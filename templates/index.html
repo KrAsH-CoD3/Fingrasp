@@ -56,11 +56,53 @@
       margin: 0 auto;
       padding: 32px 24px 80px;
     }
+
+    /* ── Header ── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 48px;
+    }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--accent); }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .badge {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 5px 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .toggle {
+      width: 40px; height: 40px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); font-size: 17px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .toggle:hover { border-color: var(--accent); box-shadow: 0 0 12px var(--glow); }
   </style>
 </head>
 <body>
 <div class="page">
-
+  <header>
+    <div class="logo">Fin<span>grasp</span></div>
+    <div class="header-right">
+      <div class="badge"><div class="dot"></div>Live</div>
+      <button class="toggle" id="themeBtn">🌙</button>
+    </div>
+  </header>
 </div>
 </body>
 </html>
