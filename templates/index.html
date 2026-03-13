@@ -92,10 +92,26 @@
       transition: border-color .2s, box-shadow .2s;
     }
     .toggle:hover { border-color: var(--accent); box-shadow: 0 0 12px var(--glow); }
+
+    /* ── Hero ── */
+    .hero { text-align: center; margin-bottom: 48px; }
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(32px, 6vw, 58px);
+      font-weight: 800; letter-spacing: -2px; line-height: 1.05;
+      margin-bottom: 14px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero p { font-size: 12px; color: var(--muted); line-height: 1.9; }
   </style>
 </head>
 <body>
 <div class="page">
+
   <header>
     <div class="logo">Fin<span>grasp</span></div>
     <div class="header-right">
@@ -103,6 +119,12 @@
       <button class="toggle" id="themeBtn">🌙</button>
     </div>
   </header>
+
+  <div class="hero">
+    <h1>Your Device<br/><em>Fully Grasped</em></h1>
+    <p>Fingerprint collected automatically on page load and saved to the database.</p>
+  </div>
+
 </div>
 </body>
 </html>
