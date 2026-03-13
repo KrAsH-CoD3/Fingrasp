@@ -1,7 +1,7 @@
 [project]
 name = "fingrasp"
 version = "0.1.0"
-description = "Add your description here"
+description = "Browser fingerprinting collector and API backend utilizing FastAPI, MongoDB Atlas, and MixVisit."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
