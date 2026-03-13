@@ -159,6 +159,21 @@
     .copy-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--glow); }
     .copy-btn.copied { border-color: var(--success); color: var(--success); }
     .copy-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    /* data body */
+    .fp-body {
+      padding: 20px;
+      font-size: 12px; line-height: 2; color: var(--muted);
+      max-height: 500px; overflow-y: auto;
+    }
+    .fp-body::-webkit-scrollbar { width: 3px; }
+    .fp-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* syntax highlight */
+    .jk { color: var(--accent2); }
+    .js { color: #f6ad55; }
+    .jn { color: var(--accent); }
+    .jb { color: #fc8181; }
   </style>
 </head>
 <body>
