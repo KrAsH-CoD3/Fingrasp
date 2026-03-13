@@ -122,6 +122,43 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loader p { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+
+    /* ── Fingerprint Section ── */
+    .fp-section {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    /* sticky top bar */
+    .fp-bar {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+    .fp-bar-left { display: flex; align-items: center; gap: 8px; }
+    .fp-bar-title { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+    .fp-indicator { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+
+    .copy-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; letter-spacing: 0.5px;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 12px;
+      cursor: pointer; transition: all .2s;
+      white-space: nowrap;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+    .copy-btn.copied { border-color: var(--success); color: var(--success); }
+    .copy-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -144,6 +181,24 @@
   <div class="loader" id="loader">
     <div class="spinner"></div>
     <p>Collecting fingerprint…</p>
+  </div>
+
+  <!-- Shown after fingerprint is collected -->
+  <div class="fp-section" id="fpSection">
+    <div class="fp-bar">
+      <div class="fp-bar-left">
+        <div class="fp-indicator"></div>
+        <span class="fp-bar-title">Obtained Fingerprint</span>
+      </div>
+      <button class="copy-btn" id="copyBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+        </svg>
+        Copy
+      </button>
+    </div>
+    <div class="fp-body" id="fpBody"></div>
   </div>
 
 </div>
