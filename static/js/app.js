@@ -45,22 +45,79 @@ copyBtn.addEventListener('click', async () => {
 });
 
 // ── Logic: Collect, Render, Persist ──
+const CATEGORIES = {
+  'Identity':   ['hash', 'platform', 'loadTime'],
+  'Browser':    ['userAgent', 'language', 'languages', 'vendor', 'product', 'productSub', 'appCodeName', 'appName', 'appVersion'],
+  'Hardware':   ['deviceMemory', 'hardwareConcurrency', 'maxTouchPoints', 'oscpu', 'cpuClass'],
+  'Display':    ['screen', 'innerWidth', 'innerHeight', 'outerWidth', 'outerHeight', 'devicePixelRatio', 'colorDepth', 'pixelDepth'],
+  'Environment':['timezone', 'timezoneOffset', 'cookieEnabled', 'doNotTrack', 'webdriver', 'pdfViewerEnabled'],
+  'Graphics':   ['canvas', 'webgl', 'webglInfo', 'gpu'],
+  'Audio':      ['audio'],
+  'Network':    ['ip', 'downlink', 'effectiveType', 'rtt', 'saveData']
+};
+
 async function collectData() {
   const mv = new MixVisit();
   await mv.load();
+  const signals = mv.get();
   return {
     hash:     mv.fingerprintHash,
     platform: mv.get('platform'),
     loadTime: mv.loadTime,
-    signals:  mv.get(),
+    signals:  signals,
   };
 }
 
 function renderUI(payload) {
   rawData = JSON.stringify(payload, null, 2);
-  document.getElementById('loader').style.display    = 'none';
-  document.getElementById('fpSection').style.display = 'block';
-  document.getElementById('fpBody').innerHTML        = highlight(payload);
+  const body = document.getElementById('fpBody');
+  const loader = document.getElementById('loader');
+  const section = document.getElementById('fpSection');
+
+  loader.style.display = 'none';
+  section.style.display = 'block';
+  body.innerHTML = '';
+
+  const { signals, ...core } = payload;
+  const flat = { ...core, ...signals };
+  const usedKeys = new Set();
+
+  Object.entries(CATEGORIES).forEach(([name, keys]) => {
+    const chunk = {};
+    keys.forEach(k => {
+      if (flat[k] !== undefined) {
+        chunk[k] = flat[k];
+        usedKeys.add(k);
+      }
+    });
+
+    if (Object.keys(chunk).length > 0) {
+      appendSegment(body, name, chunk);
+    }
+  });
+
+  // Remaining keys in 'Other'
+  const other = {};
+  Object.keys(flat).forEach(k => {
+    if (!usedKeys.has(k)) other[k] = flat[k];
+  });
+  if (Object.keys(other).length > 0) {
+    appendSegment(body, 'Other Signals', other);
+  }
+}
+
+function appendSegment(parent, name, data) {
+  const keys = Object.keys(data).length;
+  const html = `
+    <div class="fp-segment">
+      <div class="fps-head">
+        <span class="fps-title">${name}</span>
+        <span class="fps-count">${keys} key${keys === 1 ? '' : 's'}</span>
+      </div>
+      <div class="fps-content">${highlight(data)}</div>
+    </div>
+  `;
+  parent.insertAdjacentHTML('beforeend', html);
 }
 
 async function persist(payload) {
