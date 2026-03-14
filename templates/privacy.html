@@ -8,6 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/privacy.css">
+  <script>
+    // Set theme immediately to prevent flashing
+    const _saved = localStorage.getItem('theme');
+    if (_saved) document.documentElement.setAttribute('data-theme', _saved);
+  </script>
 </head>
 <body>
 <div class="page">
@@ -238,19 +243,5 @@
 
 </div><!-- /.page -->
 
-<script>
-  let dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const saved = localStorage.getItem('theme');
-  if (saved) { dark = saved === 'dark'; document.documentElement.setAttribute('data-theme', saved); }
-  const btn = document.getElementById('themeBtn');
-  btn.textContent = dark ? '🌙' : '☀️';
-  btn.addEventListener('click', () => {
-    dark = !dark;
-    const t = dark ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem('theme', t);
-    btn.textContent = dark ? '🌙' : '☀️';
-  });
-</script>
 </body>
 </html>
