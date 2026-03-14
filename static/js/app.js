@@ -118,22 +118,31 @@ function appendSegment(parent, name, data) {
   
   const html = `
     <div class="fp-segment" id="${sectionId}">
-      <div class="fps-head">
+      <div class="fps-head" onclick="toggleSegment('${sectionId}')">
         <div class="fps-head-left">
+          <div class="fps-chevron">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
           <span class="fps-title">${name}</span>
           <span class="fps-count">${keys} key${keys === 1 ? '' : 's'}</span>
         </div>
-        <button class="fps-copy" onclick="copySection('${sectionId}')">
+        <button class="fps-copy" onclick="event.stopPropagation(); copySection('${sectionId}')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           Copy
         </button>
       </div>
-      <div class="fps-content">${highlight(data)}</div>
-      <textarea style="display:none" class="fps-raw">${json}</textarea>
+      <div class="fps-content-wrapper">
+        <div class="fps-content">${highlight(data)}</div>
+        <textarea style="display:none" class="fps-raw">${json}</textarea>
+      </div>
     </div>
   `;
   parent.insertAdjacentHTML('beforeend', html);
 }
+
+window.toggleSegment = (id) => {
+  document.getElementById(id).classList.toggle('collapsed');
+};
 
 window.copySection = async (id) => {
   const sec = document.getElementById(id);
