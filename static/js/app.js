@@ -59,17 +59,23 @@ const CATEGORIES = {
 async function collectData() {
   const mv = new MixVisit();
   await mv.load();
-  const signals = mv.get();
   return {
     hash:     mv.fingerprintHash,
-    platform: mv.get('platform'),
     loadTime: mv.loadTime,
-    signals:  signals,
+    signals:  mv.get(),
   };
 }
 
 function renderUI(payload) {
+  const { hash, loadTime, signals } = payload;
+  
+  // Set meta values
+  document.getElementById('valHash').textContent = hash;
+  document.getElementById('valTime').textContent = `${loadTime}ms`;
+  
+  // Update raw data for "Copy All"
   rawData = JSON.stringify(payload, null, 2);
+  
   const body = document.getElementById('fpBody');
   const loader = document.getElementById('loader');
   const section = document.getElementById('fpSection');
@@ -78,8 +84,7 @@ function renderUI(payload) {
   section.style.display = 'block';
   body.innerHTML = '';
 
-  const { signals, ...core } = payload;
-  const flat = { ...core, ...signals };
+  const flat = { ...signals };
   const usedKeys = new Set();
 
   Object.entries(CATEGORIES).forEach(([name, keys]) => {

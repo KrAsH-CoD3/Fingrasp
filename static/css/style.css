@@ -153,6 +153,36 @@ header {
 .copy-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 /* data body */
+.fp-meta {
+  display: flex;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.meta-item {
+  flex: 1;
+  padding: 12px 20px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.meta-item:last-child { border-right: none; }
+.meta-label {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.meta-val {
+  font-size: 11px;
+  color: var(--accent2);
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fp-body {
   padding: 0;
   font-size: 12px;
