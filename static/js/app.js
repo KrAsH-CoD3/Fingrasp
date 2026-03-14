@@ -108,17 +108,44 @@ function renderUI(payload) {
 
 function appendSegment(parent, name, data) {
   const keys = Object.keys(data).length;
+  const sectionId = `sec-${name.toLowerCase().replace(/\s+/g, '-')}`;
+  const json = JSON.stringify(data, null, 2);
+  
   const html = `
-    <div class="fp-segment">
+    <div class="fp-segment" id="${sectionId}">
       <div class="fps-head">
-        <span class="fps-title">${name}</span>
-        <span class="fps-count">${keys} key${keys === 1 ? '' : 's'}</span>
+        <div class="fps-head-left">
+          <span class="fps-title">${name}</span>
+          <span class="fps-count">${keys} key${keys === 1 ? '' : 's'}</span>
+        </div>
+        <button class="fps-copy" onclick="copySection('${sectionId}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>
       </div>
       <div class="fps-content">${highlight(data)}</div>
+      <textarea style="display:none" class="fps-raw">${json}</textarea>
     </div>
   `;
   parent.insertAdjacentHTML('beforeend', html);
 }
+
+window.copySection = async (id) => {
+  const sec = document.getElementById(id);
+  const raw = sec.querySelector('.fps-raw').value;
+  const btn = sec.querySelector('.fps-copy');
+  
+  await navigator.clipboard.writeText(raw);
+  
+  const original = btn.innerHTML;
+  btn.classList.add('copied');
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+  
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = original;
+  }, 2000);
+};
 
 async function persist(payload) {
   const res = await fetch('/save', {

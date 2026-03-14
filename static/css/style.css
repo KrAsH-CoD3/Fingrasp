@@ -175,14 +175,32 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 12px 20px;
   background: rgba(255,255,255,0.02);
-  cursor: pointer;
   user-select: none;
   transition: background .2s;
 }
 .fps-head:hover { background: rgba(255,255,255,0.05); }
-.fps-head:hover .fps-title { color: var(--accent2); }
+
+.fps-head-left { display: flex; align-items: center; gap: 12px; }
+
+.fps-copy {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.fps-copy:hover { border-color: var(--accent); color: var(--accent); }
+.fps-copy.copied { border-color: var(--success); color: var(--success); }
+.fps-copy svg { width: 10px; height: 10px; }
 
 .fps-title {
   font-size: 10px;
