@@ -34,7 +34,17 @@
     <div class="fp-bar">
       <div class="fp-bar-left">
         <div class="fp-indicator"></div>
-        <span class="fp-bar-title">Obtained Fingerprint</span>
+        <span class="fp-bar-title">Grasped</span>
+      </div>
+      <div class="fp-bar-center">
+        <div class="bar-item">
+          <span class="bar-label">ID</span>
+          <span class="bar-val" id="valHash">—</span>
+        </div>
+        <div class="bar-item">
+          <span class="bar-label">Time</span>
+          <span class="bar-val" id="valTime">—</span>
+        </div>
       </div>
       <button class="copy-btn" id="copyBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -43,16 +53,6 @@
         </svg>
         Copy All
       </button>
-    </div>
-    <div class="fp-meta">
-      <div class="meta-item">
-        <span class="meta-label">SHA-256 ID</span>
-        <span class="meta-val" id="valHash">—</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">Collection Time</span>
-        <span class="meta-val" id="valTime">—</span>
-      </div>
     </div>
     <div class="fp-body" id="fpBody"></div>
   </div>

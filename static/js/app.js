@@ -169,7 +169,7 @@ async function run() {
     renderUI(payload);
 
     // Silently persist data to backend
-    persist(payload).catch();
+    // persist(payload).catch();
   } catch (err) {
     console.error('Core error:', err);
   }
