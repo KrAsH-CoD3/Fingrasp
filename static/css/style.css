@@ -177,4 +177,21 @@ header {
 }
 .notice.ok  { display:flex; background:rgba(104,211,145,.07); border-color:rgba(104,211,145,.2); color:var(--success); }
 .notice.err { display:flex; background:rgba(252,129,129,.07); border-color:rgba(252,129,129,.2); color:#fc8181; }
-.notice svg { width:14px; height:14px; flex-shrink:0; }
+/* ── Shared Components ── */
+.logo-link { text-decoration: none; color: inherit; }
+
+.site-footer {
+  margin-top: 64px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  padding-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.site-footer a { color: var(--accent); text-decoration: none; }
+.site-footer a:hover { opacity: .7; }
+.footer-sep { opacity: .3; }
+

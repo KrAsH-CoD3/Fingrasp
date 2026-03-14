@@ -20,7 +20,7 @@
 
   <div class="hero">
     <h1>Your Device<br/><em>Fully Grasped</em></h1>
-    <p>Fingerprint collected automatically on page load and saved to the database.</p>
+    <p>Device fingerprint collected on page load for research &amp; fraud-prevention purposes.<br/>See our <a href="/privacy" style="color:var(--accent);text-decoration:none;">Privacy Policy</a> to learn exactly what we collect and why.</p>
   </div>
 
   <!-- Loader shown while MixVisit runs -->
@@ -47,10 +47,20 @@
     <div class="fp-body" id="fpBody"></div>
   </div>
 
-  <div class="notice" id="notice"></div>
+
+  <footer class="site-footer">
+    <span>© 2026 Fingrasp</span>
+    <span class="footer-sep">·</span>
+    <a href="/privacy">Privacy Policy</a>
+  </footer>
 
 </div>
 
+<script>
+  // Persist theme in localStorage
+  const _saved = localStorage.getItem('theme');
+  if (_saved) document.documentElement.setAttribute('data-theme', _saved);
+</script>
 <script type="module" src="/static/js/app.js"></script>
 </body>
 </html>
