@@ -1,66 +1,63 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fingrasp</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-<div class="page">
+{% extends "base.html" %}
 
-  <header>
-    <div class="logo">Fin<span>grasp</span></div>
-    <div class="header-right">
-      <div class="badge"><div class="dot"></div>Live</div>
-      <button class="toggle" id="themeBtn">🌙</button>
-    </div>
-  </header>
-
-  <div class="hero">
-    <h1>Your Device<br/><em>Fully Grasped</em></h1>
-    <p>Device fingerprint collected on page load for research &amp; fraud-prevention purposes.<br/>See our <a href="/privacy" style="color:var(--accent);text-decoration:none;">Privacy Policy</a> to learn exactly what we collect and why.</p>
-  </div>
-
-  <!-- Loader shown while MixVisit runs -->
-  <div class="loader" id="loader">
-    <div class="spinner"></div>
-    <p>Collecting fingerprint…</p>
-  </div>
-
-  <!-- Shown after fingerprint is collected -->
-  <div class="fp-section" id="fpSection">
-    <div class="fp-bar">
-      <div class="fp-bar-left">
-        <div class="fp-indicator"></div>
-        <span class="fp-bar-title">Obtained Fingerprint</span>
-      </div>
-      <button class="copy-btn" id="copyBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2"/>
-          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-        </svg>
-        Copy
-      </button>
-    </div>
-    <div class="fp-body" id="fpBody"></div>
-  </div>
-
-
-  <footer class="site-footer">
-    <span>© 2026 Fingrasp</span>
-    <span class="footer-sep">·</span>
-    <a href="/privacy">Privacy Policy</a>
-  </footer>
-
+{% block content %}
+<div class="hero">
+  <h1>Your Device<br /><em>Fully Grasped</em></h1>
+  <p>Device fingerprint collected on page load for research &amp; fraud-prevention purposes.<br />See our <a
+      href="/privacy" style="color:var(--accent);text-decoration:none;">Privacy Policy</a> to learn exactly what we
+    collect and why.</p>
 </div>
 
-<script>
-  // Persist theme in localStorage
-  const _saved = localStorage.getItem('theme');
-  if (_saved) document.documentElement.setAttribute('data-theme', _saved);
-</script>
-<script type="module" src="/static/js/app.js"></script>
-</body>
-</html>
+<!-- Loader shown while MixVisit runs -->
+<noscript>
+  <div class="loader-error" style="text-align: center; padding: 48px; color: #fc8181;">
+    <p>JavaScript is required to generate a device fingerprint.</p>
+    <p>Please enable JS to use this tool.</p>
+  </div>
+</noscript>
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <p>Collecting fingerprint…</p>
+</div>
+
+<!-- Shown after fingerprint is collected -->
+<div class="fp-outer-header" id="fpOuterHeader" style="display:none">
+  <div class="fp-indicator"></div>
+  <span class="fp-bar-title">Obtained Fingerprint</span>
+</div>
+
+<div class="fp-section" id="fpSection">
+  <div class="fp-bar">
+    <div class="fp-bar-meta">
+      <div class="bar-item">
+        <span class="bar-label">ID</span>
+        <span class="bar-val" id="valHash">—</span>
+      </div>
+      <div class="bar-item">
+        <span class="bar-label">Time</span>
+        <span class="bar-val" id="valTime">—</span>
+      </div>
+    </div>
+    <div class="fp-bar-right">
+      <button class="toggle-all-btn" id="toggleAllBtn" title="Expand/Collapse all">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 11l5-5 5 5M7 18l5-5 5 5"/>
+        </svg>
+        <span>Collapse All</span>
+      </button>
+      <button class="copy-btn" id="copyBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+        </svg>
+        Copy All
+      </button>
+    </div>
+  </div>
+  <div class="fp-body" id="fpBody"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="/static/js/home.js?v=1.1"></script>
+{% endblock %}

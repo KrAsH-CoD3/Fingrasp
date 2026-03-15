@@ -102,11 +102,13 @@
 
 /* Data table */
 .data-table {
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
-  margin: 18px 0;
+  margin: 24px 0;
   font-size: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 .dt-row {
   display: grid;
@@ -148,8 +150,20 @@
   line-height: 1.8;
 }
 .callout-icon { font-size: 20px; flex-shrink: 0; }
-.callout-blue  { background: rgba(99,179,237,.07); border: 1px solid rgba(99,179,237,.2); color: var(--text); }
-.callout-green { background: rgba(104,211,145,.06); border: 1px solid rgba(104,211,145,.2); color: var(--text); }
+.callout-blue  { 
+  background: var(--surface);
+  background-image: linear-gradient(rgba(99,179,237,.12), rgba(99,179,237,.12));
+  border: 1px solid rgba(99,179,237,.4); 
+  color: var(--text); 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.callout-green { 
+  background: var(--surface);
+  background-image: linear-gradient(rgba(104,211,145,.12), rgba(104,211,145,.12));
+  border: 1px solid rgba(104,211,145,.4); 
+  color: var(--text); 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
 
 /* Reason list */
 .reason-list {
