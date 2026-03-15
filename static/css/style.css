@@ -551,11 +551,43 @@ header {
   transform: translateY(-2px);
 }
 
-@media (max-width: 600px) {
-  .scroll-top-btn {
-    bottom: 16px;
-    right: 16px;
-    width: 40px;
-    height: 40px;
-  }
+/* ── Mobile & Tablet Optimization ── */
+@media (max-width: 768px) {
+  .page { padding: 24px 16px 20px; }
+  header { margin-bottom: 32px; }
+  .logo { font-size: 18px; }
+  .hero { margin-bottom: 32px; }
+  .hero h1 { font-size: clamp(26px, 8vw, 42px); margin-bottom: 10px; }
+  .hero p { font-size: 11px; }
+  
+  .fp-bar { padding: 8px 12px; gap: 16px; }
+  .fp-bar-title { font-size: 9px; }
+  .bar-label { font-size: 7px; }
+  .bar-val { font-size: 9px; }
+  .copy-btn, .toggle-all-btn { font-size: 10px; padding: 5px 10px; gap: 4px; }
+  .copy-btn svg, .toggle-all-btn svg { width: 12px; height: 12px; }
+
+  .fps-head { padding: 10px 14px; }
+  .fps-title { font-size: 9px; }
+  .fps-count { font-size: 8px; padding: 2px 6px; }
+  
+  .kv-key { width: 140px; min-width: 140px; padding: 8px 12px; font-size: 9px; }
+  .kv-val { padding: 8px 12px; font-size: 10.5px; }
+  
+  .site-footer { margin-top: 48px; font-size: 11px; }
+
+  .scroll-top-btn { bottom: 16px; right: 16px; width: 40px; height: 40px; }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 16px 12px 16px; }
+  .hero h1 { font-size: clamp(22px, 10vw, 30px); }
+  .badge { font-size: 9px; padding: 4px 10px; }
+  
+  .fp-bar { gap: 12px; }
+  .fp-outer-header { margin-bottom: 8px; }
+  
+  .kv-key { width: 100px; min-width: 100px; padding: 8px 10px; font-size: 8.5px; letter-spacing: 0; }
+  .kv-val { padding: 8px 10px; font-size: 9.5px; }
+  .val-nested { min-width: 120px; }
 }
