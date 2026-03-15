@@ -45,16 +45,6 @@ copyBtn.addEventListener('click', async () => {
 });
 
 // ── Logic: Collect, Render, Persist ──
-const CATEGORIES = {
-  'Identity':   ['hash', 'platform', 'loadTime'],
-  'Browser':    ['userAgent', 'language', 'languages', 'vendor', 'product', 'productSub', 'appCodeName', 'appName', 'appVersion'],
-  'Hardware':   ['deviceMemory', 'hardwareConcurrency', 'maxTouchPoints', 'oscpu', 'cpuClass'],
-  'Display':    ['screen', 'innerWidth', 'innerHeight', 'outerWidth', 'outerHeight', 'devicePixelRatio', 'colorDepth', 'pixelDepth'],
-  'Environment':['timezone', 'timezoneOffset', 'cookieEnabled', 'doNotTrack', 'webdriver', 'pdfViewerEnabled'],
-  'Graphics':   ['canvas', 'webgl', 'webglInfo', 'gpu'],
-  'Audio':      ['audio'],
-  'Network':    ['ip', 'downlink', 'effectiveType', 'rtt', 'saveData']
-};
 
 async function collectData() {
   const mv = new MixVisit();
@@ -62,18 +52,17 @@ async function collectData() {
   return {
     hash:     mv.fingerprintHash,
     loadTime: mv.loadTime,
-    signals:  mv.get(),
+    fingerprint:  mv.get(),
   };
 }
 
 function renderUI(payload) {
-  const { hash, loadTime, signals } = payload;
+  const { hash, loadTime, fingerprint } = payload;
   
   // Set meta values
   document.getElementById('valHash').textContent = hash;
   document.getElementById('valTime').textContent = `${loadTime}ms`;
   
-  // Update raw data for "Copy All"
   rawData = JSON.stringify(payload, null, 2);
   
   const body = document.getElementById('fpBody');
@@ -84,8 +73,22 @@ function renderUI(payload) {
   section.style.display = 'block';
   body.innerHTML = '';
 
-  const flat = { ...signals };
+  // Expand categories and include top-level metadata in 'flat'
+  const flat = { ...fingerprint };
   const usedKeys = new Set();
+  
+  // Categorize by actual MixVisit signal keys
+  const CATEGORIES = {
+    'Browser':       ['navigator', 'navigatorProperties', 'vendorFlavors', 'cookiesEnabled', 'sessionStorage', 'localStorage', 'openDatabase', 'indexedDB'],
+    'Display':       ['screen', 'screenResolution', 'screenFrame', 'devicePixelRatio', 'colorDepth', 'colorGamut', 'colorSpaceSupport', 'hdr', 'hdcp', 'invertedColors', 'forcedColors', 'monochromeDepth', 'contrastPreference', 'reducedMotion', 'reducedTransparency'],
+    'Hardware':      ['architecture', 'touchSupport', 'memory', 'systemInfo', 'scheduling', 'baseLatency'],
+    'Graphics':      ['canvas', 'webgl', 'webgpu', 'clientRects', 'fontRendering'],
+    'Audio':         ['audio', 'speechSynthesisVoices', 'mediaCapabilities', 'mediaDecodingCapabilities'],
+    'Network':       ['networkAPI', 'networkInfo', 'location', 'geolocation', 'webrtc'],
+    'Fonts & Intl':  ['fonts', 'fontPreferences', 'intl', 'math'],
+    'Environment':   ['timezone', 'globalPrivacyControl', 'performance', 'devToolsOpen', 'batteryAPI', 'batteryInfo', 'bluetoothAPI'],
+    'APIs & Engine': ['activeX', 'silverlight', 'flash', 'java', 'drmSupport', 'fileAPIs', 'storageQuota', 'symbolProperties', 'webkitAPIs', 'builtInObjects', 'cssSupport', 'computedStyleProperties', 'globalObjests']
+  };
 
   Object.entries(CATEGORIES).forEach(([name, keys]) => {
     const chunk = {};

@@ -187,7 +187,7 @@ header {
   font-size: 12px;
   line-height: 1.6;
   color: var(--muted);
-  max-height: 600px;
+  max-height: 800px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -267,7 +267,7 @@ header {
 .fps-content-wrapper {
   overflow: hidden;
   transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: 1000px; /* Large enough to show content */
+  max-height: 10000px; /* Increased to accommodate very large data */
 }
 
 .fp-segment.collapsed .fps-content-wrapper {
