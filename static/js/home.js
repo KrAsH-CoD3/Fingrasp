@@ -38,15 +38,21 @@ function renderValue(val, depth = 0) {
 
   if (Array.isArray(val)) {
     if (val.length === 0) return '<span class="val-null">[ ]</span>';
-    if (val.length <= 5 && val.every(v => typeof v !== 'object'))
-      return `<span class="val-arr">[${val.map(v => typeof v === 'string' ? `"${escHtml(v)}"` : v).join(', ')}]</span>`;
+    
+    // Smart Inline Preview: Only if all items are simple and total length is short
+    if (val.length <= 5 && val.every(v => typeof v !== 'object')) {
+      const preview = `[${val.map(v => typeof v === 'string' ? `"${escHtml(v)}"` : v).join(', ')}]`;
+      if (preview.length < 60) {
+        return `<span class="val-arr">${preview}</span>`;
+      }
+    }
 
     const id = 'nest-' + Math.random().toString(36).slice(2, 8);
     const rows = val.map((item, i) =>
       `<tr class="kv-row"><td class="kv-key">[${i}]</td><td class="kv-val">${renderValue(item, depth + 1)}</td></tr>`
     ).join('');
     return `<div class="val-nested">
-      <button class="val-toggle" onclick="toggleNested('${id}')">▶ Array (${val.length} items)</button>
+      <button class="val-toggle" onclick="toggleNested(this, '${id}')"><span>▶</span> Array (${val.length} items)</button>
       <table class="kv-table kv-sub" id="${id}" style="display:none">${rows}</table>
     </div>`;
   }
@@ -61,6 +67,14 @@ function renderValue(val, depth = 0) {
     if ('value' in val && 'duration' in val)
       return renderValue(val.value, depth);
 
+    // Smart Inline Preview for small objects
+    if (entries.length <= 3 && entries.every(([k, v]) => typeof v !== 'object')) {
+      const preview = `{ ${entries.map(([k, v]) => `${k}: ${typeof v === 'string' ? `"${escHtml(v)}"` : v}`).join(', ')} }`;
+      if (preview.length < 50) {
+        return `<span class="val-arr">${preview}</span>`;
+      }
+    }
+
     const id = 'nest-' + Math.random().toString(36).slice(2, 8);
     const rows = entries.map(([k, v]) =>
       `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val">${renderValue(v, depth + 1)}</td></tr>`
@@ -68,7 +82,7 @@ function renderValue(val, depth = 0) {
     if (depth === 0)
       return `<table class="kv-table">${rows}</table>`;
     return `<div class="val-nested">
-      <button class="val-toggle" onclick="toggleNested('${id}')">▶ Object (${entries.length} keys)</button>
+      <button class="val-toggle" onclick="toggleNested(this, '${id}')"><span>▶</span> Object (${entries.length} keys)</button>
       <table class="kv-table kv-sub" id="${id}" style="display:none">${rows}</table>
     </div>`;
   }
@@ -87,13 +101,15 @@ window.toggleExpand = (id) => {
   }
 };
 
-window.toggleNested = (id) => {
+window.toggleNested = (btn, id) => {
   const el = document.getElementById(id);
-  const btn = el.previousElementSibling;
+  const icon = btn.querySelector('span');
   if (el.style.display === 'none') {
-    el.style.display = 'table'; btn.textContent = btn.textContent.replace('▶', '▼');
+    el.style.display = 'table';
+    if (icon) icon.textContent = '▼';
   } else {
-    el.style.display = 'none'; btn.textContent = btn.textContent.replace('▼', '▶');
+    el.style.display = 'none';
+    if (icon) icon.textContent = '▶';
   }
 };
 
