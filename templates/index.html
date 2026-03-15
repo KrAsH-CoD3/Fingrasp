@@ -9,6 +9,12 @@
 </div>
 
 <!-- Loader shown while MixVisit runs -->
+<noscript>
+  <div class="loader-error" style="text-align: center; padding: 48px; color: #fc8181;">
+    <p>JavaScript is required to generate a device fingerprint.</p>
+    <p>Please enable JS to use this tool.</p>
+  </div>
+</noscript>
 <div class="loader" id="loader">
   <div class="spinner"></div>
   <p>Collecting fingerprint…</p>
@@ -22,7 +28,7 @@
 
 <div class="fp-section" id="fpSection">
   <div class="fp-bar">
-    <div class="fp-bar-center">
+    <div class="fp-bar-meta">
       <div class="bar-item">
         <span class="bar-label">ID</span>
         <span class="bar-val" id="valHash">—</span>
@@ -35,7 +41,7 @@
     <div class="fp-bar-right">
       <button class="toggle-all-btn" id="toggleAllBtn" title="Expand/Collapse all">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+          <path d="M7 11l5-5 5 5M7 18l5-5 5 5"/>
         </svg>
         <span>Collapse All</span>
       </button>

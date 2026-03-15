@@ -236,7 +236,7 @@ function appendSegment(parent, name, data) {
       </div>
       <div class="fps-content-wrapper">
         <div class="fps-content"><table class="kv-table">${rows}</table></div>
-        <textarea style="display:none" class="fps-raw">${json}</textarea>
+        <textarea style="display:none" class="fps-raw">${escHtml(json)}</textarea>
       </div>
     </div>
   `;

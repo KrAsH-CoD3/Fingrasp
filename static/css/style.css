@@ -163,7 +163,7 @@ header {
   flex-shrink: 0; 
 }
 
-.fp-bar-center {
+.fp-bar-meta {
   display: flex;
   align-items: center;
   gap: 20px;
