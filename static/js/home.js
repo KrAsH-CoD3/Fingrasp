@@ -128,6 +128,27 @@ if (copyBtn) {
   });
 }
 
+// ── Toggle All button ──
+const toggleAllBtn = document.getElementById('toggleAllBtn');
+if (toggleAllBtn) {
+  let allCollapsed = false;
+  
+  toggleAllBtn.addEventListener('click', () => {
+    allCollapsed = !allCollapsed;
+    const segments = document.querySelectorAll('.fp-segment');
+    segments.forEach(seg => {
+      if (allCollapsed) {
+        seg.classList.add('collapsed');
+      } else {
+        seg.classList.remove('collapsed');
+      }
+    });
+    
+    toggleAllBtn.classList.toggle('active', allCollapsed);
+    toggleAllBtn.querySelector('span').textContent = allCollapsed ? 'Expand All' : 'Collapse All';
+  });
+}
+
 // ── Logic: Collect, Render, Persist ──
 async function collectData() {
   const mv = new MixVisit();
@@ -149,9 +170,11 @@ function renderUI(payload) {
   const body    = document.getElementById('fpBody');
   const loader  = document.getElementById('loader');
   const section = document.getElementById('fpSection');
+  const outerHe = document.getElementById('fpOuterHeader');
 
   loader.style.display  = 'none';
   section.style.display = 'block';
+  if (outerHe) outerHe.style.display = 'flex';
   body.innerHTML = '';
 
   const flat = { ...fingerprint };
@@ -263,4 +286,4 @@ async function run() {
   }
 }
 
-window.addEventListener('load', run);
+window.addEventListener('DOMContentLoaded', run);

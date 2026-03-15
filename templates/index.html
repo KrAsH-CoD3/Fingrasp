@@ -15,12 +15,13 @@
 </div>
 
 <!-- Shown after fingerprint is collected -->
+<div class="fp-outer-header" id="fpOuterHeader" style="display:none">
+  <div class="fp-indicator"></div>
+  <span class="fp-bar-title">Obtained Fingerprint</span>
+</div>
+
 <div class="fp-section" id="fpSection">
   <div class="fp-bar">
-    <div class="fp-bar-left">
-      <div class="fp-indicator"></div>
-      <span class="fp-bar-title">Obtained Fingerprint</span>
-    </div>
     <div class="fp-bar-center">
       <div class="bar-item">
         <span class="bar-label">ID</span>
@@ -31,14 +32,21 @@
         <span class="bar-val" id="valTime">—</span>
       </div>
     </div>
-    <button class="copy-btn" id="copyBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round">
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-      </svg>
-      Copy All
-    </button>
+    <div class="fp-bar-right">
+      <button class="toggle-all-btn" id="toggleAllBtn" title="Expand/Collapse all">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+        </svg>
+        <span>Collapse All</span>
+      </button>
+      <button class="copy-btn" id="copyBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+        </svg>
+        Copy All
+      </button>
+    </div>
   </div>
   <div class="fp-body" id="fpBody"></div>
 </div>
