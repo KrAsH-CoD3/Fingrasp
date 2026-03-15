@@ -148,8 +148,18 @@
   line-height: 1.8;
 }
 .callout-icon { font-size: 20px; flex-shrink: 0; }
-.callout-blue  { background: rgba(99,179,237,.07); border: 1px solid rgba(99,179,237,.2); color: var(--text); }
-.callout-green { background: rgba(104,211,145,.06); border: 1px solid rgba(104,211,145,.2); color: var(--text); }
+.callout-blue  { 
+  background: rgba(99,179,237,.15); 
+  border: 1px solid rgba(99,179,237,.4); 
+  color: var(--text); 
+  box-shadow: 0 4px 16px rgba(99,179,237,.1);
+}
+.callout-green { 
+  background: rgba(104,211,145,.15); 
+  border: 1px solid rgba(104,211,145,.4); 
+  color: var(--text); 
+  box-shadow: 0 4px 16px rgba(104,211,145,.1);
+}
 
 /* Reason list */
 .reason-list {

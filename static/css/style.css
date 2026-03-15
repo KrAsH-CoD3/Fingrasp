@@ -491,7 +491,7 @@ header {
 .site-footer {
   margin-top: 64px;
   text-align: center;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   padding-bottom: 24px;
   display: flex;
@@ -499,7 +499,7 @@ header {
   align-items: center;
   gap: 10px;
 }
-.site-footer a { color: var(--accent); text-decoration: none; }
+.site-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
 .site-footer a:hover { opacity: .7; }
 .footer-sep { opacity: .3; }
 
