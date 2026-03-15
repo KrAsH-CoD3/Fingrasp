@@ -1,83 +1,207 @@
 import { MixVisit } from '/static/js/mixvisit.js';
 
 // ── Theme toggle ──
-let dark = document.documentElement.getAttribute('data-theme') !== 'light';
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme) {
-  dark = savedTheme === 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-}
 const themeBtn = document.getElementById('themeBtn');
-themeBtn.textContent = dark ? '🌙' : '☀️';
-themeBtn.addEventListener('click', () => {
-  dark = !dark;
-  const t = dark ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('theme', t);
+if (themeBtn) {
+  let dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    dark = savedTheme === 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }
   themeBtn.textContent = dark ? '🌙' : '☀️';
-});
-
-// ── Syntax highlight ──
-function highlight(obj) {
-  return JSON.stringify(obj, null, 2).replace(
-    /("(?:\\.|[^"\\])*"(?=\s*:)|"(?:\\.|[^"\\])*"|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
-    m => {
-      if (/^".*":\s*$/.test(m + ' ')) return `<span class="jk">${m}</span>`;
-      if (/".*":/.test(m))            return `<span class="jk">${m}</span>`;
-      if (/^"/.test(m))               return `<span class="js">${m}</span>`;
-      if (/true|false/.test(m))       return `<span class="jb">${m}</span>`;
-      return `<span class="jn">${m}</span>`;
-    }
-  );
+  themeBtn.addEventListener('click', () => {
+    dark = !dark;
+    const t = dark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+    themeBtn.textContent = dark ? '🌙' : '☀️';
+  });
 }
 
-// ── Copy button ──
+// ── Scroll to Top ──
+const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+if (scrollToTopBtn) {
+  const toggleVisibility = () => {
+    const windowScrolled = window.scrollY > 200 || document.documentElement.scrollTop > 200;
+    const fpBody = document.getElementById('fpBody');
+    const fpScrolled = fpBody && fpBody.scrollTop > 200;
+    
+    if (windowScrolled || fpScrolled) {
+      scrollToTopBtn.classList.add('visible');
+    } else {
+      scrollToTopBtn.classList.remove('visible');
+    }
+  };
+
+  window.addEventListener('scroll', toggleVisibility);
+  
+  // The fpBody might be populated later, but the element exists
+  const fpBody = document.getElementById('fpBody');
+  if (fpBody) {
+    fpBody.addEventListener('scroll', toggleVisibility);
+  }
+
+  scrollToTopBtn.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    const fpBody = document.getElementById('fpBody');
+    if (fpBody) {
+      fpBody.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  });
+
+  // Initial check
+  toggleVisibility();
+}
+
+// ── Value Formatting ──
+function formatKey(key) {
+  return key
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .replace(/^./, s => s.toUpperCase());
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderValue(val, depth = 0) {
+  if (val === null || val === undefined)
+    return '<span class="val-null">null</span>';
+
+  if (typeof val === 'boolean')
+    return val
+      ? '<span class="val-bool val-true">✓ true</span>'
+      : '<span class="val-bool val-false">✗ false</span>';
+
+  if (typeof val === 'number')
+    return `<span class="val-num">${val}</span>`;
+
+  if (typeof val === 'string') {
+    if (val.length > 120) {
+      const id = 'exp-' + Math.random().toString(36).slice(2, 8);
+      return `<span class="val-str val-long">
+        <span class="val-preview" id="${id}-p">${escHtml(val.slice(0, 80))}…</span>
+        <span class="val-full" id="${id}-f" style="display:none">${escHtml(val)}</span>
+        <button class="val-expand" onclick="toggleExpand('${id}')">show more</button>
+      </span>`;
+    }
+    return `<span class="val-str">${escHtml(val)}</span>`;
+  }
+
+  if (Array.isArray(val)) {
+    if (val.length === 0) return '<span class="val-null">[ ]</span>';
+    if (val.length <= 5 && val.every(v => typeof v !== 'object'))
+      return `<span class="val-arr">[${val.map(v => typeof v === 'string' ? `"${escHtml(v)}"` : v).join(', ')}]</span>`;
+
+    const id = 'nest-' + Math.random().toString(36).slice(2, 8);
+    const rows = val.map((item, i) =>
+      `<tr class="kv-row"><td class="kv-key">[${i}]</td><td class="kv-val">${renderValue(item, depth + 1)}</td></tr>`
+    ).join('');
+    return `<div class="val-nested">
+      <button class="val-toggle" onclick="toggleNested('${id}')">▶ Array (${val.length} items)</button>
+      <table class="kv-table kv-sub" id="${id}" style="display:none">${rows}</table>
+    </div>`;
+  }
+
+  if (typeof val === 'object') {
+    const entries = Object.entries(val);
+    if (entries.length === 0) return '<span class="val-null">{ }</span>';
+    // MixVisit error format
+    if (val.error && typeof val.error === 'object' && val.error.code)
+      return `<span class="val-err">⚠ ${escHtml(val.error.message || 'Error')}</span>`;
+    // MixVisit signal wrapper
+    if ('value' in val && 'duration' in val)
+      return renderValue(val.value, depth);
+
+    const id = 'nest-' + Math.random().toString(36).slice(2, 8);
+    const rows = entries.map(([k, v]) =>
+      `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val">${renderValue(v, depth + 1)}</td></tr>`
+    ).join('');
+    if (depth === 0)
+      return `<table class="kv-table">${rows}</table>`;
+    return `<div class="val-nested">
+      <button class="val-toggle" onclick="toggleNested('${id}')">▶ Object (${entries.length} keys)</button>
+      <table class="kv-table kv-sub" id="${id}" style="display:none">${rows}</table>
+    </div>`;
+  }
+
+  return `<span class="val-str">${escHtml(String(val))}</span>`;
+}
+
+window.toggleExpand = (id) => {
+  const p = document.getElementById(id + '-p');
+  const f = document.getElementById(id + '-f');
+  const btn = p.parentElement.querySelector('.val-expand');
+  if (f.style.display === 'none') {
+    p.style.display = 'none'; f.style.display = 'inline'; btn.textContent = 'show less';
+  } else {
+    p.style.display = 'inline'; f.style.display = 'none'; btn.textContent = 'show more';
+  }
+};
+
+window.toggleNested = (id) => {
+  const el = document.getElementById(id);
+  const btn = el.previousElementSibling;
+  if (el.style.display === 'none') {
+    el.style.display = 'table'; btn.textContent = btn.textContent.replace('▶', '▼');
+  } else {
+    el.style.display = 'none'; btn.textContent = btn.textContent.replace('▼', '▶');
+  }
+};
+
+// ── Copy All button ──
 let rawData = '';
 const copyBtn = document.getElementById('copyBtn');
-const COPY_HTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy`;
-const CHECK_HTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+if (copyBtn) {
+  const COPY_HTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy All`;
+  const CHECK_HTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
 
-copyBtn.addEventListener('click', async () => {
-  await navigator.clipboard.writeText(rawData);
-  copyBtn.classList.add('copied');
-  copyBtn.innerHTML = CHECK_HTML;
-  setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.innerHTML = COPY_HTML; }, 2000);
-});
+  copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(rawData);
+    copyBtn.classList.add('copied');
+    copyBtn.innerHTML = CHECK_HTML;
+    setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.innerHTML = COPY_HTML; }, 2000);
+  });
+}
 
 // ── Logic: Collect, Render, Persist ──
-
 async function collectData() {
   const mv = new MixVisit();
   await mv.load();
   return {
-    hash:     mv.fingerprintHash,
-    loadTime: mv.loadTime,
-    fingerprint:  mv.get(),
+    hash:        mv.fingerprintHash,
+    loadTime:    mv.loadTime,
+    fingerprint: mv.get(),
   };
 }
 
 function renderUI(payload) {
   const { hash, loadTime, fingerprint } = payload;
-  
-  // Set meta values
+
   document.getElementById('valHash').textContent = hash;
   document.getElementById('valTime').textContent = `${loadTime}ms`;
-  
   rawData = JSON.stringify(payload, null, 2);
-  
-  const body = document.getElementById('fpBody');
-  const loader = document.getElementById('loader');
+
+  const body    = document.getElementById('fpBody');
+  const loader  = document.getElementById('loader');
   const section = document.getElementById('fpSection');
 
-  loader.style.display = 'none';
+  loader.style.display  = 'none';
   section.style.display = 'block';
   body.innerHTML = '';
 
-  // Expand categories and include top-level metadata in 'flat'
   const flat = { ...fingerprint };
   const usedKeys = new Set();
-  
-  // Categorize by actual MixVisit signal keys
+
   const CATEGORIES = {
     'Browser':       ['navigator', 'navigatorProperties', 'vendorFlavors', 'cookiesEnabled', 'sessionStorage', 'localStorage', 'openDatabase', 'indexedDB'],
     'Display':       ['screen', 'screenResolution', 'screenFrame', 'devicePixelRatio', 'colorDepth', 'colorGamut', 'colorSpaceSupport', 'hdr', 'hdcp', 'invertedColors', 'forcedColors', 'monochromeDepth', 'contrastPreference', 'reducedMotion', 'reducedTransparency'],
@@ -93,32 +217,30 @@ function renderUI(payload) {
   Object.entries(CATEGORIES).forEach(([name, keys]) => {
     const chunk = {};
     keys.forEach(k => {
-      if (flat[k] !== undefined) {
-        chunk[k] = flat[k];
-        usedKeys.add(k);
-      }
+      if (flat[k] !== undefined) { chunk[k] = flat[k]; usedKeys.add(k); }
     });
-
-    if (Object.keys(chunk).length > 0) {
-      appendSegment(body, name, chunk);
-    }
+    if (Object.keys(chunk).length > 0) appendSegment(body, name, chunk);
   });
 
-  // Remaining keys in 'Other'
   const other = {};
-  Object.keys(flat).forEach(k => {
-    if (!usedKeys.has(k)) other[k] = flat[k];
-  });
-  if (Object.keys(other).length > 0) {
-    appendSegment(body, 'Other Signals', other);
-  }
+  Object.keys(flat).forEach(k => { if (!usedKeys.has(k)) other[k] = flat[k]; });
+  if (Object.keys(other).length > 0) appendSegment(body, 'Other Signals', other);
 }
 
 function appendSegment(parent, name, data) {
-  const keys = Object.keys(data).length;
-  const sectionId = `sec-${name.toLowerCase().replace(/\s+/g, '-')}`;
+  const count = Object.keys(data).length;
+  const sectionId = `sec-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   const json = JSON.stringify(data, null, 2);
-  
+
+  // Build key-value rows
+  const rows = Object.entries(data).map(([key, val]) => {
+    const display = (val && typeof val === 'object' && 'value' in val && 'duration' in val) ? val.value : val;
+    return `<tr class="kv-row">
+      <td class="kv-key">${formatKey(key)}</td>
+      <td class="kv-val">${renderValue(display, 0)}</td>
+    </tr>`;
+  }).join('');
+
   const html = `
     <div class="fp-segment" id="${sectionId}">
       <div class="fps-head" onclick="toggleSegment('${sectionId}')">
@@ -127,7 +249,7 @@ function appendSegment(parent, name, data) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
           <span class="fps-title">${name}</span>
-          <span class="fps-count">${keys} key${keys === 1 ? '' : 's'}</span>
+          <span class="fps-count">${count} signal${count === 1 ? '' : 's'}</span>
         </div>
         <button class="fps-copy" onclick="event.stopPropagation(); copySection('${sectionId}')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
@@ -135,7 +257,7 @@ function appendSegment(parent, name, data) {
         </button>
       </div>
       <div class="fps-content-wrapper">
-        <div class="fps-content">${highlight(data)}</div>
+        <div class="fps-content"><table class="kv-table">${rows}</table></div>
         <textarea style="display:none" class="fps-raw">${json}</textarea>
       </div>
     </div>
@@ -151,13 +273,13 @@ window.copySection = async (id) => {
   const sec = document.getElementById(id);
   const raw = sec.querySelector('.fps-raw').value;
   const btn = sec.querySelector('.fps-copy');
-  
+
   await navigator.clipboard.writeText(raw);
-  
+
   const original = btn.innerHTML;
   btn.classList.add('copied');
   btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
-  
+
   setTimeout(() => {
     btn.classList.remove('copied');
     btn.innerHTML = original;
@@ -174,14 +296,16 @@ async function persist(payload) {
   return res.json();
 }
 
-
 async function run() {
   try {
-    const payload = await collectData();
-    renderUI(payload);
+    // Only run fingerprint collection on the home page (where loader exists)
+    if (document.getElementById('loader')) {
+      const payload = await collectData();
+      renderUI(payload);
 
-    // Silently persist data to backend
-    // persist(payload).catch();
+      // Silently persist data to backend
+      // persist(payload).catch();
+    }
   } catch (err) {
     console.error('Core error:', err);
   }

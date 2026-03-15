@@ -1,247 +1,216 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Privacy Policy — Fingrasp</title>
-  <meta name="description" content="Fingrasp Privacy Policy — how and why we collect device fingerprints."/>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css">
-  <link rel="stylesheet" href="/static/css/privacy.css">
-  <script>
-    // Set theme immediately to prevent flashing
-    const _saved = localStorage.getItem('theme');
-    if (_saved) document.documentElement.setAttribute('data-theme', _saved);
-  </script>
-</head>
-<body>
-<div class="page">
+{% extends "base.html" %}
 
-  <header>
-    <a href="/" class="logo-link"><div class="logo">Fin<span>grasp</span></div></a>
-    <div class="header-right">
-      <div class="badge"><div class="dot"></div>Live</div>
-      <button class="toggle" id="themeBtn">🌙</button>
+{% block title %}Privacy Policy — Fingrasp{% endblock %}
+{% block description %}Fingrasp Privacy Policy — how and why we collect device fingerprints.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/privacy.css">
+{% endblock %}
+
+{% block content %}
+<div class="pp-hero">
+  <div class="pp-tag">Legal</div>
+  <h1>Privacy <em>Policy</em></h1>
+  <p class="pp-meta">Effective date: <strong>March 14, 2025</strong> &nbsp;·&nbsp; Last updated: <strong>March 14, 2026</strong></p>
+</div>
+
+<div class="pp-toc">
+  <p class="toc-title">Table of Contents</p>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#what-we-collect">What We Collect</a></li>
+    <li><a href="#why-fingerprint">Why Device Fingerprinting?</a></li>
+    <li><a href="#how-we-use">How We Use Your Data</a></li>
+    <li><a href="#storage">Data Storage & Retention</a></li>
+    <li><a href="#rights">Your Rights</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</div>
+
+<div class="pp-body">
+
+  <section id="overview">
+    <h2><span class="sec-num">01</span>Overview</h2>
+    <p>
+      Fingrasp is a browser-fingerprint intelligence platform. When you visit this website, your browser
+      automatically communicates certain technical attributes to our servers. We collect and store a structured
+      snapshot of those attributes — a <em>device fingerprint</em> — to power the core functionality of this
+      service.
+    </p>
+    <p>
+      This policy explains precisely what we collect, why we collect it, and what we do (and do not do) with
+      that information. We are committed to full transparency because we believe you have a right to understand
+      every technical decision made about your data.
+    </p>
+  </section>
+
+  <section id="what-we-collect">
+    <h2><span class="sec-num">02</span>What We Collect</h2>
+    <p>On every page load, Fingrasp collects the following signals from your browser and device:</p>
+    <div class="data-table">
+      <div class="dt-row dt-head">
+        <span>Signal</span><span>Examples</span><span>Sensitivity</span>
+      </div>
+      <div class="dt-row">
+        <span>Browser metadata</span><span>User-agent, language, timezone, DNT flag</span><span class="tag low">Low</span>
+      </div>
+      <div class="dt-row">
+        <span>Hardware hints</span><span>CPU cores, device memory, screen resolution &amp; color depth</span><span class="tag low">Low</span>
+      </div>
+      <div class="dt-row">
+        <span>Graphics fingerprint</span><span>WebGL renderer, vendor, canvas hash</span><span class="tag med">Medium</span>
+      </div>
+      <div class="dt-row">
+        <span>Audio fingerprint</span><span>AudioContext oscillator output hash</span><span class="tag med">Medium</span>
+      </div>
+      <div class="dt-row">
+        <span>Network indicators</span><span>IP address (server-side), connection type</span><span class="tag med">Medium</span>
+      </div>
+      <div class="dt-row">
+        <span>Browser capabilities</span><span>Supported codecs, API availability, installed fonts</span><span class="tag low">Low</span>
+      </div>
+      <div class="dt-row">
+        <span>Composite hash</span><span>SHA-256 of all signals combined into one ID</span><span class="tag high">Identifier</span>
+      </div>
     </div>
-  </header>
+    <p>We do <strong>not</strong> collect names, email addresses, passwords, payment details, or any other
+      directly identifying personal information unless you voluntarily provide them.</p>
+  </section>
 
-  <div class="pp-hero">
-    <div class="pp-tag">Legal</div>
-    <h1>Privacy <em>Policy</em></h1>
-    <p class="pp-meta">Effective date: <strong>March 14, 2025</strong> &nbsp;·&nbsp; Last updated: <strong>March 14, 2026</strong></p>
-  </div>
+  <section id="why-fingerprint">
+    <h2><span class="sec-num">03</span>Why Device Fingerprinting?</h2>
 
-  <div class="pp-toc">
-    <p class="toc-title">Table of Contents</p>
-    <ol>
-      <li><a href="#overview">Overview</a></li>
-      <li><a href="#what-we-collect">What We Collect</a></li>
-      <li><a href="#why-fingerprint">Why Device Fingerprinting?</a></li>
-      <li><a href="#how-we-use">How We Use Your Data</a></li>
-      <li><a href="#storage">Data Storage & Retention</a></li>
-      <li><a href="#rights">Your Rights</a></li>
-      <li><a href="#contact">Contact</a></li>
-    </ol>
-  </div>
-
-  <div class="pp-body">
-
-    <section id="overview">
-      <h2><span class="sec-num">01</span>Overview</h2>
-      <p>
-        Fingrasp is a browser-fingerprint intelligence platform. When you visit this website, your browser
-        automatically communicates certain technical attributes to our servers. We collect and store a structured
-        snapshot of those attributes — a <em>device fingerprint</em> — to power the core functionality of this
-        service.
-      </p>
-      <p>
-        This policy explains precisely what we collect, why we collect it, and what we do (and do not do) with
-        that information. We are committed to full transparency because we believe you have a right to understand
-        every technical decision made about your data.
-      </p>
-    </section>
-
-    <section id="what-we-collect">
-      <h2><span class="sec-num">02</span>What We Collect</h2>
-      <p>On every page load, Fingrasp collects the following signals from your browser and device:</p>
-      <div class="data-table">
-        <div class="dt-row dt-head">
-          <span>Signal</span><span>Examples</span><span>Sensitivity</span>
-        </div>
-        <div class="dt-row">
-          <span>Browser metadata</span><span>User-agent, language, timezone, DNT flag</span><span class="tag low">Low</span>
-        </div>
-        <div class="dt-row">
-          <span>Hardware hints</span><span>CPU cores, device memory, screen resolution &amp; color depth</span><span class="tag low">Low</span>
-        </div>
-        <div class="dt-row">
-          <span>Graphics fingerprint</span><span>WebGL renderer, vendor, canvas hash</span><span class="tag med">Medium</span>
-        </div>
-        <div class="dt-row">
-          <span>Audio fingerprint</span><span>AudioContext oscillator output hash</span><span class="tag med">Medium</span>
-        </div>
-        <div class="dt-row">
-          <span>Network indicators</span><span>IP address (server-side), connection type</span><span class="tag med">Medium</span>
-        </div>
-        <div class="dt-row">
-          <span>Browser capabilities</span><span>Supported codecs, API availability, installed fonts</span><span class="tag low">Low</span>
-        </div>
-        <div class="dt-row">
-          <span>Composite hash</span><span>SHA-256 of all signals combined into one ID</span><span class="tag high">Identifier</span>
-        </div>
+    <div class="callout callout-blue">
+      <div class="callout-icon">🔬</div>
+      <div>
+        <strong>Our core mission</strong> is to advance the scientific understanding of browser entropy —
+        how uniquely identifiable devices actually are across the modern web. Every fingerprint submitted to
+        Fingrasp contributes to an anonymised research dataset that we analyse to measure fingerprint
+        stability, collision rates, and the effectiveness of privacy-enhancing browser technologies.
       </div>
-      <p>We do <strong>not</strong> collect names, email addresses, passwords, payment details, or any other
-        directly identifying personal information unless you voluntarily provide them.</p>
-    </section>
+    </div>
 
-    <section id="why-fingerprint">
-      <h2><span class="sec-num">03</span>Why Device Fingerprinting?</h2>
+    <p>We collect device fingerprints for the following specific, legitimate reasons:</p>
 
-      <div class="callout callout-blue">
-        <div class="callout-icon">🔬</div>
+    <div class="reason-list">
+      <div class="reason">
+        <div class="reason-icon">🛡️</div>
         <div>
-          <strong>Our core mission</strong> is to advance the scientific understanding of browser entropy —
-          how uniquely identifiable devices actually are across the modern web. Every fingerprint submitted to
-          Fingrasp contributes to an anonymised research dataset that we analyse to measure fingerprint
-          stability, collision rates, and the effectiveness of privacy-enhancing browser technologies.
+          <h3>Fraud &amp; Bot Prevention Research</h3>
+          <p>
+            Fingerprinting is one of the most reliable signals for distinguishing human visitors from
+            automated bots. By building a large corpus of real-device fingerprints, we study how
+            fraud-prevention systems can become more accurate and less invasive — ultimately reducing
+            the need for disruptive CAPTCHAs and friction-heavy verification flows that affect legitimate
+            users.
+          </p>
         </div>
       </div>
-
-      <p>We collect device fingerprints for the following specific, legitimate reasons:</p>
-
-      <div class="reason-list">
-        <div class="reason">
-          <div class="reason-icon">🛡️</div>
-          <div>
-            <h3>Fraud &amp; Bot Prevention Research</h3>
-            <p>
-              Fingerprinting is one of the most reliable signals for distinguishing human visitors from
-              automated bots. By building a large corpus of real-device fingerprints, we study how
-              fraud-prevention systems can become more accurate and less invasive — ultimately reducing
-              the need for disruptive CAPTCHAs and friction-heavy verification flows that affect legitimate
-              users.
-            </p>
-          </div>
-        </div>
-        <div class="reason">
-          <div class="reason-icon">📊</div>
-          <div>
-            <h3>Device Uniqueness &amp; Entropy Analysis</h3>
-            <p>
-              We are actively studying how many bits of entropy different browser signals contribute to a
-              composite fingerprint. This research informs browser vendors, standard bodies (W3C, WHATWG),
-              and privacy tools like Tor Browser and Brave on which APIs leak the most identifying
-              information — helping them make smarter privacy-preserving decisions.
-            </p>
-          </div>
-        </div>
-        <div class="reason">
-          <div class="reason-icon">🔁</div>
-          <div>
-            <h3>Fingerprint Stability Tracking</h3>
-            <p>
-              A meaningful research question is: how long does a fingerprint remain stable as browsers update,
-              OS patches ship, and hardware drivers change? We track fingerprint hashes over time — without
-              linking them to personally identifiable information — to build stability models that benefit
-              the entire security research community.
-            </p>
-          </div>
-        </div>
-        <div class="reason">
-          <div class="reason-icon">🌐</div>
-          <div>
-            <h3>Session Continuity Without Cookies</h3>
-            <p>
-              As third-party cookies are phased out across the web, websites will need privacy-respecting
-              alternatives to provide coherent user experiences (e.g., keeping a shopping cart across tabs).
-              Fingrasp investigates whether probabilistic fingerprint matching can serve this purpose without
-              storing personally identifiable information — a potential win for both usability and privacy.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="callout callout-green">
-        <div class="callout-icon">✅</div>
+      <div class="reason">
+        <div class="reason-icon">📊</div>
         <div>
-          <strong>The bottom line:</strong> your fingerprint is treated as an anonymous technical signal, not
-          as a profile of you as a person. It is never combined with your name, email, or any other directly
-          identifying data unless you explicitly provide those separately.
+          <h3>Device Uniqueness &amp; Entropy Analysis</h3>
+          <p>
+            We are actively studying how many bits of entropy different browser signals contribute to a
+            composite fingerprint. This research informs browser vendors, standard bodies (W3C, WHATWG),
+            and privacy tools like Tor Browser and Brave on which APIs leak the most identifying
+            information — helping them make smarter privacy-preserving decisions.
+          </p>
         </div>
       </div>
-    </section>
-
-    <section id="how-we-use">
-      <h2><span class="sec-num">04</span>How We Use Your Data</h2>
-      <ul class="pp-list">
-        <li>Generating and storing a SHA-256 composite fingerprint hash for research purposes.</li>
-        <li>Analysing aggregate entropy across our dataset to understand browser uniqueness distributions.</li>
-        <li>Publishing anonymised, aggregated research findings — individual fingerprints are never published.</li>
-        <li>Improving the detection accuracy of our fingerprint collection pipeline.</li>
-        <li>Internal product analytics (e.g., which browser signals contribute most entropy).</li>
-      </ul>
-      <p>We <strong>do not</strong>:</p>
-      <ul class="pp-list pp-list-no">
-        <li>Sell your fingerprint data to any third party.</li>
-        <li>Use it for targeted advertising.</li>
-        <li>Link it to your name, email, or social profiles.</li>
-        <li>Share raw fingerprint records with any government entity unless compelled by a lawful order.</li>
-      </ul>
-    </section>
-
-    <section id="storage">
-      <h2><span class="sec-num">05</span>Data Storage &amp; Retention</h2>
-      <p>
-        Fingerprint records are stored on secure, encrypted servers and are protected using industry-standard
-        technical and organisational measures. All data is encrypted at rest and in transit.
-        Access is strictly restricted to authorised personnel via role-based access control.
-      </p>
-      <p>
-        Raw fingerprint records are retained for a maximum of <strong>24 months</strong> from the date of
-        collection. After that, records are either permanently deleted or irreversibly aggregated into
-        statistical summaries that cannot be traced back to any individual device.
-      </p>
-    </section>
-
-
-
-    <section id="rights">
-      <h2><span class="sec-num">06</span>Your Rights</h2>
-      <p>Depending on your jurisdiction you may have the right to:</p>
-      <ul class="pp-list">
-        <li><strong>Access</strong> — request a copy of your fingerprint record.</li>
-        <li><strong>Deletion</strong> — request erasure of your fingerprint record.</li>
-        <li><strong>Portability</strong> — receive your data in a machine-readable format.</li>
-        <li><strong>Objection</strong> — object to the processing of your data.</li>
-      </ul>
-      <p>
-        Because fingerprints are not linked to personal identifiers, to exercise these rights you will need to
-        provide your <strong>fingerprint hash</strong> (visible on the main page) so we can locate your record.
-        Contact us at the address below.
-      </p>
-    </section>
-
-    <section id="contact">
-      <h2><span class="sec-num">07</span>Contact</h2>
-      <p>For privacy-related inquiries, requests, or complaints:</p>
-      <div class="contact-block">
-        <div class="contact-row"><span class="ck">Email</span><span class="cv">privacy@fingrasp.dev</span></div>
-        <div class="contact-row"><span class="ck">Subject line</span><span class="cv">Privacy Request — [your fingerprint hash]</span></div>
-        <div class="contact-row"><span class="ck">Response time</span><span class="cv">Within 30 days</span></div>
+      <div class="reason">
+        <div class="reason-icon">🔁</div>
+        <div>
+          <h3>Fingerprint Stability Tracking</h3>
+          <p>
+            A meaningful research question is: how long does a fingerprint remain stable as browsers update,
+            OS patches ship, and hardware drivers change? We track fingerprint hashes over time — without
+            linking them to personally identifiable information — to build stability models that benefit
+            the entire security research community.
+          </p>
+        </div>
       </div>
-    </section>
+      <div class="reason">
+        <div class="reason-icon">🌐</div>
+        <div>
+          <h3>Session Continuity Without Cookies</h3>
+          <p>
+            As third-party cookies are phased out across the web, websites will need privacy-respecting
+            alternatives to provide coherent user experiences (e.g., keeping a shopping cart across tabs).
+            Fingrasp investigates whether probabilistic fingerprint matching can serve this purpose without
+            storing personally identifiable information — a potential win for both usability and privacy.
+          </p>
+        </div>
+      </div>
+    </div>
 
-  </div><!-- /.pp-body -->
+    <div class="callout callout-green">
+      <div class="callout-icon">✅</div>
+      <div>
+        <strong>The bottom line:</strong> your fingerprint is treated as an anonymous technical signal, not
+        as a profile of you as a person. It is never combined with your name, email, or any other directly
+        identifying data unless you explicitly provide those separately.
+      </div>
+    </div>
+  </section>
 
-  <footer class="site-footer">
-    <span>© 2026 Fingrasp</span>
-    <span class="footer-sep">·</span>
-    <a href="/privacy">Privacy Policy</a>
-    <span class="footer-sep">·</span>
-    <a href="/">Home</a>
-  </footer>
+  <section id="how-we-use">
+    <h2><span class="sec-num">04</span>How We Use Your Data</h2>
+    <ul class="pp-list">
+      <li>Generating and storing a SHA-256 composite fingerprint hash for research purposes.</li>
+      <li>Analysing aggregate entropy across our dataset to understand browser uniqueness distributions.</li>
+      <li>Publishing anonymised, aggregated research findings — individual fingerprints are never published.</li>
+      <li>Improving the detection accuracy of our fingerprint collection pipeline.</li>
+      <li>Internal product analytics (e.g., which browser signals contribute most entropy).</li>
+    </ul>
+    <p>We <strong>do not</strong>:</p>
+    <ul class="pp-list pp-list-no">
+      <li>Sell your fingerprint data to any third party.</li>
+      <li>Use it for targeted advertising.</li>
+      <li>Link it to your name, email, or social profiles.</li>
+      <li>Share raw fingerprint records with any government entity unless compelled by a lawful order.</li>
+    </ul>
+  </section>
 
-</div><!-- /.page -->
+  <section id="storage">
+    <h2><span class="sec-num">05</span>Data Storage &amp; Retention</h2>
+    <p>
+      Fingerprint records are stored on secure, encrypted servers and are protected using industry-standard
+      technical and organisational measures. All data is encrypted at rest and in transit.
+      Access is strictly restricted to authorised personnel via role-based access control.
+    </p>
+    <p>
+      Raw fingerprint records are retained for a maximum of <strong>24 months</strong> from the date of
+      collection. After that, records are either permanently deleted or irreversibly aggregated into
+      statistical summaries that cannot be traced back to any individual device.
+    </p>
+  </section>
 
-</body>
-</html>
+  <section id="rights">
+    <h2><span class="sec-num">06</span>Your Rights</h2>
+    <p>Depending on your jurisdiction you may have the right to:</p>
+    <ul class="pp-list">
+      <li><strong>Access</strong> — request a copy of your fingerprint record.</li>
+      <li><strong>Deletion</strong> — request erasure of your fingerprint record.</li>
+      <li><strong>Portability</strong> — receive your data in a machine-readable format.</li>
+      <li><strong>Objection</strong> — object to the processing of your data.</li>
+    </ul>
+    <p>
+      Because fingerprints are not linked to personal identifiers, to exercise these rights you will need to
+      provide your <strong>fingerprint hash</strong> (visible on the main page) so we can locate your record.
+      Contact us at the address below.
+    </p>
+  </section>
+
+  <section id="contact">
+    <h2><span class="sec-num">07</span>Contact</h2>
+    <p>For privacy-related inquiries, requests, or complaints:</p>
+    <div class="contact-block">
+      <div class="contact-row"><span class="ck">Email</span><span class="cv">privacy@fingrasp.dev</span></div>
+      <div class="contact-row"><span class="ck">Subject line</span><span class="cv">Privacy Request — [your fingerprint hash]</span></div>
+      <div class="contact-row"><span class="ck">Response time</span><span class="cv">Within 30 days</span></div>
+    </div>
+  </section>
+
+</div><!-- /.pp-body -->
+{% endblock %}
