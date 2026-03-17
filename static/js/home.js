@@ -76,9 +76,14 @@ function renderValue(val, depth = 0) {
     }
 
     const id = 'nest-' + Math.random().toString(36).slice(2, 8);
-    const rows = entries.map(([k, v]) =>
-      `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val">${renderValue(v, depth + 1)}</td></tr>`
-    ).join('');
+    const rows = entries.map(([k, v]) => {
+      const lowK = k.toLowerCase();
+      const rendered = renderValue(v, depth + 1);
+      // Wrap if specific key OR if the rendered string is quite long (e.g. > 60 chars)
+      const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowK) || rendered.length > 60;
+      const wrap = shouldWrap ? ' wrap' : '';
+      return `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val${wrap}">${rendered}</td></tr>`;
+    }).join('');
     if (depth === 0)
       return `<table class="kv-table">${rows}</table>`;
     return `<div class="val-nested">
@@ -213,9 +218,14 @@ function appendSegment(parent, name, data) {
   // Build key-value rows
   const rows = Object.entries(data).map(([key, val]) => {
     const display = (val && typeof val === 'object' && 'value' in val && 'duration' in val) ? val.value : val;
+    const lowKey = key.toLowerCase();
+    const rendered = renderValue(display, 0);
+    // Wrap if specific key OR if the rendered string is quite long (e.g. > 60 chars)
+    const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowKey) || rendered.length > 60;
+    const wrap = shouldWrap ? ' wrap' : '';
     return `<tr class="kv-row">
       <td class="kv-key">${formatKey(key)}</td>
-      <td class="kv-val">${renderValue(display, 0)}</td>
+      <td class="kv-val${wrap}">${rendered}</td>
     </tr>`;
   }).join('');
 

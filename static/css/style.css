@@ -535,6 +535,11 @@ header {
   line-height: 1.6;
 }
 
+.kv-val.wrap {
+  white-space: normal;
+  word-break: break-all;
+}
+
 .val-toggle span {
   display: inline-block;
   width: 12px;
