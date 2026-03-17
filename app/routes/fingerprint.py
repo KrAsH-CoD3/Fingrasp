@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, HTTPException, status
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from datetime import datetime, timezone
 import logging
@@ -18,7 +18,7 @@ async def index(request: Request):
 async def privacy(request: Request):
     return templates.TemplateResponse("privacy.html", {"request": request})
 
-@router.post("/save")
+@router.post("/save", status_code=status.HTTP_201_CREATED)
 async def save(request: Request):
     try:
         data = await request.json()
@@ -27,8 +27,14 @@ async def save(request: Request):
         
         result = await db["fingerprints"].insert_one(data)
         
-        logger.info(f"Successfully saved fingerprint. ID: {result.inserted_id}")
-        return {"status": "ok"}
+        logger.info(f">>> Successfully saved fingerprint. ID: {result.inserted_id}")
+        response = {"status": "ok"}
+
+        return JSONResponse(
+            status_code=201,
+            content=response,
+            # headers={"Location": f"/data/{result.inserted_id}"} # Not needed at the moment
+        )
     except Exception as e:
         logger.error(f"Failed to save fingerprint: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
