@@ -12,7 +12,7 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function renderValue(val, depth = 0) {
+function renderValue(val, depth = 0, noTruncate = false) {
   if (val === null || val === undefined)
     return '<span class="val-null">null</span>';
 
@@ -25,7 +25,7 @@ function renderValue(val, depth = 0) {
     return `<span class="val-num">${val}</span>`;
 
   if (typeof val === 'string') {
-    if (val.length > 120) {
+    if (!noTruncate && val.length > 120) {
       const id = 'exp-' + Math.random().toString(36).slice(2, 8);
       return `<span class="val-str val-long">
         <span class="val-preview" id="${id}-p">${escHtml(val.slice(0, 80))}…</span>
@@ -76,9 +76,15 @@ function renderValue(val, depth = 0) {
     }
 
     const id = 'nest-' + Math.random().toString(36).slice(2, 8);
-    const rows = entries.map(([k, v]) =>
-      `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val">${renderValue(v, depth + 1)}</td></tr>`
-    ).join('');
+    const rows = entries.map(([k, v]) => {
+      const lowK = k.toLowerCase();
+      const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowK);
+      const rendered = renderValue(v, depth + 1, noTrunc);
+      // Wrap if specific key OR if the rendered string is quite long (e.g. > 60 chars)
+      const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowK) || rendered.length > 60;
+      const wrap = shouldWrap ? ' wrap' : '';
+      return `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val${wrap}">${rendered}</td></tr>`;
+    }).join('');
     if (depth === 0)
       return `<table class="kv-table">${rows}</table>`;
     return `<div class="val-nested">
@@ -213,9 +219,15 @@ function appendSegment(parent, name, data) {
   // Build key-value rows
   const rows = Object.entries(data).map(([key, val]) => {
     const display = (val && typeof val === 'object' && 'value' in val && 'duration' in val) ? val.value : val;
+    const lowKey = key.toLowerCase();
+    const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowKey);
+    const rendered = renderValue(display, 0, noTrunc);
+    // Wrap if specific key OR if the rendered string is quite long (e.g. > 60 chars)
+    const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowKey) || rendered.length > 60;
+    const wrap = shouldWrap ? ' wrap' : '';
     return `<tr class="kv-row">
       <td class="kv-key">${formatKey(key)}</td>
-      <td class="kv-val">${renderValue(display, 0)}</td>
+      <td class="kv-val${wrap}">${rendered}</td>
     </tr>`;
   }).join('');
 
