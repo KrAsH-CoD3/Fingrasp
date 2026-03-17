@@ -490,6 +490,7 @@ header {
   padding: 0;
   background: var(--surface);
   border-top: 1px solid rgba(99, 179, 237, 0.05);
+  overflow-x: auto;
 }
 
 /* ── Key-Value Table ── */
@@ -529,7 +530,7 @@ header {
 .kv-val {
   padding: 12px 20px;
   color: var(--text);
-  word-break: break-all;
+  white-space: nowrap;
   vertical-align: top;
   line-height: 1.6;
 }
@@ -549,20 +550,24 @@ header {
   padding-left: 14px;
   background: transparent;
   display: block;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
 }
 
 .kv-sub .kv-row {
   display: block;
   margin-bottom: 12px;
   border: none;
+  width: max-content;
+  min-width: 100%;
 }
 
 .kv-sub .kv-key {
   display: block;
   padding: 0 0 4px 0;
   font-size: 9px;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border: none;
   background: transparent;
   color: var(--accent);
@@ -574,7 +579,8 @@ header {
   display: block;
   padding: 0;
   font-size: 11px;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
 }
 
 /* Value types */
