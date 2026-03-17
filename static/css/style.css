@@ -233,9 +233,15 @@ header {
   display: none;
   /* Shown via JS */
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 12px;
   padding: 0 4px;
+}
+
+.fp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .fp-bar-title {
@@ -837,70 +843,88 @@ header {
     max-width: 100%;
   }
 
-  /* Fingerprint bar */
+  /* Fingerprint bar - Premium, Minimalist Layout */
   .fp-bar {
     padding: 10px 14px;
     gap: 12px;
-    flex-direction: column;
-    align-items: flex-start;
-    position: static;
-    backdrop-filter: none;
-    background: var(--surface);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(20px);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: nowrap;
+    overflow: hidden; /* Header itself shouldn't scroll */
+  }
+
+  .fp-bar-meta {
+    flex: 1;
+    min-width: 0; /* Critical for inner scrolling */
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .fp-bar-meta::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .bar-label {
+    opacity: 0.6;
+    font-size: 7px;
+  }
+
+  .bar-val {
+    font-size: 10px;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+  }
+
+  .fp-bar-right {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Compact buttons for mobile */
+  .copy-btn, .toggle-all-btn {
+    padding: 8px;
+    border-radius: 8px;
+    min-width: 36px;
+    justify-content: center;
+  }
+
+  .copy-btn span, .toggle-all-btn span {
+    display: none; /* Icon only on small mobile */
+  }
+
+  .copy-btn svg, .toggle-all-btn svg {
+    margin: 0;
+    width: 16px;
+    height: 16px;
   }
 
   .fp-outer-header {
     display: flex;
-  }
-
-  .fp-bar-meta {
-    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
     justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 10px;
-  }
-
-  .fp-bar-right {
-    width: 100%;
-    justify-content: flex-end;
-    padding-top: 4px;
-  }
-
-  .bar-item {
-    flex: 1;
-  }
-
-  .bar-val {
-    font-size: 11px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
-  }
-
-  /* Segment headers */
-  .fps-head {
-    padding: 12px 16px;
-  }
-
-  .fps-title {
-    font-size: 11px;
-  }
-
-  /* Key-Value Table - Keep desktop table layout but optimize spacing for mobile */
-  .kv-key {
-    padding: 10px 12px;
-    width: 110px;
-    min-width: 110px;
-    font-size: 9px;
-  }
-
-  .kv-val {
-    padding: 10px 12px;
-    font-size: 11px;
-  }
-
-  /* Nested tables inside collapsed content */
-  .kv-sub {
-    padding-left: 10px;
   }
 
   /* Site footer */
@@ -927,36 +951,5 @@ header {
 
   .hero p {
     font-size: 12px;
-  }
-
-  .fp-bar-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .bar-item {
-    width: 100%;
-  }
-
-  .bar-val {
-    max-width: none;
-  }
-
-  .toggle-all-btn span {
-    display: none;
-  }
-
-  .toggle-all-btn {
-    padding: 8px;
-  }
-
-  .val-nested {
-    min-width: 100%;
-  }
-
-  .val-toggle {
-    width: 100%;
-    justify-content: space-between;
   }
 }
