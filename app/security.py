@@ -3,6 +3,7 @@
 from __future__ import annotations
 from urllib.parse import urlparse
 import ipaddress
+import secrets
 import logging
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -92,6 +93,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        # Generate a unique nonce for this request (128-bit)
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+
         response = await call_next(request)
 
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -101,16 +106,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = (
             "camera=(), microphone=(), geolocation=(), payment=()"
         )
-        # CSP: allow self-hosted assets, inline scripts for the theme snippet,
+        
+        # Content Security Policy (CSP): allow self-hosted assets,
+        # We replace 'unsafe-inline' with 'nonce-{SECRET}' for scripts and styles,
         # and data: URIs for images (canvas fingerprint previews).
-        response.headers["Content-Security-Policy"] = (
+        csp = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
+            f"script-src 'self' 'nonce-{nonce}'; "
+            f"style-src 'self' 'nonce-{nonce}'; "
             "img-src 'self' data:; "
             "font-src 'self'; "
             "connect-src 'self'; "
             "frame-ancestors 'none'"
         )
+        response.headers["Content-Security-Policy"] = csp
 
         return response
