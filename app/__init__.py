@@ -17,6 +17,9 @@ def create_app() -> FastAPI:
     application.state.limiter = limiter
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+    # ── Secure HTTP Headers ──
+    application.add_middleware(SecurityHeadersMiddleware)
+
     # ── CORS ──
     application.add_middleware(
         CORSMiddleware,
@@ -25,9 +28,6 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
-
-    # ── Secure HTTP Headers ──
-    application.add_middleware(SecurityHeadersMiddleware)
 
     # ── Static Files ──
     application.mount("/static", StaticFiles(directory="static"), name="static")

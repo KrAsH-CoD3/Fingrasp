@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/static/css/style.css?v=1.1">
   {% block extra_css %}{% endblock %}
 
-  <script>
+  <script nonce="{{ nonce }}">
     // Set theme immediately to prevent flashing
     const _saved = localStorage.getItem('theme');
     if (_saved) document.documentElement.setAttribute('data-theme', _saved);
@@ -61,7 +61,7 @@
   </button>
 
   <!-- Scripts -->
-  <script type="module" src="/static/js/app.js?v=1.1"></script>
+  <script nonce="{{ nonce }}" type="module" src="/static/js/app.js?v=1.1"></script>
   {% block extra_js %}{% endblock %}
 </body>
 

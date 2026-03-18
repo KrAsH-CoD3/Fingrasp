@@ -19,12 +19,18 @@ logger = logging.getLogger(__name__)
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "nonce": request.state.csp_nonce}
+    )
 
 
 @router.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    return templates.TemplateResponse("privacy.html", {"request": request})
+    return templates.TemplateResponse(
+        "privacy.html",
+        {"request": request, "nonce": request.state.csp_nonce}
+    )
 
 
 @router.post("/save", status_code=status.HTTP_201_CREATED)
