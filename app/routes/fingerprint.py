@@ -1,12 +1,16 @@
 from fastapi import APIRouter, Request, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import ValidationError
 from datetime import datetime, timezone
+from pydantic import ValidationError
 import logging
 
-from app.database import db
+from app.security import anonymize_ip, is_trusted_origin
 from app.schemas import FingerprintPayload
+from app.config import settings
+from app.database import db
+from app.limiter import limiter
+
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -24,8 +28,21 @@ async def privacy(request: Request):
 
 
 @router.post("/save", status_code=status.HTTP_201_CREATED)
+@limiter.limit(settings.RATE_LIMIT_SAVE)
 async def save(request: Request):
-    # ── Parse raw JSON ──  
+    # ── Trusted Origin Check ──
+    if not is_trusted_origin(request):
+        logger.warning(
+            f"Blocked untrusted origin: "
+            f"Origin={request.headers.get('origin')!r}  "
+            f"Referer={request.headers.get('referer')!r}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Request origin not allowed",
+        )
+
+    # ── Parse raw JSON ──
     try:
         raw = await request.json()
     except Exception:
@@ -46,7 +63,11 @@ async def save(request: Request):
 
     # ── Build document from validated data only ──
     validated_data = payload.model_dump()
-    validated_data["ip"] = request.client.host
+
+    # IP Anonymization — mask last octet before persisting
+    raw_ip = request.client.host if request.client else "0.0.0.0"
+    validated_data["ip"] = anonymize_ip(raw_ip) if settings.ANONYMIZE_IP else raw_ip
+
     validated_data["saved_at"] = datetime.now(timezone.utc).isoformat()
 
     try:
