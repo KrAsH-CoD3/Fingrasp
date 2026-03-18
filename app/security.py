@@ -134,9 +134,4 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         response.headers["Content-Security-Policy"] = "; ".join(csp_parts)
 
-        # ── Server Disclosure ──
-        # Hide the exact server version (some proxy servers might put it back)
-        if "Server" in response.headers:
-            del response.headers["Server"]
-
         return response
