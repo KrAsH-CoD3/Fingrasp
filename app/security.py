@@ -106,14 +106,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = (
             "camera=(), microphone=(), geolocation=(), payment=()"
         )
-        
+
         # Content Security Policy (CSP): allow self-hosted assets,
         # We replace 'unsafe-inline' with 'nonce-{SECRET}' for scripts and styles,
         # and data: URIs for images (canvas fingerprint previews).
         csp = (
             "default-src 'self'; "
-            f"script-src 'self' 'nonce-{nonce}'; "
-            f"style-src 'self' 'nonce-{nonce}'; "
+            f"script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; "
+            f"style-src 'self' 'nonce-{nonce}' 'strict-dynamic'; "
             "img-src 'self' data:; "
             "font-src 'self'; "
             "connect-src 'self'; "
