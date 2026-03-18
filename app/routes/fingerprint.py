@@ -27,11 +27,11 @@ async def save(request: Request):
         
         result = await db["fingerprints"].insert_one(data)
         
-        logger.info(f">>> Successfully saved fingerprint. ID: {result.inserted_id}")
+        logger.info(f"Successfully saved fingerprint. ID: {result.inserted_id}")
         response = {"status": "ok"}
 
         return JSONResponse(
-            status_code=201,
+            status_code=status.HTTP_201_CREATED,
             content=response,
             # headers={"Location": f"/data/{result.inserted_id}"} # Not needed at the moment
         )
