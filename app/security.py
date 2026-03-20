@@ -49,34 +49,45 @@ def anonymize_ip(ip: str) -> str:
 # 2. Trusted Origin Check
 # ─────────────────────────────────────────────
 
+
 def is_trusted_origin(request: Request) -> bool:
     """
-    Return True if the request's Origin or Referer header
-    matches one of the configured ALLOWED_ORIGINS.
-
-    Returns True when neither header is present (same-origin
-    navigational requests from forms / fetch without Origin).
+    Matches Origin/Referer AND validates CSRF token 
+    for state-changing methods (POST, PUT, DELETE).
     """
+    # 1. Always check Origin/Referer first
     origin = request.headers.get("origin")
     referer = request.headers.get("referer")
-
-    # If the browser sent an Origin header, check it
+    
+    trusted = False
     if origin:
-        return origin.rstrip("/") in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]
-
-    # Fall back to Referer
-    if referer:
+        trusted = origin.rstrip("/") in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]
+    elif referer:
         parsed = urlparse(referer)
         ref_origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
-        return ref_origin in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]
+        trusted = ref_origin in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]
+    else:
+        trusted = True # Same-origin or internal
 
-    # No origin/referer — likely a same-origin request or server-to-server
+    if not trusted:
+        return False
+
+    # 2. CSRF Double-Submit Validation for POST/PUT/DELETE
+    if request.method in ("POST", "PUT", "DELETE", "PATCH"):
+        cookie_token = request.cookies.get("csrf_token")
+        header_token = request.headers.get("x-csrf-token")
+        
+        if not cookie_token or not header_token or cookie_token != header_token:
+            logger.warning("CSRF validation failed: Token mismatch or missing.")
+            return False
+            
     return True
 
 
 # ─────────────────────────────────────────────
 # 3. Secure HTTP Headers Middleware
 # ─────────────────────────────────────────────
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
@@ -99,7 +110,21 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         nonce = secrets.token_urlsafe(16)
         request.state.csp_nonce = nonce
 
+        # Generate CSRF token for cookie-based CSRF protection
+        csrf_token = secrets.token_urlsafe(32)
+        request.state.csrf_token = csrf_token
+
         response = await call_next(request)
+
+        # Set CSRF cookie with secure flags
+        response.set_cookie(
+            "csrf_token",
+            value=csrf_token,
+            secure=settings.STRICT_SECURITY,
+            httponly=False,  # Must be readable by JS to send in header
+            samesite="strict",
+            max_age=86400,  # 24 hours
+        )
 
         # ── Standard Security Headers (Applied always) ──
         response.headers["X-Content-Type-Options"] = "nosniff"

@@ -279,7 +279,10 @@ window.copySection = async (id) => {
 async function persist(payload) {
   const res = await fetch('/save', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1]
+    },
     body:    JSON.stringify(payload),
   });
   if (!res.ok) throw new Error('Save failed');
@@ -292,7 +295,7 @@ async function run() {
     renderUI(payload);
 
     // Silently persist data to backend
-    persist(payload).catch();
+    // persist(payload).catch();
   } catch (err) {
     console.error('Core error:', err);
   }

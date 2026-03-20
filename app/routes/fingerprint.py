@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, status
+from fastapi import APIRouter, Request, HTTPException, status, Cookie
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from datetime import datetime, timezone
@@ -35,7 +35,13 @@ async def privacy(request: Request):
 
 @router.post("/save", status_code=status.HTTP_201_CREATED)
 @limiter.limit(settings.RATE_LIMIT_SAVE)
-async def save(request: Request):
+async def save(request: Request, csrf_token: str = Cookie(None, alias="csrf_token")):
+    # ── CSRF Token Validation ──
+    header_token = request.headers.get("X-CSRF-Token")
+    if not csrf_token or not header_token or csrf_token != header_token:
+        # Both missing? Or one missing? Or both exist but don't match?
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
     # ── Trusted Origin Check ──
     if not is_trusted_origin(request):
         logger.warning(
