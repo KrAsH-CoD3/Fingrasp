@@ -958,12 +958,12 @@ header {
     height: 16px;
   }
 
-  .fp-outer-header {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: space-between;
-  }
+.fp-outer-header {
+  display: none;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
 
   /* Site footer */
   .site-footer {
