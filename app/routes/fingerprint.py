@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, status
+from fastapi import APIRouter, Request, HTTPException, status, Cookie
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from datetime import datetime, timezone
@@ -17,25 +17,35 @@ templates = Jinja2Templates(directory="templates")
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
+@limiter.limit("20/minute")
 async def index(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "nonce": request.state.csp_nonce}
+        "index.html", {"request": request, "nonce": request.state.csp_nonce}
     )
 
 
-@router.get("/privacy", response_class=HTMLResponse)
+@router.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+@limiter.limit("20/minute")
 async def privacy(request: Request):
     return templates.TemplateResponse(
-        "privacy.html",
-        {"request": request, "nonce": request.state.csp_nonce}
+        "privacy.html", {"request": request, "nonce": request.state.csp_nonce}
     )
 
 
-@router.post("/save", status_code=status.HTTP_201_CREATED)
+@router.post("/save", status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @limiter.limit(settings.RATE_LIMIT_SAVE)
-async def save(request: Request):
+async def save(request: Request, csrf_token: str = Cookie(None, alias="csrf_token")):
+    # ── CSRF Token Validation ──
+    header_token = request.headers.get("X-CSRF-Token")
+    if not csrf_token or not header_token or csrf_token != header_token:
+        # Both missing? Or one missing? Or both exist but don't match?
+        logger.warning(f"CSRF token mismatch: csrf_token={csrf_token!r}, header_token={header_token!r}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF token mismatch",
+        )
+
     # ── Trusted Origin Check ──
     if not is_trusted_origin(request):
         logger.warning(
@@ -52,6 +62,7 @@ async def save(request: Request):
     try:
         raw = await request.json()
     except Exception:
+        logger.warning(f"Failed to parse request body as JSON")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Request body is not valid JSON",
@@ -61,11 +72,12 @@ async def save(request: Request):
     try:
         payload = FingerprintPayload(**raw)
     except ValidationError as e:
-        logger.warning(f"Validation failed: {e.error_count()} error(s)\n{e}")
+        logger.warning(f"Validation failed for fingerpint save: {e.json()}")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=e.errors(),
+            detail="Invalid request data format",
         )
+
 
     # ── Build document from validated data only ──
     validated_data = payload.model_dump()

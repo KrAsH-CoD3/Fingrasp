@@ -8,13 +8,15 @@ if (themeBtn) {
     document.documentElement.setAttribute('data-theme', savedTheme);
   }
   themeBtn.textContent = dark ? '🌙' : '☀️';
-  themeBtn.addEventListener('click', () => {
-    dark = !dark;
-    const t = dark ? 'dark' : 'light';
+themeBtn.addEventListener('click', () => {
+  dark = !dark;
+  const t = dark ? 'dark' : 'light';
+  if (t === 'dark' || t === 'light') {
     document.documentElement.setAttribute('data-theme', t);
     localStorage.setItem('theme', t);
-    themeBtn.textContent = dark ? '🌙' : '☀️';
-  });
+  }
+  themeBtn.textContent = dark ? '🌙' : '☀️';
+});
 }
 
 // ── Scroll to Top ──
