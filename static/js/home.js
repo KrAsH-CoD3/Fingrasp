@@ -29,7 +29,7 @@ function renderValue(val, depth = 0, noTruncate = false) {
       const id = 'exp-' + Math.random().toString(36).slice(2, 8);
       return `<span class="val-str val-long">
         <span class="val-preview" id="${id}-p">${escHtml(val.slice(0, 80))}…</span>
-        <span class="val-full" id="${id}-f" style="display:none">${escHtml(val)}</span>
+        <span class="val-full hidden" id="${id}-f">${escHtml(val)}</span>
         <button class="val-expand" onclick="toggleExpand('${id}')">show more</button>
       </span>`;
     }
@@ -53,7 +53,7 @@ function renderValue(val, depth = 0, noTruncate = false) {
     ).join('');
     return `<div class="val-nested">
       <button class="val-toggle" onclick="toggleNested(this, '${id}')"><span>▶</span> Array (${val.length} items)</button>
-      <table class="kv-table kv-sub" id="${id}" style="display:none">${rows}</table>
+      <table class="kv-table kv-sub hidden" id="${id}">${rows}</table>
     </div>`;
   }
 
@@ -89,7 +89,7 @@ function renderValue(val, depth = 0, noTruncate = false) {
       return `<table class="kv-table">${rows}</table>`;
     return `<div class="val-nested">
       <button class="val-toggle" onclick="toggleNested(this, '${id}')"><span>▶</span> Object (${entries.length} keys)</button>
-      <table class="kv-table kv-sub" id="${id}" style="display:none">${rows}</table>
+      <table class="kv-table kv-sub hidden" id="${id}">${rows}</table>
     </div>`;
   }
 
@@ -100,21 +100,21 @@ window.toggleExpand = (id) => {
   const p = document.getElementById(id + '-p');
   const f = document.getElementById(id + '-f');
   const btn = p.parentElement.querySelector('.val-expand');
-  if (f.style.display === 'none') {
-    p.style.display = 'none'; f.style.display = 'inline'; btn.textContent = 'show less';
+  if (f.classList.contains('hidden')) {
+    p.classList.add('hidden'); f.classList.remove('hidden'); btn.textContent = 'show less';
   } else {
-    p.style.display = 'inline'; f.style.display = 'none'; btn.textContent = 'show more';
+    p.classList.remove('hidden'); f.classList.add('hidden'); btn.textContent = 'show more';
   }
 };
 
 window.toggleNested = (btn, id) => {
   const el = document.getElementById(id);
   const icon = btn.querySelector('span');
-  if (el.style.display === 'none') {
-    el.style.display = 'table';
+  if (el.classList.contains('hidden')) {
+    el.classList.remove('hidden');
     if (icon) icon.textContent = '▼';
   } else {
-    el.style.display = 'none';
+    el.classList.add('hidden');
     if (icon) icon.textContent = '▶';
   }
 };
@@ -178,9 +178,9 @@ function renderUI(payload) {
   const section = document.getElementById('fpSection');
   const outerHe = document.getElementById('fpOuterHeader');
 
-  loader.style.display  = 'none';
-  section.style.display = 'block';
-  if (outerHe) outerHe.style.display = 'flex';
+  loader.classList.add('hidden');
+  section.classList.add('visible');
+  if (outerHe) outerHe.classList.add('visible');
   body.innerHTML = '';
 
   const flat = { ...fingerprint };
@@ -281,7 +281,7 @@ async function persist(payload) {
     method:  'POST',
     headers: { 
       'Content-Type': 'application/json',
-      'X-CSRF-Token': document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1]
+      'X-Csrf-Token': document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1]
     },
     body:    JSON.stringify(payload),
   });

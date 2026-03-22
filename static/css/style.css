@@ -255,6 +255,10 @@ header {
   overflow: hidden;
 }
 
+.fp-section.visible {
+  display: block;
+}
+
 /* sticky top bar */
 .fp-bar {
   position: sticky;
@@ -279,11 +283,14 @@ header {
 
 .fp-outer-header {
   display: none;
-  /* Shown via JS */
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
   padding: 0 4px;
+}
+
+.fp-outer-header.visible {
+  display: flex;
 }
 
 .fp-header-left {
@@ -809,6 +816,40 @@ header {
 
 .footer-sep {
   opacity: .3;
+}
+
+/* ── Utility Classes (For CSP Compliance) ── */
+.hidden { display: none; }
+.text-accent { color: var(--accent); }
+.text-accent2 { color: var(--accent2); }
+.text-bold { font-weight: 600; }
+.text-error { color: #fc8181; }
+.text-center { text-align: center; }
+.text-no-underline { text-decoration: none; }
+.padding-v-xl { padding: 48px 0; }
+
+.noscript-error {
+  text-align: center;
+  padding: 48px;
+  color: #fc8181;
+}
+
+/* Specific button/link variants to avoid style attributes */
+.link-privacy {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link-home {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-mixvisit {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 600;
 }
 
 /* ── Scroll to Top ── */
