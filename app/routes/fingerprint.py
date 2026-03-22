@@ -4,11 +4,11 @@ from fastapi.templating import Jinja2Templates
 from datetime import datetime, timezone
 from pydantic import ValidationError
 import logging
+import hmac
 
 from app.security import anonymize_ip, is_trusted_origin
 from app.schemas import FingerprintPayload
 from app.config import settings
-from app.database import db
 from app.limiter import limiter
 
 
@@ -38,9 +38,19 @@ async def privacy(request: Request):
 async def save(request: Request, csrf_token: str = Cookie(None, alias="csrf_token")):
     # ── CSRF Token Validation ──
     header_token = request.headers.get("X-CSRF-Token")
-    if not csrf_token or not header_token or csrf_token != header_token:
-        # Both missing? Or one missing? Or both exist but don't match?
-        logger.warning(f"CSRF token mismatch: csrf_token={csrf_token!r}, header_token={header_token!r}")
+    if (not csrf_token) or (not header_token) or (not hmac.compare_digest(csrf_token, header_token)):
+        csrf_preview = (
+            csrf_token[:8] + "..." if csrf_token and len(csrf_token) > 8 else "None"
+        )
+        header_preview = (
+            header_token[:8] + "..."
+            if header_token and len(header_token) > 8
+            else "None"
+        )
+        logger.warning(
+            f"CSRF token mismatch: csrf_token={csrf_preview}, header_token={header_preview}, "
+            f"client={request.client.host if request.client else 'unknown'}"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="CSRF token mismatch",
@@ -56,6 +66,15 @@ async def save(request: Request, csrf_token: str = Cookie(None, alias="csrf_toke
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Request origin not allowed",
+        )
+
+    # ── Content-Type Validation ──
+    content_type = request.headers.get("content-type", "")
+    if "application/json" not in content_type.lower():
+        logger.warning(f"Invalid Content-Type: {content_type}")
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Content-Type must be application/json",
         )
 
     # ── Parse raw JSON ──
@@ -78,7 +97,6 @@ async def save(request: Request, csrf_token: str = Cookie(None, alias="csrf_toke
             detail="Invalid request data format",
         )
 
-
     # ── Build document from validated data only ──
     validated_data = payload.model_dump()
 
@@ -89,6 +107,7 @@ async def save(request: Request, csrf_token: str = Cookie(None, alias="csrf_toke
     validated_data["saved_at"] = datetime.now(timezone.utc).isoformat()
 
     try:
+        db = request.app.state.db
         result = await db["fingerprints"].insert_one(validated_data)
         logger.info(f"Saved fingerprint. ID: {result.inserted_id}")
         return JSONResponse(
