@@ -130,3 +130,38 @@ class FingerprintPayload(BaseModel):
         _check_strings(self.fingerprint)
 
         return self
+
+
+class CodeValidationRequest(BaseModel):
+    """Schema for code validation request in manual flow."""
+
+    code: str = Field(
+        ...,
+        min_length=6,
+        max_length=6,
+        description="Access code to validate",
+    )
+
+
+class MixVisitPayload(FingerprintPayload):
+    """Schema for fingerprint submission with access code."""
+
+    access_code: str = Field(
+        ...,
+        min_length=6,
+        max_length=6,
+        description="Access code from URL or manual entry",
+    )
+
+
+class ErrorResponse(BaseModel):
+    """Standard error response."""
+
+    error_code: str
+    message: str
+
+
+class SuccessResponse(BaseModel):
+    """Standard success response."""
+
+    message: str

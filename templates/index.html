@@ -1,62 +1,79 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="hero">
-  <h1>Your Device<br /><em>Fully Grasped</em></h1>
-  <p>Device fingerprint collected on page load for research &amp; fraud-prevention purposes.<br />See our <a
-      href="/privacy" class="link-privacy">Privacy Policy</a> to learn exactly what we
-    collect and why.</p>
+<div class="hero hidden">
+<h1>Your Device<br /><em>Fully Grasped</em></h1>
+<p>Device fingerprint collected on page load for research &amp; fraud-prevention purposes.<br />See our <a
+href="/privacy" class="link-privacy">Privacy Policy</a> to learn exactly what we
+collect and why.</p>
 </div>
+
+<!-- Code Entry Prompt (shown when no code in URL) -->
+<div class="code-entry-section hidden" id="codeEntrySection">
+<div class="code-entry-card">
+<h2>Enter Access Code</h2>
+<p>Please enter the access code provided by the researcher.</p>
+<form id="codeForm">
+<input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" maxlength="8" />
+<button type="submit" id="codeSubmitBtn">Continue</button>
+</form>
+<p class="code-error hidden" id="codeError">That code is not valid.</p>
+<p class="code-hint">If you don't have a code, reach out to the researcher who invited you.</p>
+<p class="code-attempts" id="attemptsRemaining">Attempts remaining: 3</p>
+</div>
+</div>
+
+<input type="hidden" id="validatedCode" value="" />
 
 <!-- Loader shown while MixVisit runs -->
 <noscript>
-  <div class="noscript-error">
-    <p>JavaScript is required to generate a device fingerprint.</p>
-    <p>Please enable JS to use this tool.</p>
-  </div>
-</noscript>
-<div class="loader" id="loader">
-  <div class="spinner"></div>
-  <p>Collecting fingerprint…</p>
+<div class="noscript-error">
+<p>JavaScript is required to generate a device fingerprint.</p>
+<p>Please enable JS to use this tool.</p>
 </div>
+</noscript>
+<div class="loader hidden" id="loader">
+            <div class="spinner"></div>
+            <p id="loaderMessage">Loading…</p>
+        </div>
 
 <!-- Shown after fingerprint is collected -->
-<div class="fp-outer-header" id="fpOuterHeader">
-  <div class="fp-header-left">
-    <div class="fp-indicator"></div>
-    <span class="fp-bar-title">Fingerprint Collected</span>
-  </div>
-  <div class="bar-item">
-    <span class="bar-label">Time</span>
-    <span class="bar-val" id="valTime">—</span>
-  </div>
+<div class="fp-outer-header hidden" id="fpOuterHeader">
+<div class="fp-header-left">
+<div class="fp-indicator"></div>
+<span class="fp-bar-title">Fingerprint Collected</span>
+</div>
+<div class="bar-item">
+<span class="bar-label">Time</span>
+<span class="bar-val" id="valTime">—</span>
+</div>
 </div>
 
-<div class="fp-section" id="fpSection">
-  <div class="fp-bar">
-    <div class="fp-bar-meta">
-      <div class="bar-item">
-        <span class="bar-label">ID</span>
-        <span class="bar-val" id="valHash">—</span>
-      </div>
-    </div>
-    <div class="fp-bar-right">
-      <button class="toggle-all-btn" id="toggleAllBtn" title="Expand/Collapse all">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M7 11l5-5 5 5M7 18l5-5 5 5"/>
-        </svg>
-        <span>Collapse All</span>
-      </button>
-      <button class="copy-btn" id="copyBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2" />
-          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-        </svg>
-        Copy All
-      </button>
-    </div>
-  </div>
-  <div class="fp-body" id="fpBody"></div>
+<div class="fp-section hidden" id="fpSection">
+<div class="fp-bar">
+<div class="fp-bar-meta">
+<div class="bar-item">
+<span class="bar-label">ID</span>
+<span class="bar-val" id="valHash">—</span>
+</div>
+</div>
+<div class="fp-bar-right">
+<button class="toggle-all-btn" id="toggleAllBtn" title="Expand/Collapse all">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M7 11l5-5 5 5M7 18l5-5 5 5"/>
+</svg>
+<span>Collapse All</span>
+</button>
+<button class="copy-btn" id="copyBtn">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<rect x="9" y="9" width="13" height="13" rx="2" />
+<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+</svg>
+Copy All
+</button>
+</div>
+</div>
+<div class="fp-body" id="fpBody"></div>
 </div>
 {% endblock %}
 
