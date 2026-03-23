@@ -256,7 +256,7 @@ header {
 }
 
 .fp-section.visible {
-  display: block;
+display: block !important;
 }
 
 /* sticky top bar */
@@ -290,7 +290,7 @@ header {
 }
 
 .fp-outer-header.visible {
-  display: flex;
+display: flex !important;
 }
 
 .fp-header-left {
@@ -819,7 +819,7 @@ header {
 }
 
 /* ── Utility Classes (For CSP Compliance) ── */
-.hidden { display: none; }
+.hidden { display: none !important; }
 .text-accent { color: var(--accent); }
 .text-accent2 { color: var(--accent2); }
 .text-bold { font-weight: 600; }
@@ -898,6 +898,119 @@ header {
 
 .scroll-top-btn:hover svg {
   transform: translateY(-2px);
+}
+
+/* ── Code Entry Section ── */
+.code-entry-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 200px);
+    padding: 48px 20px;
+}
+
+.code-entry-card {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 16px;
+padding: 32px;
+max-width: 400px;
+width: 100%;
+text-align: center;
+}
+
+.code-entry-card h2 {
+font-family: 'Syne', sans-serif;
+font-size: 24px;
+font-weight: 800;
+margin-bottom: 12px;
+color: var(--text);
+}
+
+.code-entry-card p {
+font-size: 13px;
+color: var(--muted);
+margin-bottom: 20px;
+line-height: 1.6;
+}
+
+.code-entry-card form {
+display: flex;
+flex-direction: column;
+gap: 12px;
+margin-bottom: 16px;
+}
+
+.code-entry-card input[type="text"] {
+font-family: 'JetBrains Mono', monospace;
+font-size: 16px;
+padding: 14px 16px;
+background: var(--surface2);
+border: 1px solid var(--border);
+border-radius: 10px;
+color: var(--text);
+text-align: center;
+letter-spacing: 2px;
+transition: border-color .2s, box-shadow .2s;
+}
+
+.code-entry-card input[type="text"]:focus {
+outline: none;
+border-color: var(--accent);
+box-shadow: 0 0 12px var(--glow);
+}
+
+.code-entry-card input[type="text"]::placeholder {
+color: var(--muted);
+letter-spacing: 0;
+}
+
+.code-entry-card button[type="submit"] {
+font-family: 'JetBrains Mono', monospace;
+font-size: 13px;
+font-weight: 600;
+padding: 14px 24px;
+background: var(--accent);
+color: var(--bg);
+border: none;
+border-radius: 10px;
+cursor: pointer;
+transition: transform .2s, box-shadow .2s;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+
+.code-entry-card button[type="submit"]:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 16px var(--glow);
+}
+
+.code-entry-card button[type="submit"]:active {
+transform: translateY(0);
+}
+
+.code-error {
+color: #fc8181;
+font-size: 12px;
+margin-top: 12px;
+padding: 10px;
+background: rgba(252, 129, 129, .08);
+border-radius: 8px;
+border: 1px solid rgba(252, 129, 129, .2);
+}
+
+.code-hint {
+font-size: 11px !important;
+color: var(--muted) !important;
+margin-top: 16px !important;
+opacity: .7;
+}
+
+.code-attempts {
+font-size: 11px;
+color: var(--muted);
+margin-top: 8px;
+opacity: .6;
 }
 
 /* ── Mobile & Tablet Optimization ── */
@@ -1009,11 +1122,20 @@ header {
     height: 16px;
   }
 
+.fp-header-left {
+gap: 8px;
+}
+
 .fp-outer-header {
-  display: none;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: space-between;
+flex-wrap: wrap;
+gap: 10px;
+justify-content: space-between;
+flex-direction: column;
+align-items: flex-start;
+}
+
+.fp-outer-header .bar-item {
+font-size: 9px;
 }
 
   /* Site footer */
@@ -1027,6 +1149,51 @@ header {
   .footer-sep {
     display: none;
   }
+
+  .code-entry-section {
+    padding: 32px 16px;
+  }
+
+  .code-entry-card {
+    padding: 24px 20px;
+    max-width: 100%;
+    border-radius: 12px;
+  }
+
+  .code-entry-card h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .code-entry-card p {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .code-entry-card input[type="text"] {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .code-entry-card button[type="submit"] {
+    padding: 12px 20px;
+    font-size: 12px;
+  }
+
+  .code-error {
+    font-size: 11px;
+    padding: 8px;
+  }
+
+  .code-hint {
+    font-size: 10px !important;
+  }
+
+  .code-attempts {
+    font-size: 10px;
+  }
+
+
 }
 
 @media (max-width: 480px) {
@@ -1040,5 +1207,32 @@ header {
 
   .hero p {
     font-size: 12px;
+  }
+
+  .hero {
+    margin-bottom: 20px;
+  }
+
+  .code-entry-section {
+    padding: 24px 12px;
+  }
+
+  .code-entry-card {
+    padding: 20px 16px;
+    border-radius: 10px;
+  }
+
+  .code-entry-card h2 {
+    font-size: 18px;
+  }
+
+  .code-entry-card input[type="text"] {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .code-entry-card button[type="submit"] {
+    padding: 10px 16px;
+    font-size: 11px;
   }
 }

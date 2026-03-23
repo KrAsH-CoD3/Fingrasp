@@ -8,6 +8,7 @@ from starlette.responses import Response
 from fastapi import FastAPI, Request
 
 from app.routes.fingerprint import router as fingerprint_router
+from app.routes.api import router as api_router
 from app.config import settings, MAX_REQUEST_BODY_SIZE
 from app.security import SecurityHeadersMiddleware
 from app.database import setup_db
@@ -46,7 +47,7 @@ class BodySizeLimitMiddleware:
                     if body_size > self.max_size:
                         # Body too large, reject immediately
                         response = Response(
-                            content=f'{{"detail": "Request body exceeds maximum size"}}',
+                            content='{"detail": "Request body exceeds maximum size"}',
                             status_code=413,
                             headers={"Content-Type": "application/json"},
                         )
@@ -158,6 +159,7 @@ def create_app() -> FastAPI:
 
     # ── Routes ──
     application.include_router(fingerprint_router)
+    application.include_router(api_router)
 
     # ── Request Body Size Limit ──
     # Added last among middlewares so it is outermost in the ASGI stack,

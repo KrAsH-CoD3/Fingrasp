@@ -1,6 +1,14 @@
 import { MixVisit } from '/static/js/mixvisit.js';
 
-// ── Value Formatting ──
+const MAX_ATTEMPTS = 3;
+let attemptsRemaining = MAX_ATTEMPTS;
+let validatedCode = null;
+
+function setLoaderMessage(message) {
+    const loaderMsg = document.getElementById('loaderMessage');
+    if (loaderMsg) loaderMsg.textContent = message;
+}
+
 function formatKey(key) {
   return key
     .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -38,8 +46,7 @@ function renderValue(val, depth = 0, noTruncate = false) {
 
   if (Array.isArray(val)) {
     if (val.length === 0) return '<span class="val-null">[ ]</span>';
-    
-    // Smart Inline Preview: Only if all items are simple and total length is short
+
     if (val.length <= 5 && val.every(v => typeof v !== 'object')) {
       const preview = `[${val.map(v => typeof v === 'string' ? `"${escHtml(v)}"` : v).join(', ')}]`;
       if (preview.length < 60) {
@@ -60,14 +67,11 @@ function renderValue(val, depth = 0, noTruncate = false) {
   if (typeof val === 'object') {
     const entries = Object.entries(val);
     if (entries.length === 0) return '<span class="val-null">{ }</span>';
-    // MixVisit error format
     if (val.error && typeof val.error === 'object' && val.error.code)
       return `<span class="val-err">⚠ ${escHtml(val.error.message || 'Error')}</span>`;
-    // MixVisit signal wrapper
     if ('value' in val && 'duration' in val)
       return renderValue(val.value, depth);
 
-    // Smart Inline Preview for small objects
     if (entries.length <= 3 && entries.every(([k, v]) => typeof v !== 'object')) {
       const preview = `{ ${entries.map(([k, v]) => `${k}: ${typeof v === 'string' ? `"${escHtml(v)}"` : v}`).join(', ')} }`;
       if (preview.length < 50) {
@@ -80,7 +84,6 @@ function renderValue(val, depth = 0, noTruncate = false) {
       const lowK = k.toLowerCase();
       const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowK);
       const rendered = renderValue(v, depth + 1, noTrunc);
-      // Wrap if specific key OR if the rendered string is quite long (e.g. > 60 chars)
       const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowK) || rendered.length > 60;
       const wrap = shouldWrap ? ' wrap' : '';
       return `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val${wrap}">${rendered}</td></tr>`;
@@ -119,7 +122,6 @@ window.toggleNested = (btn, id) => {
   }
 };
 
-// ── Copy All button ──
 let rawData = '';
 const copyBtn = document.getElementById('copyBtn');
 if (copyBtn) {
@@ -134,11 +136,10 @@ if (copyBtn) {
   });
 }
 
-// ── Toggle All button ──
 const toggleAllBtn = document.getElementById('toggleAllBtn');
 if (toggleAllBtn) {
   let allCollapsed = false;
-  
+
   toggleAllBtn.addEventListener('click', () => {
     allCollapsed = !allCollapsed;
     const segments = document.querySelectorAll('.fp-segment');
@@ -149,21 +150,10 @@ if (toggleAllBtn) {
         seg.classList.remove('collapsed');
       }
     });
-    
+
     toggleAllBtn.classList.toggle('active', allCollapsed);
     toggleAllBtn.querySelector('span').textContent = allCollapsed ? 'Expand All' : 'Collapse All';
   });
-}
-
-// ── Logic: Collect, Render, Persist ──
-async function collectData() {
-  const mv = new MixVisit();
-  await mv.load();
-  return {
-    hash:        mv.fingerprintHash,
-    loadTime:    mv.loadTime,
-    fingerprint: mv.get(),
-  };
 }
 
 function renderUI(payload) {
@@ -173,28 +163,36 @@ function renderUI(payload) {
   document.getElementById('valTime').textContent = `${loadTime}ms`;
   rawData = JSON.stringify(payload, null, 2);
 
-  const body    = document.getElementById('fpBody');
-  const loader  = document.getElementById('loader');
+  const body = document.getElementById('fpBody');
+  const loader = document.getElementById('loader');
   const section = document.getElementById('fpSection');
   const outerHe = document.getElementById('fpOuterHeader');
+  const codeEntry = document.getElementById('codeEntrySection');
+  const hero = document.querySelector('.hero');
 
   loader.classList.add('hidden');
-  section.classList.add('visible');
-  if (outerHe) outerHe.classList.add('visible');
+  if (codeEntry) codeEntry.classList.add('hidden');
+  if (hero) hero.classList.remove('hidden');
+section.classList.remove('hidden');
+section.classList.add('visible');
+if (outerHe) {
+outerHe.classList.remove('hidden');
+outerHe.classList.add('visible');
+}
   body.innerHTML = '';
 
   const flat = { ...fingerprint };
   const usedKeys = new Set();
 
   const CATEGORIES = {
-    'Browser':       ['navigator', 'navigatorProperties', 'vendorFlavors', 'cookiesEnabled', 'sessionStorage', 'localStorage', 'openDatabase', 'indexedDB'],
-    'Display':       ['screen', 'screenResolution', 'screenFrame', 'devicePixelRatio', 'colorDepth', 'colorGamut', 'colorSpaceSupport', 'hdr', 'hdcp', 'invertedColors', 'forcedColors', 'monochromeDepth', 'contrastPreference', 'reducedMotion', 'reducedTransparency'],
-    'Hardware':      ['architecture', 'touchSupport', 'memory', 'systemInfo', 'scheduling', 'baseLatency'],
-    'Graphics':      ['canvas', 'webgl', 'webgpu', 'clientRects', 'fontRendering'],
-    'Audio':         ['audio', 'speechSynthesisVoices', 'mediaCapabilities', 'mediaDecodingCapabilities'],
-    'Network':       ['networkAPI', 'networkInfo', 'location', 'geolocation', 'webrtc'],
-    'Fonts & Intl':  ['fonts', 'fontPreferences', 'intl', 'math'],
-    'Environment':   ['timezone', 'globalPrivacyControl', 'performance', 'devToolsOpen', 'batteryAPI', 'batteryInfo', 'bluetoothAPI'],
+    'Browser': ['navigator', 'navigatorProperties', 'vendorFlavors', 'cookiesEnabled', 'sessionStorage', 'localStorage', 'openDatabase', 'indexedDB'],
+    'Display': ['screen', 'screenResolution', 'screenFrame', 'devicePixelRatio', 'colorDepth', 'colorGamut', 'colorSpaceSupport', 'hdr', 'hdcp', 'invertedColors', 'forcedColors', 'monochromeDepth', 'contrastPreference', 'reducedMotion', 'reducedTransparency'],
+    'Hardware': ['architecture', 'touchSupport', 'memory', 'systemInfo', 'scheduling', 'baseLatency'],
+    'Graphics': ['canvas', 'webgl', 'webgpu', 'clientRects', 'fontRendering'],
+    'Audio': ['audio', 'speechSynthesisVoices', 'mediaCapabilities', 'mediaDecodingCapabilities'],
+    'Network': ['networkAPI', 'networkInfo', 'location', 'geolocation', 'webrtc'],
+    'Fonts & Intl': ['fonts', 'fontPreferences', 'intl', 'math'],
+    'Environment': ['timezone', 'globalPrivacyControl', 'performance', 'devToolsOpen', 'batteryAPI', 'batteryInfo', 'bluetoothAPI'],
     'APIs & Engine': ['activeX', 'silverlight', 'flash', 'java', 'drmSupport', 'fileAPIs', 'storageQuota', 'symbolProperties', 'webkitAPIs', 'builtInObjects', 'cssSupport', 'computedStyleProperties', 'globalObjests']
   };
 
@@ -216,13 +214,11 @@ function appendSegment(parent, name, data) {
   const sectionId = `sec-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   const json = JSON.stringify(data, null, 2);
 
-  // Build key-value rows
   const rows = Object.entries(data).map(([key, val]) => {
     const display = (val && typeof val === 'object' && 'value' in val && 'duration' in val) ? val.value : val;
     const lowKey = key.toLowerCase();
     const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowKey);
     const rendered = renderValue(display, 0, noTrunc);
-    // Wrap if specific key OR if the rendered string is quite long (e.g. > 60 chars)
     const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowKey) || rendered.length > 60;
     const wrap = shouldWrap ? ' wrap' : '';
     return `<tr class="kv-row">
@@ -276,28 +272,119 @@ window.copySection = async (id) => {
   }, 2000);
 };
 
-async function persist(payload) {
-  const res = await fetch('/save', {
-    method:  'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'X-Csrf-Token': document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1]
-    },
-    body:    JSON.stringify(payload),
+async function validateCode(code) {
+	const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+	const csrfToken = csrfMatch ? csrfMatch[1] : '';
+	const res = await fetch('/api/validate-code', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+		body: JSON.stringify({ code })
+	});
+	return res.ok;
+}
+
+async function collectAndSubmit() {
+    try {
+        // Loader is already shown with appropriate message before calling this
+        const mv = new MixVisit();
+    await mv.load();
+
+    const payload = {
+      access_code: validatedCode,
+      hash: mv.fingerprintHash,
+      loadTime: mv.loadTime,
+      fingerprint: mv.get()
+    };
+
+	renderUI({ hash: payload.hash, loadTime: payload.loadTime, fingerprint: payload.fingerprint });
+
+	const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+	const csrfToken = csrfMatch ? csrfMatch[1] : '';
+	const res = await fetch('/api/save', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+		body: JSON.stringify(payload)
+	});
+
+    if (!res.ok) {
+      console.error('Submit failed:', res.status);
+    }
+  } catch (err) {
+    console.error('Collection error:', err);
+  }
+}
+
+function showCodeEntry() {
+  document.getElementById('codeEntrySection').classList.remove('hidden');
+
+  const form = document.getElementById('codeForm');
+  const input = document.getElementById('codeInput');
+  const errorMsg = document.getElementById('codeError');
+  const attemptsDisplay = document.getElementById('attemptsRemaining');
+
+  if (attemptsDisplay) {
+    attemptsDisplay.textContent = attemptsRemaining;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = input.value.trim();
+    if (!code) return;
+
+    if (attemptsRemaining <= 0) {
+      errorMsg.textContent = 'No attempts remaining. Please request a new code.';
+      errorMsg.classList.remove('hidden');
+      return;
+    }
+
+    errorMsg.classList.add('hidden');
+    document.getElementById('codeEntrySection').classList.add('hidden');
+    document.getElementById('loader').classList.remove('hidden');
+
+    const isValid = await validateCode(code);
+
+    if (isValid) {
+      validatedCode = code;
+      document.getElementById('loader').classList.remove('hidden');
+      await collectAndSubmit();
+    } else {
+      attemptsRemaining--;
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('codeEntrySection').classList.remove('hidden');
+
+      if (attemptsRemaining > 0) {
+        errorMsg.textContent = 'That code is not valid.';
+      } else {
+        errorMsg.textContent = 'No attempts remaining. Please request a new code.';
+      }
+      errorMsg.classList.remove('hidden');
+
+      if (attemptsDisplay) {
+        attemptsDisplay.textContent = attemptsRemaining;
+      }
+    }
   });
-  if (!res.ok) throw new Error('Save failed');
-  return res.json();
 }
 
 async function run() {
-  try {
-    const payload = await collectData();
-    renderUI(payload);
+  const params = new URLSearchParams(window.location.search);
+  const urlCode = params.get('code');
 
-    // Silently persist data to backend
-    persist(payload).catch();
-  } catch (err) {
-    console.error('Core error:', err);
+  if (urlCode) {
+    const isValid = await validateCode(urlCode);
+    if (isValid) {
+      validatedCode = urlCode;
+      document.querySelector('.hero').classList.remove('hidden');
+      document.getElementById('loader').classList.remove('hidden');
+      await collectAndSubmit();
+    } else {
+      document.getElementById('codeEntrySection').classList.remove('hidden');
+      const errorMsg = document.getElementById('codeError');
+      errorMsg.textContent = 'The access code in the URL is invalid.';
+      errorMsg.classList.remove('hidden');
+    }
+  } else {
+    showCodeEntry();
   }
 }
 

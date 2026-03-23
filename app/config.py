@@ -10,6 +10,7 @@ TRUE_VALUES = {"true", "1", "yes"}
 # ── Security Configuration ──
 MAX_REQUEST_BODY_SIZE = 512 * 1024  # 512 KB max request body
 
+
 def _validate_mongodb_uri() -> str:
     """Validate that MONGODB_URI is configured."""
     uri = os.getenv("MONGODB_URI", "").strip()
@@ -57,6 +58,13 @@ class Settings:
     # When True, the last octet of IPv4 (or last 80 bits of IPv6) is zeroed
     # before saving to the database.
     ANONYMIZE_IP: bool = os.getenv("ANONYMIZE_IP", "true").lower() in TRUE_VALUES
+
+    # ── Telegram Bot ──
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    TELEGRAM_ALLOWED_USER_ID: int = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
+    BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
+    CODE_EXPIRY_HOURS: int = int(os.getenv("CODE_EXPIRY_HOURS", "48"))
+    COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "collection_name")
 
 
 settings = Settings()
