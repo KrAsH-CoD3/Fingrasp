@@ -47,95 +47,129 @@ function renderValue(val, depth = 0, noTruncate = false) {
     if (typeof val === 'number')
         return `<span class="val-num">${val}</span>`;
 
-    if (typeof val === 'string') {
-        if (!noTruncate && val.length > 120) {
-            const id = 'exp-' + Math.random().toString(36).slice(2, 8);
-            return `<span class="val-str val-long">
-                <span class="val-preview" id="${id}-p">${escHtml(val.slice(0, 80))}…</span>
-                <span class="val-full hidden" id="${id}-f">${escHtml(val)}</span>
-                <button class="val-expand" onclick="toggleExpand('${id}')">show more</button>
-            </span>`;
-        }
-        return `<span class="val-str">${escHtml(val)}</span>`;
-    }
+	if (typeof val === 'string') {
+		if (!noTruncate && val.length > 120) {
+			const id = 'exp-' + Math.random().toString(36).slice(2, 8);
+			return `<span class="val-str val-long">
+<span class="val-preview" id="${id}-p">${escHtml(val.slice(0, 80))}…</span>
+<span class="val-full hidden" id="${id}-f">${escHtml(val)}</span>
+<button class="val-expand" data-target="${id}">show more</button>
+</span>`;
+		}
+		return `<span class="val-str">${escHtml(val)}</span>`;
+	}
 
-    if (Array.isArray(val)) {
-        if (val.length === 0) return '<span class="val-null">[ ]</span>';
+	if (Array.isArray(val)) {
+		if (val.length === 0) return '<span class="val-null">[ ]</span>';
 
-        if (val.length <= 5 && val.every(v => typeof v !== 'object')) {
-            const preview = `[${val.map(v => typeof v === 'string' ? `"${escHtml(v)}"` : v).join(', ')}]`;
-            if (preview.length < 60) {
-                return `<span class="val-arr">${preview}</span>`;
-            }
-        }
+		if (val.length <= 5 && val.every(v => typeof v !== 'object')) {
+			const preview = `[${val.map(v => typeof v === 'string' ? `"${escHtml(v)}"` : v).join(', ')}]`;
+			if (preview.length < 60) {
+				return `<span class="val-arr">${preview}</span>`;
+			}
+		}
 
-        const id = 'nest-' + Math.random().toString(36).slice(2, 8);
-        const rows = val.map((item, i) =>
-            `<tr class="kv-row"><td class="kv-key">[${i}]</td><td class="kv-val">${renderValue(item, depth + 1)}</td></tr>`
-        ).join('');
-        return `<div class="val-nested">
-            <button class="val-toggle" onclick="toggleNested(this, '${id}')"><span>▶</span> Array (${val.length} items)</button>
-            <table class="kv-table kv-sub hidden" id="${id}">${rows}</table>
-        </div>`;
-    }
+		const id = 'nest-' + Math.random().toString(36).slice(2, 8);
+		const rows = val.map((item, i) =>
+			`<tr class="kv-row"><td class="kv-key">[${i}]</td><td class="kv-val">${renderValue(item, depth + 1)}</td></tr>`
+		).join('');
+		return `<div class="val-nested">
+<button class="val-toggle" data-target="${id}"><span>▶</span> Array (${val.length} items)</button>
+<table class="kv-table kv-sub hidden" id="${id}">${rows}</table>
+</div>`;
+	}
 
-    if (typeof val === 'object') {
-        const entries = Object.entries(val);
-        if (entries.length === 0) return '<span class="val-null">{ }</span>';
-        if (val.error && typeof val.error === 'object' && val.error.code)
-            return `<span class="val-err">⚠ ${escHtml(val.error.message || 'Error')}</span>`;
-        if ('value' in val && 'duration' in val)
-            return renderValue(val.value, depth);
+	if (typeof val === 'object') {
+		const entries = Object.entries(val);
+		if (entries.length === 0) return '<span class="val-null">{ }</span>';
+		if (val.error && typeof val.error === 'object' && val.error.code)
+			return `<span class="val-err">⚠ ${escHtml(val.error.message || 'Error')}</span>`;
+		if ('value' in val && 'duration' in val)
+			return renderValue(val.value, depth);
 
-        if (entries.length <= 3 && entries.every(([k, v]) => typeof v !== 'object')) {
-            const preview = `{ ${entries.map(([k, v]) => `${k}: ${typeof v === 'string' ? `"${escHtml(v)}"` : v}`).join(', ')} }`;
-            if (preview.length < 50) {
-                return `<span class="val-arr">${preview}</span>`;
-            }
-        }
+		if (entries.length <= 3 && entries.every(([k, v]) => typeof v !== 'object')) {
+			const preview = `{ ${entries.map(([k, v]) => `${k}: ${typeof v === 'string' ? `"${escHtml(v)}"` : v}`).join(', ')} }`;
+			if (preview.length < 50) {
+				return `<span class="val-arr">${preview}</span>`;
+			}
+		}
 
-        const id = 'nest-' + Math.random().toString(36).slice(2, 8);
-        const rows = entries.map(([k, v]) => {
-            const lowK = k.toLowerCase();
-            const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowK);
-            const rendered = renderValue(v, depth + 1, noTrunc);
-            const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowK) || rendered.length > 60;
-            const wrap = shouldWrap ? ' wrap' : '';
-            return `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val${wrap}">${rendered}</td></tr>`;
-        }).join('');
-        if (depth === 0)
-            return `<table class="kv-table">${rows}</table>`;
-        return `<div class="val-nested">
-            <button class="val-toggle" onclick="toggleNested(this, '${id}')"><span>▶</span> Object (${entries.length} keys)</button>
-            <table class="kv-table kv-sub hidden" id="${id}">${rows}</table>
-        </div>`;
-    }
+		const id = 'nest-' + Math.random().toString(36).slice(2, 8);
+		const rows = entries.map(([k, v]) => {
+			const lowK = k.toLowerCase();
+			const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowK);
+			const rendered = renderValue(v, depth + 1, noTrunc);
+			const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowK) || rendered.length > 60;
+			const wrap = shouldWrap ? ' wrap' : '';
+			return `<tr class="kv-row"><td class="kv-key">${formatKey(k)}</td><td class="kv-val${wrap}">${rendered}</td></tr>`;
+		}).join('');
+		if (depth === 0)
+			return `<table class="kv-table">${rows}</table>`;
+		return `<div class="val-nested">
+<button class="val-toggle" data-target="${id}"><span>▶</span> Object (${entries.length} keys)</button>
+<table class="kv-table kv-sub hidden" id="${id}">${rows}</table>
+</div>`;
+	}
 
     return `<span class="val-str">${escHtml(String(val))}</span>`;
 }
 
 window.toggleExpand = (id) => {
-    const p = document.getElementById(id + '-p');
-    const f = document.getElementById(id + '-f');
-    const btn = p.parentElement.querySelector('.val-expand');
-    if (f.classList.contains('hidden')) {
-        p.classList.add('hidden'); f.classList.remove('hidden'); btn.textContent = 'show less';
-    } else {
-        p.classList.remove('hidden'); f.classList.add('hidden'); btn.textContent = 'show more';
-    }
+	const p = document.getElementById(id + '-p');
+	const f = document.getElementById(id + '-f');
+	const btn = p.parentElement.querySelector('.val-expand');
+	if (f.classList.contains('hidden')) {
+		p.classList.add('hidden'); f.classList.remove('hidden'); btn.textContent = 'show less';
+	} else {
+		p.classList.remove('hidden'); f.classList.add('hidden'); btn.textContent = 'show more';
+	}
 };
 
 window.toggleNested = (btn, id) => {
-    const el = document.getElementById(id);
-    const icon = btn.querySelector('span');
-    if (el.classList.contains('hidden')) {
-        el.classList.remove('hidden');
-        if (icon) icon.textContent = '▼';
-    } else {
-        el.classList.add('hidden');
-        if (icon) icon.textContent = '▶';
-    }
+	const el = document.getElementById(id);
+	const icon = btn.querySelector('span');
+	if (el.classList.contains('hidden')) {
+		el.classList.remove('hidden');
+		if (icon) icon.textContent = '▼';
+	} else {
+		el.classList.add('hidden');
+		if (icon) icon.textContent = '▶';
+	}
 };
+
+function setupNestedToggles() {
+	document.addEventListener('click', (e) => {
+		if (e.target.matches('.val-toggle')) {
+			const btn = e.target;
+			const id = btn.dataset.target;
+			const el = document.getElementById(id);
+			const icon = btn.querySelector('span');
+			if (el.classList.contains('hidden')) {
+				el.classList.remove('hidden');
+				if (icon) icon.textContent = '▼';
+			} else {
+				el.classList.add('hidden');
+				if (icon) icon.textContent = '▶';
+			}
+		}
+
+		if (e.target.matches('.val-expand')) {
+			const btn = e.target;
+			const id = btn.dataset.target;
+			const p = document.getElementById(id + '-p');
+			const f = document.getElementById(id + '-f');
+			if (f.classList.contains('hidden')) {
+				p.classList.add('hidden');
+				f.classList.remove('hidden');
+				btn.textContent = 'show less';
+			} else {
+				p.classList.remove('hidden');
+				f.classList.add('hidden');
+				btn.textContent = 'show more';
+			}
+		}
+	});
+}
 
 let rawData = '';
 const copyBtn = document.getElementById('copyBtn');
@@ -418,4 +452,7 @@ async function run() {
 	}
 }
 
-window.addEventListener('DOMContentLoaded', run);
+window.addEventListener('DOMContentLoaded', () => {
+	setupNestedToggles();
+	run();
+});
