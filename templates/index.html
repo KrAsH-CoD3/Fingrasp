@@ -3,12 +3,17 @@
 {% block content %}
 <!-- Desktop Layout Container (side-by-side for desktop) -->
 <div class="desktop-layout show-code-entry" id="desktopLayout">
-    <!-- Hero Section (always visible on left) -->
-    <div class="hero" id="heroSection">
-        <h1>Your Device<br /><em>Fully Grasped</em></h1>
-        <p>Device fingerprint collected on page load for research &amp; fraud-prevention purposes.<br />See our <a
-                href="/privacy" class="link-privacy">Privacy Policy</a> to learn exactly what we collect and why.</p>
-    </div>
+<!-- Hero Section (always visible on left) -->
+<div class="hero" id="heroSection">
+<div id="heroWaiting">
+<h1>Your Device<br /><em>Fingerprint</em></h1>
+<p>Enter your access code to begin the fingerprint collection process.<br />See our <a href="/privacy" class="link-privacy">Privacy Policy</a> to learn exactly what we collect and why.</p>
+</div>
+<div id="heroCollected" class="hidden">
+<h1>Your Device<br /><em>Fully Grasped</em></h1>
+<p>Device fingerprint collected for research &amp; fraud-prevention purposes.<br />See our <a href="/privacy" class="link-privacy">Privacy Policy</a> to learn exactly what we collect and why.</p>
+</div>
+</div>
 
     <!-- Right Panel (Code Entry or Fingerprint) -->
     <div class="right-panel" id="rightPanel">

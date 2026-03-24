@@ -206,30 +206,34 @@ if (toggleAllBtn) {
 }
 
 function renderUI(payload) {
-	const { hash, loadTime, fingerprint } = payload;
+    const { hash, loadTime, fingerprint } = payload;
 
-	const desktopLayout = document.getElementById('desktopLayout');
-	if (desktopLayout) desktopLayout.classList.remove('show-code-entry');
+    const desktopLayout = document.getElementById('desktopLayout');
+    if (desktopLayout) desktopLayout.classList.remove('show-code-entry');
 
-	document.getElementById('valHash').textContent = hash;
-	document.getElementById('valTime').textContent = `${loadTime}ms`;
-	rawData = JSON.stringify(payload, null, 2);
+    document.getElementById('valHash').textContent = hash;
+    document.getElementById('valTime').textContent = `${loadTime}ms`;
+    rawData = JSON.stringify(payload, null, 2);
 
-	const body = document.getElementById('fpBody');
-	const loader = document.getElementById('loader');
-	const section = document.getElementById('fpSection');
-	const outerHe = document.getElementById('fpOuterHeader');
-	const codeEntry = document.getElementById('codeEntrySection');
+    const body = document.getElementById('fpBody');
+    const loader = document.getElementById('loader');
+    const section = document.getElementById('fpSection');
+    const outerHe = document.getElementById('fpOuterHeader');
+    const codeEntry = document.getElementById('codeEntrySection');
+    const heroWaiting = document.getElementById('heroWaiting');
+    const heroCollected = document.getElementById('heroCollected');
 
-	loader.classList.add('hidden');
-	if (codeEntry) codeEntry.classList.add('hidden');
-	section.classList.remove('hidden');
-	section.classList.add('visible');
-	if (outerHe) {
-		outerHe.classList.remove('hidden');
-		outerHe.classList.add('visible');
-	}
-	body.innerHTML = '';
+    loader.classList.add('hidden');
+    if (codeEntry) codeEntry.classList.add('hidden');
+    section.classList.remove('hidden');
+    section.classList.add('visible');
+    if (outerHe) {
+        outerHe.classList.remove('hidden');
+        outerHe.classList.add('visible');
+    }
+    if (heroWaiting) heroWaiting.classList.add('hidden');
+    if (heroCollected) heroCollected.classList.remove('hidden');
+    body.innerHTML = '';
 
     const flat = { ...fingerprint };
     const usedKeys = new Set();
