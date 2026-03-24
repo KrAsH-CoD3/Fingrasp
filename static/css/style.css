@@ -219,7 +219,7 @@ display: flex;
 align-items: center;
 justify-content: center;
 gap: 48px;
-min-height: auto;
+min-height: calc(100vh - 200px);
 padding: 24px 0;
 flex-direction: column;
 }
