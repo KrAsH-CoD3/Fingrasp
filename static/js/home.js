@@ -226,67 +226,75 @@ function renderUI(payload) {
 }
 
 function appendSegment(parent, name, data) {
-    const count = Object.keys(data).length;
-    const sectionId = `sec-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    const json = JSON.stringify(data, null, 2);
+	const count = Object.keys(data).length;
+	const sectionId = `sec-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+	const json = JSON.stringify(data, null, 2);
 
-    const rows = Object.entries(data).map(([key, val]) => {
-        const display = (val && typeof val === 'object' && 'value' in val && 'duration' in val) ? val.value : val;
-        const lowKey = key.toLowerCase();
-        const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowKey);
-        const rendered = renderValue(display, 0, noTrunc);
-        const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowKey) || rendered.length > 60;
-        const wrap = shouldWrap ? ' wrap' : '';
-        return `<tr class="kv-row">
-            <td class="kv-key">${formatKey(key)}</td>
-            <td class="kv-val${wrap}">${rendered}</td>
-        </tr>`;
-    }).join('');
+	const rows = Object.entries(data).map(([key, val]) => {
+		const display = (val && typeof val === 'object' && 'value' in val && 'duration' in val) ? val.value : val;
+		const lowKey = key.toLowerCase();
+		const noTrunc = ['useragent', 'ua', 'appversion', 'version', 'navigator'].includes(lowKey);
+		const rendered = renderValue(display, 0, noTrunc);
+		const shouldWrap = ['useragent', 'ua', 'appversion', 'version'].includes(lowKey) || rendered.length > 60;
+		const wrap = shouldWrap ? ' wrap' : '';
+		return `<tr class="kv-row">
+<td class="kv-key">${formatKey(key)}</td>
+<td class="kv-val${wrap}">${rendered}</td>
+</tr>`;
+	}).join('');
 
-    const html = `
-    <div class="fp-segment" id="${sectionId}">
-        <div class="fps-head" onclick="toggleSegment('${sectionId}')">
-            <div class="fps-head-left">
-                <div class="fps-chevron">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                </div>
-                <span class="fps-title">${name}</span>
-                <span class="fps-count">${count} signal${count === 1 ? '' : 's'}</span>
-            </div>
-            <button class="fps-copy" onclick="event.stopPropagation(); copySection('${sectionId}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                Copy
-            </button>
-        </div>
-        <div class="fps-content-wrapper">
-            <div class="fps-content"><table class="kv-table">${rows}</table></div>
-            <textarea style="display:none" class="fps-raw">${escHtml(json)}</textarea>
-        </div>
-    </div>
-    `;
-    parent.insertAdjacentHTML('beforeend', html);
+	const segmentDiv = document.createElement('div');
+	segmentDiv.className = 'fp-segment';
+	segmentDiv.id = sectionId;
+	segmentDiv.dataset.json = json;
+
+	segmentDiv.innerHTML = `
+<div class="fps-head">
+<div class="fps-head-left">
+<div class="fps-chevron">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<span class="fps-title">${name}</span>
+<span class="fps-count">${count} signal${count === 1 ? '' : 's'}</span>
+</div>
+<button class="fps-copy">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+Copy
+</button>
+</div>
+<div class="fps-content-wrapper">
+<div class="fps-content"><table class="kv-table">${rows}</table></div>
+</div>
+`;
+
+	segmentDiv.querySelector('.fps-head').addEventListener('click', () => {
+		segmentDiv.classList.toggle('collapsed');
+	});
+
+	segmentDiv.querySelector('.fps-copy').addEventListener('click', (e) => {
+		e.stopPropagation();
+		copySection(sectionId);
+	});
+
+	parent.appendChild(segmentDiv);
 }
 
-window.toggleSegment = (id) => {
-    document.getElementById(id).classList.toggle('collapsed');
-};
+function copySection(id) {
+	const sec = document.getElementById(id);
+	const raw = sec.dataset.json;
+	const btn = sec.querySelector('.fps-copy');
 
-window.copySection = async (id) => {
-    const sec = document.getElementById(id);
-    const raw = sec.querySelector('.fps-raw').value;
-    const btn = sec.querySelector('.fps-copy');
+	navigator.clipboard.writeText(raw).then(() => {
+		const original = btn.innerHTML;
+		btn.classList.add('copied');
+		btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
 
-    await navigator.clipboard.writeText(raw);
-
-    const original = btn.innerHTML;
-    btn.classList.add('copied');
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
-
-    setTimeout(() => {
-        btn.classList.remove('copied');
-        btn.innerHTML = original;
-    }, 2000);
-};
+		setTimeout(() => {
+			btn.classList.remove('copied');
+			btn.innerHTML = original;
+		}, 2000);
+	});
+}
 
 async function validateCode(code) {
     const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
