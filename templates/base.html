@@ -5,22 +5,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Fingrasp{% endblock %}</title>
-  <meta name="description" content="{% block description %}Fingrasp — Device fingerprint intelligence platform for research & fraud prevention.{% endblock %}" />
-  
-<!-- Favicon -->
-    <link rel="icon" type="image/png" href="/static/assests/favicon.png">
+  <meta name="description"
+    content="{% block description %}Fingrasp — Device fingerprint intelligence platform for research & fraud prevention.{% endblock %}" />
 
-    <!-- Main Styles -->
-    <link rel="stylesheet" href="/static/css/style.css?v=1.1">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/static/assests/favicon.png">
+
+  <!-- Main Styles -->
+  <link rel="stylesheet" href="/static/css/style.css?v=1.1">
   {% block extra_css %}{% endblock %}
 
-<script nonce="{{ nonce }}">
-  // Set theme immediately to prevent flashing (validated to prevent XSS)
-  const _saved = localStorage.getItem('theme');
-  if (_saved === 'dark' || _saved === 'light') {
-    document.documentElement.setAttribute('data-theme', _saved);
-  }
-</script>
+  <script nonce="{{ nonce }}">
+    // Set theme immediately to prevent flashing (validated to prevent XSS)
+    const _saved = localStorage.getItem('theme');
+    if (_saved === 'dark' || _saved === 'light') {
+      document.documentElement.setAttribute('data-theme', _saved);
+    }
+  </script>
 </head>
 
 <body>
@@ -49,7 +50,8 @@
       <span class="footer-sep">·</span>
       <a href="/privacy" class="link-privacy">Privacy Policy</a>
       <span class="footer-sep">·</span>
-      <span>Powered by <a href="https://www.mixvisit.com" target="_blank" rel="noopener noreferrer" class="link-mixvisit">MixVisit</a></span>
+      <span>Powered by <a href="https://www.mixvisit.com" target="_blank" rel="noopener noreferrer"
+          class="link-mixvisit">MixVisit</a></span>
       {% if request.path != '/' %}
       <span class="footer-sep">·</span>
       <a href="/" class="link-home">Home</a>
@@ -60,8 +62,9 @@
 
   <!-- Scroll to Top Button -->
   <button id="scrollToTopBtn" class="scroll-top-btn" aria-label="Scroll to top">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18 15l-6-6-6 6"/>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M18 15l-6-6-6 6" />
     </svg>
   </button>
 
