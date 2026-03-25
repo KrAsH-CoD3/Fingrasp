@@ -1,20 +1,17 @@
-[project]
-name = "fingrasp"
-version = "0.1.0"
-description = "Browser fingerprinting collector and API backend utilizing FastAPI, MongoDB Atlas, and MixVisit."
-readme = "README.md"
-requires-python = ">=3.14"
-dependencies = [
-    "fastapi>=0.135.1",
-    "jinja2>=3.1.6",
-    "motor>=3.7.1",
-    "pydantic>=2.0",
-    "python-dotenv>=1.2.2",
-    "slowapi>=0.1.9",
-    "uvicorn[standard]>=0.41.0",
-    "python-telegram-bot[webhooks]",
-    "redis"
+[project] 
+name = "fingrasp" 
+version = "0.1.0" 
+description = "Browser fingerprinting collector and API backend utilizing FastAPI, MongoDB Atlas, and MixVisit." 
+readme = "README.md" 
+requires-python = ">=3.14" 
+dependencies = [ 
+    "fastapi>=0.135.1", 
+    "jinja2>=3.1.6", 
+    "motor>=3.7.1", 
+    "pydantic>=2.0", 
+    "python-dotenv>=1.2.2", 
+    "slowapi>=0.1.9", 
+    "uvicorn[standard]>=0.41.0", 
+    "python-telegram-bot[webhooks]", 
+    "redis" 
 ]
-
-[project.scripts]
-app = "app:create_app"
