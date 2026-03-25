@@ -1,13 +1,13 @@
-import re
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from datetime import datetime, timedelta, timezone
+from telegram import Update
 import secrets
 import logging
-from datetime import datetime, timedelta, timezone
-
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+import re
 
 from app.config import settings
 from app.database import setup_db
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,10 @@ BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 BASE_URL = settings.BASE_URL
 CODE_EXPIRY_HOURS = settings.CODE_EXPIRY_HOURS
 COLLECTION_NAME = settings.COLLECTION_NAME
+
+# Webhook configuration
+TELEGRAM_WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
+TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
 
 
 def generate_code() -> str:
@@ -50,7 +54,29 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "Available commands:\n"
         "/generate - Generate a new access code\n"
         "/codes - List all access codes\n"
-        "/revoke <code> - Revoke an access code"
+        "/revoke <code> - Revoke an access code\n"
+        "/help - Show help menu"
+    )
+
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /help command - list all available commands."""
+    if not await is_authorized(update):
+        logger.warning(
+            "Unauthorized help attempt from user_id=%s",
+            update.effective_user.id if update.effective_user else "unknown",
+        )
+        return
+
+    await update.message.reply_text(
+        "🆘 <b>Fingrasp Bot Help</b>\n\n"
+        "Available commands:\n\n"
+        "• /generate - Generate a new 6-digit access code and link.\n"
+        "• /codes - List all active access codes.\n"
+        "• /revoke <code> - Immediately revoke a specific code.\n"
+        "• /help - Show this help message.\n"
+        "• /start - Show welcome message.",
+        parse_mode="HTML",
     )
 
 
@@ -176,12 +202,21 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
 
 
-async def post_init(application: Application) -> None:
-    """Initialize bot data after application starts."""
-    client, db = setup_db()
+async def post_init(application: Optional[Application], client=None, db=None) -> None:
+    """Initialize bot data using an existing database connection."""
+    if application is None:
+        return
+
+    # Use provided connection or fall back to setup_db() if running standalone
+    if client is None or db is None:
+        from app.database import setup_db
+        client, db = setup_db()
+        logger.info("New database connection created for Telegram bot (Standalone mode)")
+    else:
+        logger.info("Reusing existing FastAPI database connection for Telegram bot")
+
     application.bot_data["db"] = db
     application.bot_data["db_client"] = client
-    logger.info("Database connected for Telegram bot")
 
 
 async def post_shutdown(application: Application) -> None:
@@ -190,6 +225,46 @@ async def post_shutdown(application: Application) -> None:
     if client:
         client.close()
         logger.info("Database connection closed")
+
+
+def get_application() -> Application:
+    """Get a configured Application instance for webhook integration."""
+    if not BOT_TOKEN:
+        raise ValueError("TELEGRAM_BOT_TOKEN not set")
+
+    application = Application.builder().token(BOT_TOKEN).build()
+
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("generate", generate_command))
+    application.add_handler(CommandHandler("codes", codes_command))
+    application.add_handler(CommandHandler("revoke", revoke_command))
+
+    application.post_init = post_init
+    application.post_shutdown = post_shutdown
+
+    return application
+
+
+async def setup_webhook(application: Application) -> None:
+    """Set up the webhook with Telegram servers."""
+    if not TELEGRAM_WEBHOOK_URL or not TELEGRAM_WEBHOOK_SECRET:
+        logger.warning("Webhook URL or secret not configured")
+        return
+
+    webhook_url = f"{TELEGRAM_WEBHOOK_URL}/webhook"
+    await application.bot.set_webhook(
+        url=webhook_url,
+        secret_token=TELEGRAM_WEBHOOK_SECRET,
+        allowed_updates=Update.ALL_TYPES,
+    )
+    logger.info(f"Webhook set to: {webhook_url}")
+
+
+async def remove_webhook(application: Application) -> None:
+    """Remove the webhook from Telegram servers."""
+    await application.bot.delete_webhook()
+    logger.info("Webhook removed")
 
 
 def main() -> None:
@@ -202,18 +277,24 @@ def main() -> None:
         logger.error("TELEGRAM_ALLOWED_USER_ID not set")
         return
 
-    application = Application.builder().token(BOT_TOKEN).build()
+    application = get_application()
 
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("generate", generate_command))
-    application.add_handler(CommandHandler("codes", codes_command))
-    application.add_handler(CommandHandler("revoke", revoke_command))
-
-    application.post_init = post_init
-    application.post_shutdown = post_shutdown
-
-    logger.info("Starting Telegram bot...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # Check if webhook mode is configured
+    if TELEGRAM_WEBHOOK_URL and TELEGRAM_WEBHOOK_SECRET:
+        logger.info("Starting Telegram bot in WEBHOOK mode...")
+        # run_webhook is BLOCKING and manages its own loop.
+        # We pass webhook_url here so it calls set_webhook for us.
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=8443,
+            secret_token=TELEGRAM_WEBHOOK_SECRET,
+            url_path="webhook", 
+            webhook_url=f"{TELEGRAM_WEBHOOK_URL}/webhook",
+            allowed_updates=Update.ALL_TYPES,
+        )
+    else:
+        logger.info("Starting Telegram bot in POLLING mode...")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == "__main__":

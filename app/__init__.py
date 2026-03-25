@@ -1,3 +1,6 @@
+from app.telegram_bot import get_application, post_init, post_shutdown
+from fastapi import FastAPI, Request, Depends, HTTPException
+from telegram.ext import Application as TelegramApplication
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -5,12 +8,14 @@ from slowapi.errors import RateLimitExceeded
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from starlette.responses import Response
-from fastapi import FastAPI, Request
+from typing import Optional
+from telegram import Update
+import logging
 
 from app.routes.fingerprint import router as fingerprint_router
-from app.routes.api import router as api_router
 from app.config import settings, MAX_REQUEST_BODY_SIZE
 from app.security import SecurityHeadersMiddleware
+from app.routes.api import router as api_router
 from app.database import setup_db
 from app.limiter import limiter
 
@@ -136,12 +141,52 @@ class RateLimitedStaticFiles(StaticFiles):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(application: FastAPI):
+    # ── Database Setup ──
     client, db = setup_db()
-    app.state.db = db
+    application.state.db = db
+
+
+    logger = logging.getLogger(__name__)
+    telegram_app: Optional[TelegramApplication] = None
+
+    if settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_WEBHOOK_URL:
+        # 1. Initialize Application
+        telegram_app = get_application()
+        await telegram_app.initialize()  # Must initialize first
+        await telegram_app.start()       # Must start to process updates
+        await post_init(telegram_app, client, db)
+
+        # 2. Set Webhook
+        webhook_url = f"{settings.TELEGRAM_WEBHOOK_URL}/webhook"
+        await telegram_app.bot.set_webhook(
+            url=webhook_url,
+            secret_token=settings.TELEGRAM_WEBHOOK_SECRET,
+            allowed_updates=Update.ALL_TYPES,
+        )
+        application.state.telegram_app = telegram_app
+        logger.info(f"Telegram bot webhook initialized: {webhook_url}")
 
     yield
+
+    # ── Shutdown Logic ──
+    if telegram_app:
+        await telegram_app.stop()
+        await telegram_app.shutdown()
+        await post_shutdown(telegram_app)
+        logger.info("Telegram bot shutdown complete")
+        
     client.close()
+
+
+def verify_telegram_webhook_secret(request: Request) -> None:
+    """Verify the webhook secret token from Telegram."""
+    secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+    if secret_token != settings.TELEGRAM_WEBHOOK_SECRET:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Invalid webhook secret token attempt. Expected: {settings.TELEGRAM_WEBHOOK_SECRET[:4]}... Got: {secret_token[:4]}...")
+        raise HTTPException(status_code=403, detail="Invalid secret token")
 
 
 def create_app() -> FastAPI:
@@ -160,6 +205,20 @@ def create_app() -> FastAPI:
     # ── Routes ──
     application.include_router(fingerprint_router)
     application.include_router(api_router)
+
+    @application.post("/webhook", dependencies=[Depends(verify_telegram_webhook_secret)])
+    async def telegram_webhook(request: Request):
+        """Handle incoming Telegram webhook updates."""
+        from telegram import Update
+        telegram_app = getattr(application.state, "telegram_app", None)
+        if telegram_app is None:
+            return {"status": "error", "message": "Bot not initialized"}
+
+        # Get the raw body and parse as JSON
+        body = await request.json()
+        update = Update.de_json(body, telegram_app.bot)
+        await telegram_app.process_update(update)
+        return {"status": "ok"}
 
     # ── Request Body Size Limit ──
     # Added last among middlewares so it is outermost in the ASGI stack,

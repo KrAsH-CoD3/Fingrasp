@@ -1,13 +1,9 @@
 """FastAPI API endpoints for fingerprint collection."""
 
-import hashlib
-import hmac
-import json
-import secrets
-from datetime import datetime, timezone
-
-from fastapi import APIRouter, Cookie, HTTPException, Request, status
+from fastapi import APIRouter, Cookie, Request, status
 from fastapi.responses import JSONResponse
+from datetime import datetime, timezone
+import hmac
 
 from app.config import settings
 from app.limiter import limiter
@@ -18,6 +14,7 @@ from app.schemas import (
     SuccessResponse,
 )
 from app.security import anonymize_ip, is_trusted_origin
+
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -175,6 +172,6 @@ async def submit_fingerprint(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=SuccessResponse(
-            message="Thank you for contributing to the research.",
+            message="Thank you for contributing to this research.",
         ).model_dump(),
     )

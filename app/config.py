@@ -62,6 +62,8 @@ class Settings:
     # ── Telegram Bot ──
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_ALLOWED_USER_ID: int = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
+    TELEGRAM_WEBHOOK_SECRET: str = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+    TELEGRAM_WEBHOOK_URL: str = os.getenv("TELEGRAM_WEBHOOK_URL", "")
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
     CODE_EXPIRY_HOURS: int = int(os.getenv("CODE_EXPIRY_HOURS", "48"))
     COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "collection_name")
