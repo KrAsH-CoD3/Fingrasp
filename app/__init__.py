@@ -240,9 +240,5 @@ def create_app() -> FastAPI:
     return application
 
 
-def run():
-    return create_app()
-
-
 if __name__ == "__main__":
-    run()
+    create_app()

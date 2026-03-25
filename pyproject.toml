@@ -16,11 +16,5 @@ dependencies = [
     "redis"
 ]
 
-[tool.fastapi]
-app = "app:run"
-
-[tool.uvicorn]
-factory = true
-reload = true
-no-server-header = true
-port = 8000
+[project.scripts]
+app = "app:create_app"
