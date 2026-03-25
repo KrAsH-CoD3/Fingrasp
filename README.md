@@ -13,6 +13,11 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 - **Research-Oriented Storage:** Fingerprint records are persisted to MongoDB Atlas for entropy analysis and stability tracking.
 - **Privacy-First Approach:** No names, emails, or personal data are collected. A full privacy policy is included.
 - **Responsive Interface:** Dark-mode technical aesthetic, optimized for desktop and mobile viewports.
+- **Access Code System:** One-time-use codes control who can submit fingerprints (generated via Telegram bot).
+- **Telegram Bot Integration:** Admin bot for generating, listing, and revoking access codes.
+- **Rate Limiting:** API endpoints are rate-limited using SlowAPI to prevent abuse.
+- **CSRF Protection:** Double-submit cookie pattern validates all state-changing requests.
+- **Strict Security Headers:** CSP, HSTS, X-Frame-Options, and more for defense in depth.
 
 ---
 
@@ -21,18 +26,24 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 ```text
 .
 ├── app/
-│   ├── __init__.py         # App factory and route registration
-│   ├── config.py           # Configuration and environment management
-│   ├── database.py         # MongoDB Atlas connection lifecycle
+│   ├── __init__.py          # App factory and route registration
+│   ├── config.py            # Configuration and environment management
+│   ├── database.py          # MongoDB Atlas connection lifecycle
+│   ├── limiter.py           # SlowAPI rate limiter instance
+│   ├── schemas.py           # Pydantic models for request/response validation
+│   ├── security.py          # IP anonymization, origin validation, headers middleware
+│   ├── telegram_bot.py      # Telegram bot for access code management
 │   └── routes/
-│       └── fingerprint.py  # Page rendering and data persistence endpoints
+│       ├── fingerprint.py   # Page rendering endpoints
+│       └── api.py           # API endpoints (code validation, fingerprint submission)
 ├── static/
-│   ├── css/                # Theming and layout
-│   └── js/                 # MixVisit integration and UI rendering
-├── templates/              # Jinja2 HTML templates
-├── main.py                 # Application entry point
-├── pyproject.toml          # UV project configuration
-└── uv.lock                 # Dependency lockfile
+│   ├── css/                 # Theming and layout
+│   └── js/                  # MixVisit integration and UI rendering
+├── templates/               # Jinja2 HTML templates
+├── main.py                  # Application entry point
+├── run_bot.py               # Telegram bot entry point (standalone)
+├── pyproject.toml           # UV project configuration
+└── uv.lock                  # Dependency lockfile
 ```
 
 ---
@@ -53,6 +64,16 @@ Create a `.env` file in the project root:
 ```env
 MONGODB_URI="your_mongodb_atlas_connection_string"
 DB_NAME="fingrasp"
+
+# Telegram Bot (required for access code generation)
+TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
+TELEGRAM_ALLOWED_USER_ID="your_telegram_user_id"
+
+# Optional
+BASE_URL="http://localhost:8000"
+CODE_EXPIRY_HOURS="48"
+COLLECTION_NAME="access_codes"
+ALLOWED_ORIGINS="http://localhost:8000,http://127.0.0.1:8000"
 ```
 
 ### 3. Running the Server
@@ -61,6 +82,45 @@ uv run -m uvicorn main:app --reload
 ```
 The application will be available at `http://localhost:8000`.
 
+### 4. Running the Telegram Bot
+```bash
+uv run -m run_bot
+```
+
+---
+
+## Access Code Flow
+
+Fingrasp uses a one-time access code system to control fingerprint submissions:
+
+1. **Admin generates code** via Telegram bot (`/generate` command)
+2. **Visitor receives link** with embedded code (e.g., `/?code=123456`)
+3. **Visitor submits fingerprint** - code is consumed and cannot be reused
+4. **Fingerprint stored** with anonymized IP address
+
+### Telegram Bot Commands
+
+| Command | Description |
+| :--- | :--- |
+| `/start` | Show welcome message |
+| `/generate` | Generate a new 6-digit access code and link |
+| `/codes` | List all active access codes |
+| `/revoke <code>` | Immediately revoke a specific code |
+| `/help` | Show help message |
+
+---
+
+## API Endpoints
+
+| Endpoint | Method | Rate Limit | Description |
+| :--- | :--- | :--- | :--- |
+| `/` | GET | - | Main fingerprint collection page |
+| `/privacy` | GET | - | Privacy policy page |
+| `/api/validate-code` | POST | 10/min | Pre-flight code validation |
+| `/api/save` | POST | 10/min | Submit fingerprint data |
+
+All POST endpoints require CSRF token (double-submit cookie pattern).
+
 ---
 
 ## Deployment
@@ -68,8 +128,14 @@ The application will be available at `http://localhost:8000`.
 Fingrasp is a standard FastAPI application deployable on any Python-compatible host.
 
 1. Connect the repository to your deployment platform.
-2. Set `MONGODB_URI` and `DB_NAME` as environment variables.
-3. Start the application with `uvicorn main:app`.
+2. Set environment variables (see Configuration section).
+3. Enable `STRICT_SECURITY=true` for production.
+4. Start the application with `uvicorn main:app`.
+5. (Optional) Configure Telegram webhook for bot:
+   ```env
+   TELEGRAM_WEBHOOK_URL="https://your-domain.com"
+   TELEGRAM_WEBHOOK_SECRET="random_secret_token"
+   ```
 
 ---
 
@@ -81,7 +147,7 @@ Fingrasp is a standard FastAPI application deployable on any Python-compatible h
 | Hardware | CPU cores, device memory, screen resolution, color depth |
 | Graphics | WebGL renderer, vendor, canvas hash |
 | Audio | AudioContext oscillator output hash |
-| Network | IP address (server-side), connection type |
+| Network | IP address (server-side, anonymized), connection type |
 | Browser Capabilities | Supported codecs, API availability, installed fonts |
 
 All signals are combined into a single composite SHA-256 hash per session.
@@ -90,9 +156,15 @@ All signals are combined into a single composite SHA-256 hash per session.
 
 ## Security
 
-- Fingerprint data is encrypted at rest and in transit.
-- No personally identifiable information is collected unless voluntarily provided.
-- Access to stored records is restricted via role-based access control.
+- **CSRF Protection:** Double-submit cookie pattern on all state-changing requests.
+- **Rate Limiting:** SlowAPI limits requests per endpoint to prevent abuse.
+- **IP Anonymization:** Last octet of IPv4 / last 80 bits of IPv6 zeroed before storage.
+- **NoSQL Injection Prevention:** Payloads sanitized for MongoDB operator keys.
+- **Strict CSP:** Content-Security-Policy with nonce-based scripts.
+- **HSTS:** HTTP Strict Transport Security in production mode.
+- **Security Headers:** X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy.
+- **Payload Validation:** Max size, nesting depth, and string length limits enforced via Pydantic.
+- No personally identifiable information is collected.
 
 ---
 
