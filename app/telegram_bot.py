@@ -1,6 +1,14 @@
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 from datetime import datetime, timedelta, timezone
 from telegram import Update
+from typing import Optional
+from functools import wraps
 import secrets
 import logging
 import re
@@ -40,55 +48,55 @@ async def is_authorized(update: Update) -> bool:
     )
 
 
+def authorized(func):
+    """Decorator to check if user is authorized before executing command."""
+
+    @wraps(func)
+    async def wrapper(
+        update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs
+    ):
+        if not await is_authorized(update):
+            logger.warning(
+                "Unauthorized attempt from user_id=%s",
+                update.effective_user.id if update.effective_user else "unknown",
+            )
+            return
+        return await func(update, context, *args, **kwargs)
+
+    return wrapper
+
+
+@authorized
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command - only shows help for authorized users."""
-    if not await is_authorized(update):
-        logger.warning(
-            "Unauthorized start attempt from user_id=%s",
-            update.effective_user.id if update.effective_user else "unknown",
-        )
-        return
-
     await update.message.reply_text(
         "Welcome to Fingrasp Bot!\n\n"
         "Available commands:\n"
         "/generate - Generate a new access code\n"
         "/codes - List all access codes\n"
-        "/revoke <code> - Revoke an access code\n"
+        "/revoke {code} - Revoke an access code\n"
         "/help - Show help menu"
     )
 
 
+@authorized
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /help command - list all available commands."""
-    if not await is_authorized(update):
-        logger.warning(
-            "Unauthorized help attempt from user_id=%s",
-            update.effective_user.id if update.effective_user else "unknown",
-        )
-        return
-
     await update.message.reply_text(
         "🆘 <b>Fingrasp Bot Help</b>\n\n"
         "Available commands:\n\n"
         "• /generate - Generate a new 6-digit access code and link.\n"
         "• /codes - List all active access codes.\n"
-        "• /revoke <code> - Immediately revoke a specific code.\n"
+        "• /revoke {code} - Immediately revoke a specific code.\n"
         "• /help - Show this help message.\n"
         "• /start - Show welcome message.",
         parse_mode="HTML",
     )
 
 
+@authorized
 async def generate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /generate command - generate a new access code."""
-    if not await is_authorized(update):
-        logger.warning(
-            "Unauthorized generate attempt from user_id=%s",
-            update.effective_user.id if update.effective_user else "unknown",
-        )
-        return
-
     db = context.bot_data["db"]
 
     code = generate_code()
@@ -119,15 +127,9 @@ async def generate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     )
 
 
+@authorized
 async def codes_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /codes command - list all access codes."""
-    if not await is_authorized(update):
-        logger.warning(
-            "Unauthorized codes list attempt from user_id=%s",
-            update.effective_user.id if update.effective_user else "unknown",
-        )
-        return
-
     db = context.bot_data["db"]
 
     cursor = await db[COLLECTION_NAME].find({})
@@ -154,18 +156,12 @@ async def codes_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
 
 
+@authorized
 async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /revoke command - delete a specific access code."""
-    if not await is_authorized(update):
-        logger.warning(
-            "Unauthorized revoke attempt from user_id=%s",
-            update.effective_user.id if update.effective_user else "unknown",
-        )
-        return
-
     args = context.args
     if not args:
-        await update.message.reply_text("Usage: /revoke <code>")
+        await update.message.reply_text("Usage: /revoke {code}")
         return
 
     code = args[0]
@@ -202,24 +198,26 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
 
 
-async def post_init(application: Optional[Application], client=None, db=None) -> None:
+@authorized
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle non-command messages from authorized users."""
+    await update.message.reply_text(
+        "I only understand commands! Type /help to see what I can do. 🤖"
+    )
+
+
+async def setup_bot_database(
+    application: Optional[Application], client=None, db=None
+) -> None:
     """Initialize bot data using an existing database connection."""
     if application is None:
         return
-
-    # Use provided connection or fall back to setup_db() if running standalone
-    if client is None or db is None:
-        from app.database import setup_db
-        client, db = setup_db()
-        logger.info("New database connection created for Telegram bot (Standalone mode)")
-    else:
-        logger.info("Reusing existing FastAPI database connection for Telegram bot")
 
     application.bot_data["db"] = db
     application.bot_data["db_client"] = client
 
 
-async def post_shutdown(application: Application) -> None:
+async def close_bot_database(application: Application) -> None:
     """Cleanup after application stops."""
     client = application.bot_data.get("db_client")
     if client:
@@ -240,8 +238,13 @@ def get_application() -> Application:
     application.add_handler(CommandHandler("codes", codes_command))
     application.add_handler(CommandHandler("revoke", revoke_command))
 
-    application.post_init = post_init
-    application.post_shutdown = post_shutdown
+    # Fallback handler for non-command text messages
+    application.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
+    )
+
+    # application.post_init = setup_bot_database
+    # application.post_shutdown = close_bot_database
 
     return application
 
@@ -288,7 +291,7 @@ def main() -> None:
             listen="0.0.0.0",
             port=8443,
             secret_token=TELEGRAM_WEBHOOK_SECRET,
-            url_path="webhook", 
+            url_path="webhook",
             webhook_url=f"{TELEGRAM_WEBHOOK_URL}/webhook",
             allowed_updates=Update.ALL_TYPES,
         )

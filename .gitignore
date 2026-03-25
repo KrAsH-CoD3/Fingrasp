@@ -6,7 +6,5 @@ dist/
 wheels/
 *.egg-info
 
-.venv
-.env
-.gitnexus
-.claude
+
+.*

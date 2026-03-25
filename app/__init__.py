@@ -1,4 +1,4 @@
-from app.telegram_bot import get_application, post_init, post_shutdown
+from app.telegram_bot import get_application, setup_bot_database, close_bot_database
 from fastapi import FastAPI, Request, Depends, HTTPException
 from telegram.ext import Application as TelegramApplication
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -146,16 +146,16 @@ async def lifespan(application: FastAPI):
     client, db = setup_db()
     application.state.db = db
 
-
     logger = logging.getLogger(__name__)
     telegram_app: Optional[TelegramApplication] = None
 
     if settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_WEBHOOK_URL:
         # 1. Initialize Application
         telegram_app = get_application()
+        # Must setup db before initializing, so we can assign db to `bot_data`
+        await setup_bot_database(telegram_app, client, db)
         await telegram_app.initialize()  # Must initialize first
         await telegram_app.start()       # Must start to process updates
-        await post_init(telegram_app, client, db)
 
         # 2. Set Webhook
         webhook_url = f"{settings.TELEGRAM_WEBHOOK_URL}/webhook"
@@ -173,7 +173,7 @@ async def lifespan(application: FastAPI):
     if telegram_app:
         await telegram_app.stop()
         await telegram_app.shutdown()
-        await post_shutdown(telegram_app)
+        await close_bot_database(telegram_app)
         logger.info("Telegram bot shutdown complete")
         
     client.close()
@@ -238,3 +238,11 @@ def create_app() -> FastAPI:
     )
 
     return application
+
+
+def run():
+    return create_app()
+
+
+if __name__ == "__main__":
+    run()
