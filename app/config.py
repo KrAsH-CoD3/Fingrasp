@@ -63,7 +63,7 @@ class Settings:
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_ALLOWED_USER_ID: int = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
-    TELEGRAM_WEBHOOK_URL: str = BASE_URL
+    TELEGRAM_WEBHOOK_URL: str = BASE_URL + "/api/webhook"
     TELEGRAM_WEBHOOK_SECRET: str = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
     CODE_EXPIRY_HOURS: int = int(os.getenv("CODE_EXPIRY_HOURS", "48"))
     COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "collection_name")
