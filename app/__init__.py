@@ -19,6 +19,9 @@ from app.routes.api import router as api_router
 from app.database import setup_db
 from app.limiter import limiter
 
+TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
+TELEGRAM_WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
+
 
 class BodySizeLimitMiddleware:
     """Middleware to limit request body size before JSON parsing."""
@@ -152,20 +155,16 @@ async def lifespan(application: FastAPI):
     if settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_WEBHOOK_URL:
         # 1. Initialize Application
         telegram_app = get_application()
-        # Must setup db before initializing, so we can assign db to `bot_data`
         await setup_bot_database(telegram_app, client, db)
-        await telegram_app.initialize()  # Must initialize first
-        await telegram_app.start()       # Must start to process updates
 
         # 2. Set Webhook
-        webhook_url = f"{settings.TELEGRAM_WEBHOOK_URL}/webhook"
         await telegram_app.bot.set_webhook(
-            url=webhook_url,
-            secret_token=settings.TELEGRAM_WEBHOOK_SECRET,
+            url=TELEGRAM_WEBHOOK_URL,
+            secret_token=TELEGRAM_WEBHOOK_SECRET,
             allowed_updates=Update.ALL_TYPES,
         )
         application.state.telegram_app = telegram_app
-        logger.info(f"Telegram bot webhook initialized: {webhook_url}")
+        logger.info(f"Telegram bot webhook initialized: {TELEGRAM_WEBHOOK_URL}")
 
     yield
 
@@ -182,10 +181,10 @@ async def lifespan(application: FastAPI):
 def verify_telegram_webhook_secret(request: Request) -> None:
     """Verify the webhook secret token from Telegram."""
     secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
-    if secret_token != settings.TELEGRAM_WEBHOOK_SECRET:
+    if secret_token != TELEGRAM_WEBHOOK_SECRET:
         import logging
         logger = logging.getLogger(__name__)
-        logger.warning(f"Invalid webhook secret token attempt. Expected: {settings.TELEGRAM_WEBHOOK_SECRET[:4]}... Got: {secret_token[:4]}...")
+        logger.warning(f"Invalid webhook secret token attempt. Expected: {TELEGRAM_WEBHOOK_SECRET[:4]}... Got: {secret_token[:4]}...")
         raise HTTPException(status_code=403, detail="Invalid secret token")
 
 
