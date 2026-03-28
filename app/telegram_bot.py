@@ -207,19 +207,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 async def setup_bot_database(
-    application: Optional[Application], client=None, db=None
+    telegram_app: Optional[Application], client=None, db=None
 ) -> None:
     """Initialize bot data using an existing database connection."""
-    if application is None:
+    if telegram_app is None:
         return
 
-    application.bot_data["db"] = db
-    application.bot_data["db_client"] = client
+    # Must setup db before initializing, so db is avilable when initializing
+    telegram_app.bot_data["db"] = db
+    telegram_app.bot_data["db_client"] = client
+    await telegram_app.initialize()
+    await telegram_app.start()  # Must start to process updates
 
 
-async def close_bot_database(application: Application) -> None:
+async def close_bot_database(telegram_app: Application) -> None:
     """Cleanup after application stops."""
-    client = application.bot_data.get("db_client")
+    client = telegram_app.bot_data.get("db_client")
     if client:
         client.close()
         logger.info("Database connection closed")
@@ -255,13 +258,12 @@ async def setup_webhook(application: Application) -> None:
         logger.warning("Webhook URL or secret not configured")
         return
 
-    webhook_url = f"{TELEGRAM_WEBHOOK_URL}/webhook"
     await application.bot.set_webhook(
-        url=webhook_url,
+        url=TELEGRAM_WEBHOOK_URL,
         secret_token=TELEGRAM_WEBHOOK_SECRET,
         allowed_updates=Update.ALL_TYPES,
     )
-    logger.info(f"Webhook set to: {webhook_url}")
+    logger.info(f"Webhook set to: {TELEGRAM_WEBHOOK_URL}")
 
 
 async def remove_webhook(application: Application) -> None:
@@ -292,7 +294,7 @@ def main() -> None:
             port=8443,
             secret_token=TELEGRAM_WEBHOOK_SECRET,
             url_path="webhook",
-            webhook_url=f"{TELEGRAM_WEBHOOK_URL}/webhook",
+            webhook_url=TELEGRAM_WEBHOOK_URL,
             allowed_updates=Update.ALL_TYPES,
         )
     else:
