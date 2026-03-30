@@ -19,9 +19,15 @@ from app.routes.api import router as api_router
 from app.database import setup_db
 from app.limiter import limiter
 
+TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
 TELEGRAM_WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 class BodySizeLimitMiddleware:
     """Middleware to limit request body size before JSON parsing."""
@@ -149,10 +155,9 @@ async def lifespan(application: FastAPI):
     client, db = setup_db()
     application.state.db = db
 
-    logger = logging.getLogger(__name__)
     telegram_app: Optional[TelegramApplication] = None
 
-    if settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_WEBHOOK_URL:
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_URL:
         # 1. Initialize Application
         telegram_app = get_application()
         await setup_bot_database(telegram_app, client, db)
@@ -164,12 +169,15 @@ async def lifespan(application: FastAPI):
             allowed_updates=Update.ALL_TYPES,
         )
         application.state.telegram_app = telegram_app
-        logger.info(f"Telegram bot webhook initialized: {TELEGRAM_WEBHOOK_URL}")
+        logger.info("Telegram bot initialized\n"
+                    f">>>>>> Webhook URL: {TELEGRAM_WEBHOOK_URL}"
+        )
 
     yield
 
     # ── Shutdown Logic ──
     if telegram_app:
+        await telegram_app.bot.delete_webhook()
         await telegram_app.stop()
         await telegram_app.shutdown()
         await close_bot_database(telegram_app)
@@ -182,8 +190,6 @@ def verify_telegram_webhook_secret(request: Request) -> None:
     """Verify the webhook secret token from Telegram."""
     secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
     if secret_token != TELEGRAM_WEBHOOK_SECRET:
-        import logging
-        logger = logging.getLogger(__name__)
         logger.warning(f"Invalid webhook secret token attempt. Expected: {TELEGRAM_WEBHOOK_SECRET[:4]}... Got: {secret_token[:4]}...")
         raise HTTPException(status_code=403, detail="Invalid secret token")
 
