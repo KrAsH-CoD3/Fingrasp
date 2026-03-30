@@ -216,9 +216,10 @@ async def setup_bot_database(
     # Must setup db before initializing, so db is avilable when initializing
     telegram_app.bot_data["db"] = db
     telegram_app.bot_data["db_client"] = client
-    await telegram_app.initialize()
-    await telegram_app.start()  # Must start to process updates
 
+    # Now db is available, we can initialize and start the bot
+    await telegram_app.initialize()
+    await telegram_app.start()
 
 async def close_bot_database(telegram_app: Application) -> None:
     """Cleanup after application stops."""
@@ -245,10 +246,6 @@ def get_application() -> Application:
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     )
-
-    # application.post_init = setup_bot_database
-    # application.post_shutdown = close_bot_database
-
     return application
 
 
@@ -266,10 +263,6 @@ async def setup_webhook(application: Application) -> None:
     logger.info(f"Webhook set to: {TELEGRAM_WEBHOOK_URL}")
 
 
-async def remove_webhook(application: Application) -> None:
-    """Remove the webhook from Telegram servers."""
-    await application.bot.delete_webhook()
-    logger.info("Webhook removed")
 
 
 def main() -> None:

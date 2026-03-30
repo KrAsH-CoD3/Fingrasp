@@ -60,9 +60,9 @@ class Settings:
     ANONYMIZE_IP: bool = os.getenv("ANONYMIZE_IP", "true").lower() in TRUE_VALUES
 
     # ── Telegram Bot ──
+    BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_ALLOWED_USER_ID: int = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
-    BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
     TELEGRAM_WEBHOOK_URL: str = BASE_URL + "/webhook"
     TELEGRAM_WEBHOOK_SECRET: str = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
     CODE_EXPIRY_HOURS: int = int(os.getenv("CODE_EXPIRY_HOURS", "48"))
