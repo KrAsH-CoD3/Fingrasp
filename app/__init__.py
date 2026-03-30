@@ -23,7 +23,11 @@ TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
 TELEGRAM_WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
 
+logging.basicConfig(
+    level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 class BodySizeLimitMiddleware:
     """Middleware to limit request body size before JSON parsing."""
