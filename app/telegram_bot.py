@@ -1,3 +1,8 @@
+from telegram.error import TimedOut, NetworkError, TelegramError
+from datetime import datetime, timedelta, timezone
+from telegram import Update
+from typing import Optional
+from functools import wraps
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -5,19 +10,13 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-from datetime import datetime, timedelta, timezone
-from telegram import Update
-from typing import Optional
-from functools import wraps
 import secrets
 import logging
 import re
+import asyncio
 
 from app.config import settings
-from app.database import setup_db
 
-
-logger = logging.getLogger(__name__)
 
 ALLOWED_USER_ID = settings.TELEGRAM_ALLOWED_USER_ID
 BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
@@ -28,6 +27,8 @@ COLLECTION_NAME = settings.COLLECTION_NAME
 # Webhook configuration
 TELEGRAM_WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
 TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
+
+logger = logging.getLogger(__name__)
 
 
 def generate_code() -> str:
@@ -69,20 +70,22 @@ def authorized(func):
 @authorized
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command - only shows help for authorized users."""
-    await update.message.reply_text(
+    await safe_reply(
+        update,
         "Welcome to Fingrasp Bot!\n\n"
         "Available commands:\n"
         "/generate - Generate a new access code\n"
         "/codes - List all access codes\n"
         "/revoke {code} - Revoke an access code\n"
-        "/help - Show help menu"
+        "/help - Show help menu",
     )
 
 
 @authorized
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /help command - list all available commands."""
-    await update.message.reply_text(
+    await safe_reply(
+        update,
         "🆘 <b>Fingrasp Bot Help</b>\n\n"
         "Available commands:\n\n"
         "• /generate - Generate a new 6-digit access code and link.\n"
@@ -117,7 +120,8 @@ async def generate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     link = f"{BASE_URL}/?code={code}"
     expiry_str = expires_at.strftime("%Y-%m-%d %H:%M UTC")
 
-    await update.message.reply_text(
+    await safe_reply(
+        update,
         f"✅ Access code generated!\n\n"
         f"<b>Code:</b> <code>{code}</code>\n"
         f"<b>Link:</b> {link}\n"
@@ -137,7 +141,7 @@ async def codes_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     codes = await cursor.to_list(length=None)
 
     if not codes:
-        await update.message.reply_text("No access codes found.")
+        await safe_reply(update, "No access codes found.")
         return
 
     lines = ["📋 Access Codes:\n"]
@@ -149,7 +153,8 @@ async def codes_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
         lines.append(f"• <code>{code}</code>\n Link: {link}\n Expires: {expiry_str}\n")
 
-    await update.message.reply_text(
+    await safe_reply(
+        update,
         "\n".join(lines),
         parse_mode="HTML",
         disable_web_page_preview=True,
@@ -161,7 +166,7 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """Handle /revoke command - delete a specific access code."""
     args = context.args
     if not args:
-        await update.message.reply_text("Usage: /revoke {code}")
+        await safe_reply(update, "Usage: /revoke {code}")
         return
 
     code = args[0]
@@ -171,8 +176,8 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "Invalid code format in revoke attempt: user_id=%s",
             update.effective_user.id,
         )
-        await update.message.reply_text(
-            "❌ Invalid code format. Code must be exactly 6 digits."
+        await safe_reply(
+            update, "❌ Invalid code format. Code must be exactly 6 digits."
         )
         return
 
@@ -180,8 +185,8 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     existing = await db[COLLECTION_NAME].find_one({"code": code})
     if not existing:
-        await update.message.reply_text(
-            f"❌ Code <code>{code}</code> not found.", parse_mode="HTML"
+        await safe_reply(
+            update, f"❌ Code <code>{code}</code> not found.", parse_mode="HTML"
         )
         return
 
@@ -192,7 +197,8 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         update.effective_user.id,
     )
 
-    await update.message.reply_text(
+    await safe_reply(
+        update,
         f"✅ Code <code>{code}</code> has been revoked.",
         parse_mode="HTML",
     )
@@ -201,8 +207,8 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 @authorized
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle non-command messages from authorized users."""
-    await update.message.reply_text(
-        "I only understand commands! Type /help to see what I can do. 🤖"
+    await safe_reply(
+        update, "I only understand commands! Type /help to see what I can do. 🤖"
     )
 
 
@@ -216,8 +222,71 @@ async def setup_bot_database(
     # Must setup db before initializing, so db is avilable when initializing
     telegram_app.bot_data["db"] = db
     telegram_app.bot_data["db_client"] = client
+
+    # Now db is available, we can initialize and start the bot
     await telegram_app.initialize()
-    await telegram_app.start()  # Must start to process updates
+    await telegram_app.start()
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle errors in the telegram bot."""
+    logger.error(f"Exception while handling an update: {context.error}")
+    if isinstance(context.error, TimedOut):
+        logger.warning("Telegram API timed out - network issue or slow connection")
+    elif isinstance(context.error, NetworkError):
+        logger.warning(f"Network error: {context.error}")
+    else:
+        logger.exception("Unexpected error in telegram bot")
+
+
+async def safe_reply(update: Update, text: str, max_retries: int = 3, **kwargs) -> bool:
+    """
+    Send reply with retry logic for network errors.
+
+    Args:
+        update: Telegram update object
+        text: Message text to send
+        max_retries: Maximum number of retry attempts
+        **kwargs: Additional arguments for reply_text
+
+    Returns:
+        True if message was sent successfully, False otherwise
+    """
+    for attempt in range(max_retries):
+        try:
+            await update.message.reply_text(text, **kwargs)
+            return True
+        except TimedOut as e:
+            if attempt < max_retries - 1:
+                wait_time = 2**attempt  # Exponential backoff: 1s, 2s, 4s
+                logger.warning(
+                    f"Timeout sending message (attempt {attempt + 1}/{max_retries}), "
+                    f"retrying in {wait_time}s: {e}"
+                )
+                await asyncio.sleep(wait_time)
+            else:
+                logger.error(
+                    f"Failed to send message after {max_retries} attempts: {e}"
+                )
+                return False
+        except NetworkError as e:
+            if attempt < max_retries - 1:
+                wait_time = 2**attempt
+                logger.warning(
+                    f"Network error (attempt {attempt + 1}/{max_retries}), "
+                    f"retrying in {wait_time}s: {e}"
+                )
+                await asyncio.sleep(wait_time)
+            else:
+                logger.error(
+                    f"Failed to send message after {max_retries} attempts: {e}"
+                )
+                return False
+        except TelegramError as e:
+            # Don't retry on other Telegram errors (e.g., blocked user, invalid chat)
+            logger.error(f"Telegram error sending message: {e}")
+            return False
+    return False
 
 
 async def close_bot_database(telegram_app: Application) -> None:
@@ -233,8 +302,16 @@ def get_application() -> Application:
     if not BOT_TOKEN:
         raise ValueError("TELEGRAM_BOT_TOKEN not set")
 
-    application = Application.builder().token(BOT_TOKEN).build()
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .build()
+    )
 
+    application.add_error_handler(error_handler)
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("generate", generate_command))
@@ -245,10 +322,6 @@ def get_application() -> Application:
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     )
-
-    # application.post_init = setup_bot_database
-    # application.post_shutdown = close_bot_database
-
     return application
 
 
@@ -264,12 +337,6 @@ async def setup_webhook(application: Application) -> None:
         allowed_updates=Update.ALL_TYPES,
     )
     logger.info(f"Webhook set to: {TELEGRAM_WEBHOOK_URL}")
-
-
-async def remove_webhook(application: Application) -> None:
-    """Remove the webhook from Telegram servers."""
-    await application.bot.delete_webhook()
-    logger.info("Webhook removed")
 
 
 def main() -> None:

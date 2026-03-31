@@ -14,6 +14,7 @@ from app.schemas import (
     SuccessResponse,
 )
 from app.security import anonymize_ip, is_trusted_origin
+from app.device_detection import extract_device_name
 
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -85,7 +86,7 @@ async def validate_code(
 
 @limiter.limit("10/minute")
 @router.post("/save")
-async def submit_fingerprint(
+async def save(
     request: Request,
     payload: MixVisitPayload,
     csrf_token: str = Cookie(None, alias="csrf_token"),
@@ -159,10 +160,13 @@ async def submit_fingerprint(
     client_ip = request.client.host if request.client else "0.0.0.0"
     anonymized_ip = anonymize_ip(client_ip)
 
+    device_name = extract_device_name(payload.fingerprint)
+
     fingerprint_doc = {
         "hash": payload.hash,
         "loadTime": payload.loadTime,
         "fingerprint": payload.fingerprint,
+        "device_name": device_name,
         "ip_address": anonymized_ip,
         "created_at": datetime.now(timezone.utc),
     }
