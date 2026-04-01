@@ -1,4 +1,3 @@
-from app.telegram_bot import get_application, setup_bot_database, close_bot_database
 from fastapi import FastAPI, Request, Depends, HTTPException
 from telegram.ext import Application as TelegramApplication
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -8,16 +7,19 @@ from slowapi.errors import RateLimitExceeded
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from starlette.responses import Response
-from typing import Optional
 from telegram import Update
 import logging
 
+from app.telegram_bot import get_telegram_app, setup_bot_database
 from app.routes.fingerprint import router as fingerprint_router
 from app.config import settings, MAX_REQUEST_BODY_SIZE
-from app.security import SecurityHeadersMiddleware
 from app.routes.api import router as api_router
 from app.database import setup_db
 from app.limiter import limiter
+from app.security import (
+    SecurityValidationMiddleware,
+    SecurityHeadersMiddleware,
+)
 
 TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
@@ -28,6 +30,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
 
 class BodySizeLimitMiddleware:
     """Middleware to limit request body size before JSON parsing."""
@@ -155,19 +158,17 @@ async def lifespan(application: FastAPI):
     client, db = setup_db()
     application.state.db = db
 
-    telegram_app: Optional[TelegramApplication] = None
+    telegram_app: TelegramApplication | None = None
 
     if TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_URL:
-        # 1. Initialize Application
-        telegram_app = get_application()
-        await setup_bot_database(telegram_app, client, db)
-
-        # 2. Set Webhook
+        telegram_app = get_telegram_app()
         await telegram_app.bot.set_webhook(
             url=TELEGRAM_WEBHOOK_URL,
             secret_token=TELEGRAM_WEBHOOK_SECRET,
             allowed_updates=Update.ALL_TYPES,
         )
+
+        await setup_bot_database(telegram_app, client, db)
         application.state.telegram_app = telegram_app
         logger.info("Telegram bot initialized\n"
                     f">>>>>> Webhook URL: {TELEGRAM_WEBHOOK_URL}"
@@ -180,17 +181,18 @@ async def lifespan(application: FastAPI):
         await telegram_app.bot.delete_webhook()
         await telegram_app.stop()
         await telegram_app.shutdown()
-        await close_bot_database(telegram_app)
         logger.info("Telegram bot shutdown complete")
         
-    client.close()
+    if client:
+        client.close()
+        logger.info("Database connection closed")
 
 
 def verify_telegram_webhook_secret(request: Request) -> None:
     """Verify the webhook secret token from Telegram."""
     secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
-    if secret_token != TELEGRAM_WEBHOOK_SECRET:
-        logger.warning(f"Invalid webhook secret token attempt. Expected: {TELEGRAM_WEBHOOK_SECRET[:4]}... Got: {secret_token[:4]}...")
+    if not secret_token or secret_token != TELEGRAM_WEBHOOK_SECRET:
+        logger.warning("Invalid webhook secret token attempt")
         raise HTTPException(status_code=403, detail="Invalid secret token")
 
 
@@ -215,6 +217,7 @@ def create_app() -> FastAPI:
     async def telegram_webhook(request: Request):
         """Handle incoming Telegram webhook updates."""
         from telegram import Update
+        
         telegram_app = getattr(application.state, "telegram_app", None)
         if telegram_app is None:
             return {"status": "error", "message": "Bot not initialized"}
@@ -226,12 +229,11 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     # ── Request Body Size Limit ──
-    # Added last among middlewares so it is outermost in the ASGI stack,
-    # rejecting oversized payloads before any other middleware processes them.
     application.add_middleware(BodySizeLimitMiddleware, max_size=MAX_REQUEST_BODY_SIZE)
 
-    # ── Secure HTTP Headers ──
-    application.add_middleware(SecurityHeadersMiddleware)
+    # ── Secure HTTP Headers & Resource Protection ──
+    application.add_middleware(SecurityValidationMiddleware)    # Handles CSRF and Origin checks.
+    application.add_middleware(SecurityHeadersMiddleware)       # Injects CSP, HSTS, etc.
 
     # ── CORS ──
     application.add_middleware(

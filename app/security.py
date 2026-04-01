@@ -1,24 +1,20 @@
 """Security utilities — IP anonymization, trusted origin check, headers middleware."""
 
 from __future__ import annotations
+
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response, JSONResponse
+from fastapi import Request, status
 from urllib.parse import urlparse
 import ipaddress
 import secrets
 import logging
 
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import Response
-from fastapi import Request
+import hmac
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
-
-
-# ─────────────────────────────────────────────
-# 1. IP Anonymization
-# ─────────────────────────────────────────────
-
 
 def anonymize_ip(ip: str) -> str:
     """
@@ -44,11 +40,6 @@ def anonymize_ip(ip: str) -> str:
         # return a safe placeholder instead of leaking the raw value.
         logger.warning(f"Could not parse IP for anonymization: {ip!r}")
         return "0.0.0.0"
-
-
-# ─────────────────────────────────────────────
-# 2. Trusted Origin Check
-# ─────────────────────────────────────────────
 
 
 def is_trusted_origin(request: Request) -> bool:
@@ -96,10 +87,6 @@ def is_trusted_origin(request: Request) -> bool:
         # Safe methods without origin/referer are allowed (same-origin navigation)
         return True
 
-
-# ─────────────────────────────────────────────
-# 3. Secure HTTP Headers Middleware
-# ─────────────────────────────────────────────
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -196,3 +183,47 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = "; ".join(csp_parts)
 
         return response
+
+
+class SecurityValidationMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to validate state-changing requests (POST, PUT, DELETE, PATCH).
+    Checks:
+    1. is_trusted_origin – verifies Origin/Referer against ALLOWED_ORIGINS.
+    2. CSRF token matching – compares 'csrf_token' cookie with 'X-CSRF-Token' header.
+    """
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        # Only validate state-changing methods
+        if request.method in ("POST", "PUT", "DELETE", "PATCH"):
+            # Skip validation for the Telegram Webhook (handled by its own secret check)
+            if request.url.path == "/webhook":
+                return await call_next(request)
+
+            # Origin/Referer Validation
+            if not is_trusted_origin(request):
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content={
+                        "error_code": "FP_ERR_AUTH",
+                        "message": "Request not authorized (Untrusted Origin).",
+                    },
+                )
+
+            # CSRF Validation
+            csrf_cookie = request.cookies.get("csrf_token")
+            csrf_header = request.headers.get("X-CSRF-Token")
+
+            if not csrf_cookie or not csrf_header or not hmac.compare_digest(csrf_cookie, csrf_header):
+                logger.warning(f"CSRF validation failed for {request.url.path}")
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content={
+                        "error_code": "FP_ERR_AUTH",
+                        "message": "Request not authorized (CSRF Mismatch).",
+                    },
+                )
+
+        return await call_next(request)

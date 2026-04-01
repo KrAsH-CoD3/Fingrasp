@@ -1,10 +1,11 @@
 """FastAPI API endpoints for fingerprint collection."""
 
-from fastapi import APIRouter, Cookie, Request, status
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
-import hmac
 
+from app.device_detection import extract_device_name
+from app.security import anonymize_ip
 from app.config import settings
 from app.limiter import limiter
 from app.schemas import (
@@ -13,7 +14,6 @@ from app.schemas import (
     MixVisitPayload,
     SuccessResponse,
 )
-from app.security import anonymize_ip, is_trusted_origin
 
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -24,31 +24,12 @@ router = APIRouter(prefix="/api", tags=["api"])
 async def validate_code(
     request: Request,
     body: CodeValidationRequest,
-    csrf_token: str = Cookie(None, alias="csrf_token"),
 ) -> JSONResponse:
     """
     Pre-flight code check for manual flow.
     Validates code exists and is not expired.
     Does NOT delete the code (only validates).
     """
-    header_token = request.headers.get("X-CSRF-Token")
-    if not csrf_token or not header_token:
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content=ErrorResponse(
-                error_code="FP_ERR_AUTH",
-                message="Request not authorized.",
-            ).model_dump(),
-        )
-    if not hmac.compare_digest(csrf_token, header_token):
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content=ErrorResponse(
-                error_code="FP_ERR_AUTH",
-                message="Request not authorized.",
-            ).model_dump(),
-        )
-
     db = request.app.state.db
 
     code_doc = await db[settings.COLLECTION_NAME].find_one({"code": body.code})
@@ -85,10 +66,9 @@ async def validate_code(
 
 @limiter.limit("10/minute")
 @router.post("/save")
-async def submit_fingerprint(
+async def save(
     request: Request,
     payload: MixVisitPayload,
-    csrf_token: str = Cookie(None, alias="csrf_token"),
 ) -> JSONResponse:
     """
     Save fingerprint payload.
@@ -100,24 +80,6 @@ async def submit_fingerprint(
     d. Check for duplicates using SHA-256 hash (Section 7.3)
     e. Save fingerprint
     """
-    header_token = request.headers.get("X-CSRF-Token")
-    if not csrf_token or not header_token:
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content=ErrorResponse(
-                error_code="FP_ERR_AUTH",
-                message="Request not authorized.",
-            ).model_dump(),
-        )
-    if not hmac.compare_digest(csrf_token, header_token):
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content=ErrorResponse(
-                error_code="FP_ERR_AUTH",
-                message="Request not authorized.",
-            ).model_dump(),
-        )
-
     db = request.app.state.db
 
     code_doc = await db[settings.COLLECTION_NAME].find_one_and_delete(
@@ -159,10 +121,13 @@ async def submit_fingerprint(
     client_ip = request.client.host if request.client else "0.0.0.0"
     anonymized_ip = anonymize_ip(client_ip)
 
+    device_name = extract_device_name(payload.fingerprint)
+
     fingerprint_doc = {
         "hash": payload.hash,
         "loadTime": payload.loadTime,
         "fingerprint": payload.fingerprint,
+        "device_name": device_name,
         "ip_address": anonymized_ip,
         "created_at": datetime.now(timezone.utc),
     }
