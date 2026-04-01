@@ -22,9 +22,9 @@ from app.device_detection.databases import (
     IPAD_SCREEN_DB,
     IPHONE_SCREEN_DB,
 )
+from app.security import validate_input
 
 logger = logging.getLogger(__name__)
-
 
 # ── Helper to unwrap MixVisit {value, duration} wrapper ──
 def _unwrap(module: Any) -> Any:
@@ -40,6 +40,7 @@ def _unwrap(module: Any) -> Any:
 # ═══════════════════════════════════════════════════════════════════════════════
 # Safe Value Extraction Helpers
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def _get_nav_value(fingerprint: dict[str, Any], key: str) -> Any:
     """Safely get a value from fingerprint.navigator.value.<key>."""
@@ -134,6 +135,7 @@ def _get_gpu_renderer(fingerprint: dict[str, Any]) -> str | None:
 # ═══════════════════════════════════════════════════════════════════════════════
 # Model Normalization & Core Detection Functions
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def _normalize_model(raw_model: str) -> str:
     """
@@ -269,6 +271,7 @@ def _parse_android_model_from_ua(user_agent: str) -> str | None:
 # Main Entry Point
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def extract_device_name(fingerprint: dict[str, Any]) -> str:
     """
     Extract a human-readable device name from MixVisit fingerprint data.
@@ -330,7 +333,6 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
         f"Signal extraction — UA: {user_agent[:20]}..., Platform: {platform}, user_agent_data: {user_agent_data}, high_entropy_values: {high_entropy_values}"
     )
 
-
     # ═══════════════════════════════════════════════════════════════════════════════
     # OS Detection - Priority-based with Cross-Validation
     # ═══════════════════════════════════════════════════════════════════════════════
@@ -353,17 +355,17 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
     # ── Priority 1: highEntropyValues ──
     hev_platform = high_entropy_values.get("platform")
     if hev_platform:
-        hev_lower = hev_platform.lower()
-        if hev_lower == "android":
+        hev_platform_lower = hev_platform.lower()
+        if hev_platform_lower == "android":
             os_type = "android"
             detection_source = "highEntropyValues.platform"
-        elif hev_lower == "windows":
+        elif hev_platform_lower == "windows":
             os_type = "windows"
             detection_source = "highEntropyValues.platform"
-        elif hev_lower in ("macos", "mac os x"):
+        elif hev_platform_lower in ("macos", "mac os x"):
             os_type = "mac"
             detection_source = "highEntropyValues.platform"
-        elif hev_lower == "ios":
+        elif hev_platform_lower == "ios":
             ios_detected = True
             # Check if we have model hint from highEntropyValues
             if model_hint:
@@ -379,12 +381,14 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
     # ── Priority 2: userAgentData.platform ──
     if not os_type:
         user_agent_data_platform = user_agent_data.get("platform")
-        
+
         if user_agent_data_platform:
             user_agent_data_platform_lower = user_agent_data_platform.lower()
             if user_agent_data_platform_lower == "android":
                 os_type = "android"
-                detection_source = f"userAgentData (platform=Android, mobile={is_mobile_hint})"
+                detection_source = (
+                    f"userAgentData (platform=Android, mobile={is_mobile_hint})"
+                )
             elif user_agent_data_platform_lower == "windows":
                 os_type = "windows"
                 detection_source = "userAgentData.platform"
@@ -399,10 +403,14 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
                     user_agent_data_model_lower = user_agent_data_model.lower()
                     if user_agent_data_model_lower.startswith("ipad"):
                         os_type = "ipad"
-                        detection_source = f"userAgentData (iOS + model={user_agent_data_model})"
+                        detection_source = (
+                            f"userAgentData (iOS + model={user_agent_data_model})"
+                        )
                     elif user_agent_data_model_lower.startswith("iphone"):
                         os_type = "iphone"
-                        detection_source = f"userAgentData (iOS + model={user_agent_data_model})"
+                        detection_source = (
+                            f"userAgentData (iOS + model={user_agent_data_model})"
+                        )
 
     # ── Priority 3: navigator.platform with cross-validation ──
     if not os_type:
@@ -421,7 +429,9 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
                 elif plat_lower == "macintel" and touch_points > 0:
                     # iPadOS 13+ reports MacIntel, but we know it's iOS from Client Hints
                     os_type = "ipad"
-                    detection_source = "navigator.platform (MacIntel+touch, validated by Client Hints)"
+                    detection_source = (
+                        "navigator.platform (MacIntel+touch, validated by Client Hints)"
+                    )
                 else:
                     # Conflict: Client Hints says iOS but navigator.platform disagrees
                     # Trust Client Hints, use heuristics
@@ -507,7 +517,9 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
     if os_type:
         logger.info(f"OS detected as '{os_type}' via {detection_source}")
     else:
-        logger.warning(f"Could not detect OS from signals: platform={platform}, ua={user_agent[:50]}...")
+        logger.warning(
+            f"Could not detect OS from signals: platform={platform}, ua={user_agent[:50]}..."
+        )
 
     # ── Detection Waterfall ──
     screen_dims = _get_screen_dims(fingerprint)
@@ -597,7 +609,141 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
         for key, name in platform_map.items():
             if platform.startswith(key):
                 return name
-        if "Linux" in platform:
-            return "Linux Device"
+    if "Linux" in platform:
+        return "Linux Device"
 
     return "Unknown Device"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# User-Provided Device Model Validation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def validate_device_model(
+    device_model: str | None, fingerprint: dict | None = None
+) -> str:
+    """
+    Validate user-provided device model with short-circuit optimization.
+
+    Short-circuit: If user provides exact model (not "not_sure"), validate it
+    WITHOUT calling extract_device_name (expensive operation).
+
+    Only call extract_device_name when user selects "Not Sure" or provides no device model.
+    """
+    user_model = validate_input(device_model)
+    user_model_lower = user_model.lower()
+
+    # Auto-detection if no input or "not_sure"
+    if not user_model or user_model_lower == "not_sure" or user_model_lower == "unknown device":
+        if not fingerprint:
+            return "Unknown Device"
+
+        detected = extract_device_name(fingerprint)
+        log_msg = (
+            f"User selected 'Not Sure', auto-detected: {detected}"
+            if user_model_lower == "not_sure"
+            else f"No user device model provided, auto-detected: {detected}"
+        )
+        logger.info(log_msg)
+        return detected
+
+    # -- Use directly --
+    # iOS Devices
+    if "iphone" in user_model_lower or "ipad" in user_model_lower:
+        logger.info(f"User iOS device model: {user_model}")
+        return user_model
+
+    # Mac Devices
+    mac_keywords = ["mac", "macbook", "imac", "mac pro", "mac studio", "mac mini"]
+    if any(mac_keyword in user_model_lower for mac_keyword in mac_keywords):
+        logger.info(f"User Mac device model: {user_model}")
+        return user_model
+
+    # Android Devices - try to enrich with device store
+    android_keywords = [
+        "android", "samsung", "galaxy", "pixel", "xiaomi", "redmi", "poco", "oppo", 
+        "vivo", "iqoo", "oneplus", "huawei", "honor", "realme", "nothing", "motorola", 
+        "moto", "lg", "sony", "xperia", "nokia", "hmd", "asus", "rog", "zenfone", 
+        "lenovo", "legion", "google", "zte", "nubia", "redmagic", "alcatel", "infinix", 
+        "tecno", "itel", "coolpad", "htc", "meizu", "black shark", "blackberry", 
+        "essential", "fairphone", "tcl", "micromax", "lava", "karbonn", "gionee", 
+        "doogee", "oukitel", "ulefone", "cubot", "blackview", "umidigi", "kyocera", 
+        "caterpillar", "cat phone", "panasonic phone", "sharp aquos", "leeco", "yota", 
+        "wiko", "archos", "bq", "elephone", "leagoo", "vernee", "hisense"
+    ]
+
+    if any(android_keyword in user_model_lower for android_keyword in android_keywords):
+        from app.device_detection.devices import store
+
+        # Try exact model code match first
+        device = store.get_by_model(user_model)
+        if device and device.marketing_name:
+            name = device.marketing_name
+            if not name.lower().startswith(device.brand.lower()):
+                name = f"{device.brand} {name}"
+            logger.info(f"User Android model matched in DB: {user_model} -> {name}")
+            return name
+
+        # Try to extract SM- code and search
+        sm_match = re.search(r"(SM-[A-Za-z0-9]+)", user_model, re.IGNORECASE)
+        if sm_match:
+            sm_code = sm_match.group(1)
+            device = store.get_by_model(sm_code)
+            if device and device.marketing_name:
+                name = device.marketing_name
+                if not name.lower().startswith(device.brand.lower()):
+                    name = f"{device.brand} {name}"
+                logger.info(f"User Android SM code matched: {sm_code} -> {name}")
+                return name
+
+        # Try fuzzy search
+        if store.total:
+            try:
+                matches = store.fuzzy_search(user_model, limit=3)
+                if matches and matches[0]:
+                    best_match = matches[0]
+                    name = best_match.marketing_name
+                    if not name.lower().startswith(best_match.brand.lower()):
+                        name = f"{best_match.brand} {name}"
+                    logger.info(
+                        f"User Android model fuzzy-matched: {user_model} -> {name}"
+                    )
+                    return name
+            except Exception:
+                pass
+
+        # No match found - use user input as-is
+        logger.info(f"User Android model not in DB, using as-is: {user_model}")
+        return user_model
+
+    # Windows Devices
+    windows_keywords = [
+        "windows", "surface", "dell", "alienware", "latitude", "inspiron", "xps", 
+        "hp", "pavilion", "envy", "spectre", "omen", "lenovo", "thinkpad", "thinkbook", 
+        "ideapad", "yoga", "acer", "predator", "aspire", "swift", "asus", "zenbook", 
+        "vivobook", "tuf", "msi", "razer", "blade", "gigabyte", "aorus", "huawei matebook", 
+        "samsung galaxy book", "lg gram", "panasonic toughbook", "vaio", "fujitsu lifebook", 
+        "dynabook", "toshiba", "framework", "chuwi", "teclast", "microsoft", "origin pc", 
+        "cyberpowerpc", "ibuypower", "falcon northwest", "maingear", "corsair", "zotac", 
+        "xpg", "evga", "intel nuc", "minisforum", "beelink", "gpd win", "ayaneo", "onenetbook"
+    ]
+    if any(windows_keyword in user_model_lower for windows_keyword in windows_keywords):
+        logger.info(f"User Windows device: {user_model}")
+        return user_model
+
+    # Linux Devices
+    linux_keywords = [
+        "linux", "ubuntu", "debian", "fedora", "arch", "chromebook", "chrome os", 
+        "chromium", "system76", "purism", "tuxedo", "slimbook", "star labs", "pine64", 
+        "pinebook", "entroware", "raspberry pi", "manjaro", "mint", "pop!_os", "kali", 
+        "suse", "opensuse", "centos", "rhel", "red hat", "steam deck", "steamos"
+    ]
+    if any(linux_keyword in user_model_lower for linux_keyword in linux_keywords):
+        logger.info(f"User Linux device: {user_model}")
+        return user_model
+
+    # Unknown device type - user knows best
+    logger.info(f"User device model (unknown type): {user_model}")
+    return user_model
+
