@@ -345,6 +345,7 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
     # - We use High Entropy "model" hints to distinguish iPhone from iPad early.
 
     model_hint = _extract_model(high_entropy_values) or _extract_model(user_agent_data)
+    is_mobile_hint = user_agent_data.get("mobile") is True
     os_type = None
     detection_source = None
     ios_detected = False
@@ -378,7 +379,6 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
     # ── Priority 2: userAgentData.platform ──
     if not os_type:
         user_agent_data_platform = user_agent_data.get("platform")
-        is_mobile_hint = user_agent_data.get("mobile") is True
         
         if user_agent_data_platform:
             user_agent_data_platform_lower = user_agent_data_platform.lower()
@@ -455,7 +455,7 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
                     os_type = "linux"
                     detection_source = "navigator.platform"
 
-    # ── Priority 4: Generic Mobile Signal Fallback ──
+    # ── Priority 4a: Generic Mobile Signal Fallback ──
     if not os_type and is_mobile_hint:
         # We know it's mobile, but don't have a definitive OS name yet.
         # This occurs on some newer privacy-focused mobile browsers.
@@ -467,7 +467,7 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
             os_type = "iphone"
             detection_source = "mobile=true hint fallback"
 
-    # ── Priority 4: User-Agent string parsing ──
+    # ── Priority 4b: User-Agent string parsing ──
     if not os_type:
         if "iPad" in user_agent:
             os_type = "ipad"

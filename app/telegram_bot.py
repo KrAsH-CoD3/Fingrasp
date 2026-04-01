@@ -1,7 +1,6 @@
 from telegram.error import TimedOut, NetworkError, TelegramError
 from datetime import datetime, timedelta, timezone
 from telegram import Update
-from typing import Optional
 from functools import wraps
 from telegram.ext import (
     Application,
@@ -24,9 +23,6 @@ BASE_URL = settings.BASE_URL
 CODE_EXPIRY_HOURS = settings.CODE_EXPIRY_HOURS
 COLLECTION_NAME = settings.COLLECTION_NAME
 
-# Webhook configuration
-TELEGRAM_WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
-TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
 
 logger = logging.getLogger(__name__)
 
@@ -213,7 +209,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 async def setup_bot_database(
-    telegram_app: Optional[Application], client=None, db=None
+    telegram_app: Application | None, client=None, db=None
 ) -> None:
     """Initialize bot data using an existing database connection."""
     if telegram_app is None:
@@ -289,15 +285,9 @@ async def safe_reply(update: Update, text: str, max_retries: int = 3, **kwargs) 
     return False
 
 
-async def close_bot_database(telegram_app: Application) -> None:
-    """Cleanup after application stops."""
-    client = telegram_app.bot_data.get("db_client")
-    if client:
-        client.close()
-        logger.info("Database connection closed")
 
 
-def get_application() -> Application:
+def get_telegram_app() -> Application:
     """Get a configured Application instance for webhook integration."""
     if not BOT_TOKEN:
         raise ValueError("TELEGRAM_BOT_TOKEN not set")
@@ -324,54 +314,3 @@ def get_application() -> Application:
     )
     return application
 
-
-async def setup_webhook(application: Application) -> None:
-    """Set up the webhook with Telegram servers."""
-    if not TELEGRAM_WEBHOOK_URL or not TELEGRAM_WEBHOOK_SECRET:
-        logger.warning("Webhook URL or secret not configured")
-        return
-
-    await application.bot.set_webhook(
-        url=TELEGRAM_WEBHOOK_URL,
-        secret_token=TELEGRAM_WEBHOOK_SECRET,
-        allowed_updates=Update.ALL_TYPES,
-    )
-    logger.info(f"Webhook set to: {TELEGRAM_WEBHOOK_URL}")
-
-
-def main() -> None:
-    """Run the Telegram bot."""
-    if not BOT_TOKEN:
-        logger.error("TELEGRAM_BOT_TOKEN not set")
-        return
-
-    if not ALLOWED_USER_ID:
-        logger.error("TELEGRAM_ALLOWED_USER_ID not set")
-        return
-
-    application = get_application()
-
-    # Check if webhook mode is configured
-    if TELEGRAM_WEBHOOK_URL and TELEGRAM_WEBHOOK_SECRET:
-        logger.info("Starting Telegram bot in WEBHOOK mode...")
-        # run_webhook is BLOCKING and manages its own loop.
-        # We pass webhook_url here so it calls set_webhook for us.
-        application.run_webhook(
-            listen="0.0.0.0",
-            port=8443,
-            secret_token=TELEGRAM_WEBHOOK_SECRET,
-            url_path="webhook",
-            webhook_url=TELEGRAM_WEBHOOK_URL,
-            allowed_updates=Update.ALL_TYPES,
-        )
-    else:
-        logger.info("Starting Telegram bot in POLLING mode...")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    main()

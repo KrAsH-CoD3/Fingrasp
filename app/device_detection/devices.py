@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class Device:
-    brand: str  # Brand - "Redmi"
-    marketing_name: str  # Known as "Redmi K50 Pro"
-    device: str  # Codename - "matisse"
-    model: str  # User-facing model string - "22011211C"
+    brand: str  # The Brand name - e.g., "Redmi"
+    marketing_name: str  # Known as - e.g., "Redmi K50 Pro"
+    device: str  # Codename - e.g., "matisse"
+    model: str  # User-facing model string - e.g., "22011211C"
 
 
 class DeviceStore:
@@ -47,11 +47,7 @@ class DeviceStore:
         self.by_brand: dict[str, list[Device]] = {}
         self._total: int = 0
 
-    # ------------------------------------------------------------------
-    # Loading
-    # ------------------------------------------------------------------
-
-    def load(self, path: str | Path) -> None:
+    def load(self, path: str | Path) -> int:
         """Parse the CSV file and populate all indexes.
 
         Malformed rows are logged and skipped.
@@ -113,6 +109,7 @@ class DeviceStore:
                 "DeviceStore skipped %d malformed rows from %s", errors, path
             )
         logger.info("DeviceStore loaded %d devices from %s", count, path)
+        return errors
 
     # ------------------------------------------------------------------
     # Lookups
