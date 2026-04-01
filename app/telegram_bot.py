@@ -223,7 +223,6 @@ async def setup_bot_database(
     await telegram_app.initialize()
     await telegram_app.start()
 
-
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle errors in the telegram bot."""
     logger.error(f"Exception while handling an update: {context.error}")
