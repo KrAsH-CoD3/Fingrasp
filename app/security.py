@@ -164,10 +164,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "object-src 'none'",  # Block plugins (Flash, etc.)
             ]
 
-            # Add CSP reporting endpoint in production to detect violations
-            if settings.STRICT_SECURITY:
-                csp_parts.append("report-uri /csp-report")
-
         # ── Environment Specific (Applied only in production) ──
         if settings.STRICT_SECURITY:
             # HSTS: Only HTTPS for 1 year (include subdomains)
