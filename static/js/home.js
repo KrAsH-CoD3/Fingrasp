@@ -25,10 +25,43 @@ function showToast(message, type = 'error') {
 }
 
 function formatKey(key) {
-    return key
+  return key
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
     .replace(/^./, s => s.toUpperCase());
+}
+
+function isMobileDevice() {
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+}
+
+function getDeviceList(platform) {
+  const el = document.getElementById('deviceLists');
+  if (!el) return [];
+  try {
+    const lists = JSON.parse(el.textContent);
+    return lists[platform] || [];
+  } catch (err) {
+    console.error('Failed to parse device lists:', err);
+    return [];
+  }
+}
+
+function populateModelDropdown(devices, selectEl) {
+  // Clear existing options except first placeholder
+  selectEl.innerHTML = '<option value="" disabled selected>Select your device model</option>';
+  devices.forEach(device => {
+    const option = document.createElement('option');
+    option.value = device;
+    option.textContent = device;
+    selectEl.appendChild(option);
+  });
+  // Add "Not Sure" option at the end
+  const notSureOption = document.createElement('option');
+  notSureOption.value = 'not_sure';
+  notSureOption.textContent = 'Not Sure';
+  selectEl.appendChild(notSureOption);
 }
 
 function escHtml(s) {
@@ -345,115 +378,205 @@ async function validateCode(code) {
     return res.ok;
 }
 
-async function collectAndSubmit() {
-    try {
-        setLoaderMessage('Obtaining fingerprint...');
-        const mv = new MixVisit();
-        await mv.load();
+async function collectAndSubmit(deviceModel) {
+  try {
+    setLoaderMessage('Obtaining fingerprint...');
+    const mv = new MixVisit();
+    await mv.load();
 
-        const payload = {
-            access_code: validatedCode,
-            hash: mv.fingerprintHash,
-            loadTime: mv.loadTime,
-            fingerprint: mv.get()
-        };
+    const payload = {
+      access_code: validatedCode,
+      hash: mv.fingerprintHash,
+      loadTime: mv.loadTime,
+      fingerprint: mv.get()
+    };
 
-        renderUI({ hash: payload.hash, loadTime: payload.loadTime, fingerprint: payload.fingerprint });
-
-        const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
-        const csrfToken = csrfMatch ? csrfMatch[1] : '';
-        const res = await fetch('/api/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-            console.error('Submit failed:', res.status);
-        }
-    } catch (err) {
-        console.error('Collection error:', err);
+    if (deviceModel && deviceModel.trim()) {
+      payload.device_model = deviceModel.trim();
     }
+
+    renderUI({ hash: payload.hash, loadTime: payload.loadTime, fingerprint: payload.fingerprint });
+
+    const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+    const csrfToken = csrfMatch ? csrfMatch[1] : '';
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      console.error('Submit failed:', res.status);
+    }
+  } catch (err) {
+    console.error('Collection error:', err);
+  }
 }
 
-function showCodeEntry() {
-	const desktopLayout = document.getElementById('desktopLayout');
-	if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+function showCodeEntry(urlCode = null) {
+  const desktopLayout = document.getElementById('desktopLayout');
+  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
 
-	const form = document.getElementById('codeForm');
-	const input = document.getElementById('codeInput');
-	const attemptsDisplay = document.getElementById('attemptsRemaining');
+  const form = document.getElementById('codeForm');
+  const codeInput = document.getElementById('codeInput');
+  const platformSelect = document.getElementById('platformSelect');
+  const modelFieldContainer = document.getElementById('modelFieldContainer');
+  const deviceModelSelect = document.getElementById('deviceModelSelect');
+  const deviceModelInput = document.getElementById('deviceModelInput');
+  const attemptsDisplay = document.getElementById('attemptsRemaining');
 
-	if (attemptsDisplay) {
-		attemptsDisplay.textContent = attemptsRemaining;
-	}
+  if (attemptsDisplay) {
+    attemptsDisplay.textContent = attemptsRemaining;
+  }
 
-	form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const code = input.value.trim();
-        if (!code) return;
+  const isMobile = isMobileDevice();
+  if (urlCode) {
+    if (codeInput) codeInput.classList.add('hidden');
+  } else {
+    if (codeInput) codeInput.classList.remove('hidden');
+  }
 
-        if (attemptsRemaining <= 0) {
-            showToast('No attempts remaining. Please request a new code.', 'error');
-            return;
+  // Handle platform dropdown change
+  if (platformSelect) {
+    platformSelect.addEventListener('change', async () => {
+      const platform = platformSelect.value;
+      if (!platform) {
+        if (modelFieldContainer) modelFieldContainer.classList.add('hidden');
+        return;
+      }
+
+      if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
+
+      const iosPlatforms = ['iphone', 'ipad', 'mac'];
+      if (iosPlatforms.includes(platform)) {
+        // Show dropdown for iOS devices
+        if (deviceModelSelect) deviceModelSelect.classList.remove('hidden');
+        if (deviceModelInput) deviceModelInput.classList.add('hidden');
+        
+        // Populate device list
+        const devices = getDeviceList(platform);
+        if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect);
+      } else {
+        // Show text input for Android/Windows/Linux
+        if (deviceModelSelect) deviceModelSelect.classList.add('hidden');
+        if (deviceModelInput) {
+          deviceModelInput.classList.remove('hidden');
+          const placeholders = {
+            'android': 'Enter your device model (e.g., Samsung Galaxy S24, Pixel 8)',
+            'windows': 'Enter your device model (e.g., Surface Pro 9, Dell XPS)',
+            'linux': 'Enter your device model (e.g., ThinkPad X1, Ubuntu PC)'
+          };
+          deviceModelInput.placeholder = placeholders[platform] || 'Enter your device model';
         }
-
-        const loader = document.getElementById('loader');
-        const codeEntry = document.getElementById('codeEntrySection');
-        setLoaderMessage('Validating access code...');
-        loader.classList.remove('hidden');
-        codeEntry.classList.add('hidden');
-
-        const isValid = await validateCode(code);
-
-        if (isValid) {
-            validatedCode = code;
-            setLoaderMessage('Obtaining fingerprint...');
-            await collectAndSubmit();
-        } else {
-            attemptsRemaining--;
-            loader.classList.add('hidden');
-            codeEntry.classList.remove('hidden');
-
-            if (attemptsRemaining > 0) {
-                showToast('That code is not valid.', 'error');
-            } else {
-                showToast('No attempts remaining. Please request a new code.', 'error');
-            }
-
-            if (attemptsDisplay) {
-                attemptsDisplay.textContent = attemptsRemaining;
-            }
-        }
+      }
     });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const platform = platformSelect ? platformSelect.value : '';
+    if (!platform) {
+      showToast('Please select your device platform.', 'error');
+      return;
+    }
+
+    let deviceModel = '';
+    const iosPlatforms = ['iphone', 'ipad', 'mac'];
+    if (iosPlatforms.includes(platform)) {
+      deviceModel = deviceModelSelect ? deviceModelSelect.value : '';
+    } else {
+      deviceModel = deviceModelInput ? deviceModelInput.value.trim() : '';
+    }
+
+    if (!deviceModel) {
+      showToast('Please select or enter your device model.', 'error');
+      return;
+    }
+
+    // "Not Sure" stays as-is, backend will use device detection
+    // No transformation needed - backend handles fallback
+
+    let code;
+    if (urlCode) {
+      code = urlCode;
+    } else {
+      code = codeInput ? codeInput.value.trim() : '';
+      if (!code) return;
+    }
+
+    if (attemptsRemaining <= 0) {
+      showToast('No attempts remaining. Please request a new code.', 'error');
+      return;
+    }
+
+    const loader = document.getElementById('loader');
+    const codeEntry = document.getElementById('codeEntrySection');
+    setLoaderMessage('Validating access code...');
+    loader.classList.remove('hidden');
+    codeEntry.classList.add('hidden');
+
+    const isValid = await validateCode(code);
+
+    if (isValid) {
+      validatedCode = code;
+      setLoaderMessage('Obtaining fingerprint...');
+      await collectAndSubmit(deviceModel);
+    } else {
+      attemptsRemaining--;
+      loader.classList.add('hidden');
+      codeEntry.classList.remove('hidden');
+
+      if (attemptsRemaining > 0) {
+        showToast('That code is not valid.', 'error');
+      } else {
+        showToast('No attempts remaining. Please request a new code.', 'error');
+      }
+
+      if (attemptsDisplay) {
+        attemptsDisplay.textContent = attemptsRemaining;
+      }
+    }
+  });
 }
 
 async function run() {
-	const params = new URLSearchParams(window.location.search);
-	const urlCode = params.get('code');
+  const params = new URLSearchParams(window.location.search);
+  const urlCode = params.get('code');
 
-	if (urlCode) {
-		const desktopLayout = document.getElementById('desktopLayout');
-		const loader = document.getElementById('loader');
-		const codeEntry = document.getElementById('codeEntrySection');
+  if (urlCode) {
+    const desktopLayout = document.getElementById('desktopLayout');
+    const loader = document.getElementById('loader');
+    const codeEntry = document.getElementById('codeEntrySection');
+    const deviceModelInput = document.getElementById('deviceModelInput');
+    const codeInput = document.getElementById('codeInput');
 
-		if (desktopLayout) desktopLayout.classList.add('show-code-entry');
-		setLoaderMessage('Validating access code...');
-		loader.classList.remove('hidden');
+    if (desktopLayout) desktopLayout.classList.add('show-code-entry');
 
-		const isValid = await validateCode(urlCode);
-		if (isValid) {
-			validatedCode = urlCode;
-			setLoaderMessage('Obtaining fingerprint...');
-			await collectAndSubmit();
-		} else {
-			loader.classList.add('hidden');
-			codeEntry.classList.remove('hidden');
-			showToast('The access code in the URL is invalid.', 'error');
-		}
-	} else {
-		showCodeEntry();
-	}
+    setLoaderMessage('Validating access code...');
+    loader.classList.remove('hidden');
+
+    const isValid = await validateCode(urlCode);
+
+    if (isValid) {
+      validatedCode = urlCode;
+      loader.classList.add('hidden');
+      codeEntry.classList.remove('hidden');
+      const platformSelect = document.getElementById('platformSelect');
+      const modelFieldContainer = document.getElementById('modelFieldContainer');
+      if (platformSelect) platformSelect.classList.remove('hidden');
+      if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
+      if (codeInput) codeInput.classList.add('hidden');
+      showCodeEntry(urlCode);
+    } else {
+      loader.classList.add('hidden');
+      codeEntry.classList.remove('hidden');
+      showToast('The access code in the URL is invalid.', 'error');
+      showCodeEntry();
+    }
+  } else {
+    showCodeEntry();
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

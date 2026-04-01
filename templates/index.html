@@ -22,10 +22,25 @@
             <div class="code-entry-card">
                 <h2>Enter Access Code</h2>
                 <p>Please enter the access code provided by the researcher.</p>
-                <form id="codeForm">
-                    <input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" maxlength="8" />
-                    <button type="submit" id="codeSubmitBtn">Continue</button>
-                </form>
+<form id="codeForm">
+      <select id="platformSelect" autocomplete="off">
+        <option value="" disabled selected>Select your device platform</option>
+        <option value="iphone">iPhone</option>
+        <option value="ipad">iPad</option>
+        <option value="mac">Mac</option>
+        <option value="android">Android</option>
+        <option value="windows">Windows</option>
+        <option value="linux">Linux</option>
+      </select>
+      <div id="modelFieldContainer" class="hidden">
+        <select id="deviceModelSelect" autocomplete="off">
+          <option value="" disabled selected>Select your device model</option>
+        </select>
+        <input type="text" id="deviceModelInput" placeholder="Enter your device model (e.g., Samsung Galaxy S24)" autocomplete="off" class="hidden" />
+      </div>
+      <input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" maxlength="8" />
+      <button type="submit" id="codeSubmitBtn">Continue</button>
+    </form>
                 <p class="code-hint">If you don't have a code, reach out to the researcher who invited you.</p>
                 <p class="code-attempts" id="attemptsRemaining">Attempts remaining: 3</p>
             </div>
@@ -78,6 +93,13 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <input type="hidden" id="validatedCode" value="" />
+<script id="deviceLists" type="application/json">
+{
+  "iphone": {{ iphone_models | tojson }},
+  "ipad": {{ ipad_models | tojson }},
+  "mac": {{ mac_models | tojson }}
+}
+</script>
 
 <!-- Loader shown while MixVisit runs -->
 <noscript>
