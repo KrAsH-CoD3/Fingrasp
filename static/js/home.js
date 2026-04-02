@@ -48,9 +48,10 @@ function getDeviceList(platform) {
   }
 }
 
-function populateModelDropdown(devices, selectEl) {
+function populateModelDropdown(devices, selectEl, platformName) {
   // Clear existing options except first placeholder
-  selectEl.innerHTML = '<option value="" disabled selected>Select your device model</option>';
+  const placeholderText = platformName ? `Select your ${platformName} model` : 'Select your device model';
+  selectEl.innerHTML = `<option value="" disabled selected>${placeholderText}</option>`;
   devices.forEach(device => {
     const option = document.createElement('option');
     option.value = device;
@@ -431,10 +432,31 @@ function showCodeEntry(urlCode = null) {
   }
 
   const isMobile = isMobileDevice();
+  if (platformSelect) {
+    const mobilePlatforms = ['iphone', 'ipad', 'android'];
+    Array.from(platformSelect.options).forEach(opt => {
+      if (!opt.value) return;
+      const isMobileOpt = mobilePlatforms.includes(opt.value);
+      if (isMobile) {
+        // On mobile: Hide Mac, Windows, Linux
+        if (!isMobileOpt) opt.classList.add('hidden');
+      } else {
+        // On desktop: Hide iPhone, iPad, Android
+        if (isMobileOpt) opt.classList.add('hidden');
+      }
+    });
+  }
+
   if (urlCode) {
-    if (codeInput) codeInput.classList.add('hidden');
+    if (codeInput) {
+      codeInput.classList.add('hidden');
+      codeInput.closest('.input-wrapper')?.classList.add('hidden');
+    }
   } else {
-    if (codeInput) codeInput.classList.remove('hidden');
+    if (codeInput) {
+      codeInput.classList.remove('hidden');
+      codeInput.closest('.input-wrapper')?.classList.remove('hidden');
+    }
   }
 
   // Handle platform dropdown change
@@ -448,27 +470,44 @@ function showCodeEntry(urlCode = null) {
 
       if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
 
+      const platformNames = {
+        'iphone': 'iPhone',
+        'ipad': 'iPad',
+        'mac': 'Mac',
+        'android': 'Android',
+        'windows': 'Windows',
+        'linux': 'Linux'
+      };
+      const displayName = platformNames[platform] || 'device';
+
       const iosPlatforms = ['iphone', 'ipad', 'mac'];
       if (iosPlatforms.includes(platform)) {
         // Show dropdown for iOS devices
         if (deviceModelSelect) deviceModelSelect.classList.remove('hidden');
-        if (deviceModelInput) deviceModelInput.classList.add('hidden');
+        if (deviceModelInput) {
+          const wrapper = deviceModelInput.closest('.input-wrapper');
+          if (wrapper) wrapper.classList.add('hidden');
+          deviceModelInput.classList.add('hidden');
+          deviceModelInput.value = '';
+          const btn = wrapper?.querySelector('.clear-input-btn');
+          if (btn) btn.classList.add('hidden');
+        }
         if (modelNote) modelNote.classList.add('hidden');
         
         // Populate device list
         const devices = getDeviceList(platform);
-        if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect);
+        if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect, displayName);
       } else {
         // Show text input for Android/Windows/Linux
-        if (deviceModelSelect) deviceModelSelect.classList.add('hidden');
+        if (deviceModelSelect) {
+          deviceModelSelect.classList.add('hidden');
+          deviceModelSelect.value = '';
+        }
         if (deviceModelInput) {
+          const wrapper = deviceModelInput.closest('.input-wrapper');
+          if (wrapper) wrapper.classList.remove('hidden');
           deviceModelInput.classList.remove('hidden');
-          const placeholders = {
-            'android': 'Enter your device model (e.g., Samsung Galaxy S24, Pixel 8)',
-            'windows': 'Enter your device model (e.g., Surface Pro 9, Dell XPS)',
-            'linux': 'Enter your device model (e.g., ThinkPad X1, Ubuntu PC)'
-          };
-          deviceModelInput.placeholder = placeholders[platform] || 'Enter your device model';
+          deviceModelInput.placeholder = `Enter your ${displayName} model`;
         }
         if (modelNote) modelNote.classList.remove('hidden');
       }
@@ -572,8 +611,10 @@ async function run() {
       const platformSelect = document.getElementById('platformSelect');
       const modelFieldContainer = document.getElementById('modelFieldContainer');
       if (platformSelect) platformSelect.classList.remove('hidden');
-      if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
-      if (codeInput) codeInput.classList.add('hidden');
+      if (codeInput) {
+        codeInput.classList.add('hidden');
+        codeInput.closest('.input-wrapper')?.classList.add('hidden');
+      }
       showCodeEntry(urlCode);
     } else {
       loader.classList.add('hidden');
@@ -587,6 +628,33 @@ async function run() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-	setupNestedToggles();
-	run();
+ 	setupNestedToggles();
+ 	
+ 	// Add clear button functionality
+ 	document.querySelectorAll('.clear-input-btn').forEach(btn => {
+ 		const targetId = btn.dataset.target;
+ 		const input = document.getElementById(targetId);
+ 		if (!input) return;
+
+ 		// Show/hide clear button based on input content
+ 		const toggleVisibility = () => {
+ 			if (input.value.length > 0) {
+ 				btn.classList.remove('hidden');
+ 			} else {
+ 				btn.classList.add('hidden');
+ 			}
+ 		};
+
+ 		input.addEventListener('input', toggleVisibility);
+ 		// Also check on focus in case value was set programmatically
+ 		input.addEventListener('focus', toggleVisibility);
+
+ 		btn.addEventListener('click', () => {
+ 			input.value = '';
+ 			btn.classList.add('hidden');
+ 			input.focus();
+ 		});
+ 	});
+ 	
+ 	run();
 });
