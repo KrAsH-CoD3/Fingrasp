@@ -6,9 +6,11 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.responses import Response, JSONResponse
 from fastapi import Request, status
 from urllib.parse import urlparse
+import unicodedata
 import ipaddress
 import secrets
 import logging
+import re
 
 import hmac
 
@@ -44,49 +46,79 @@ def anonymize_ip(ip: str) -> str:
 
 def is_trusted_origin(request: Request) -> bool:
     """
-    Strict Origin/Referer validation.
-    For state-changing methods (POST, PUT, DELETE, PATCH), requires Origin header
-    or validates Referer against allowed origins.
-    GET/HEAD requests may pass without origin if they have no side effects.
+    Validates request source (Origin/Referer) against ALLOWED_ORIGINS.
+    Strict for state-changing methods; lenient for safe methods (GET/HEAD).
     """
+    if "*" in settings.ALLOWED_ORIGINS: # ── Dev Support ─
+        return True
 
     origin = request.headers.get("origin")
     referer = request.headers.get("referer")
+    
+    allowed = {o.rstrip("/") for o in settings.ALLOWED_ORIGINS}
 
-    # For state-changing methods, Origin header is REQUIRED
+    def _match(val: str | None, is_ref: bool = False) -> bool:
+        if not val:
+            return False
+        if is_ref:
+            p = urlparse(val)
+            val = f"{p.scheme}://{p.netloc}"
+        return val.rstrip("/") in allowed
+
+    # State-changing MUST have a verified source
     if request.method in ("POST", "PUT", "DELETE", "PATCH"):
-        if origin:
-            # Validate Origin header against allowed list
-            if origin.rstrip("/") in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]:
-                return True
-            logger.warning(f"Blocked request from untrusted origin: {origin}")
-            return False
-        elif referer:
-            # Fall back to Referer validation
-            parsed = urlparse(referer)
-            ref_origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
-            if ref_origin in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]:
-                return True
-            logger.warning(f"Blocked request with untrusted referer: {referer}")
-            return False
-        else:
-            # No Origin/Referer - reject state-changing requests
-            logger.warning(
-                f"Blocked {request.method} request without Origin or Referer headers"
-            )
-            return False
-
-    # For safe methods (GET, HEAD, etc.), allow missing Origin/Referer
-    if origin:
-        return origin.rstrip("/") in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]
-    elif referer:
-        parsed = urlparse(referer)
-        ref_origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
-        return ref_origin in [o.rstrip("/") for o in settings.ALLOWED_ORIGINS]
-    else:
-        # Safe methods without origin/referer are allowed (same-origin navigation)
+        return _match(origin) or _match(referer, is_ref=True)
+    
+    # Safe methods: GET, HEAD, OPTIONS
+    if not origin and not referer:
         return True
+    
+    # Most likely from malicious site/source
+    return _match(origin) or _match(referer, is_ref=True)
 
+
+# ── Pre-compiled sanitization patterns (compiled once at import time) ──
+_RE_ALLOWED = re.compile(r"[^\w\s\-./()'+,]")  # Allowlist: word chars, spaces, - . / ( ) ' + ,
+_RE_WHITESPACE = re.compile(r"\s+")
+
+_DEFAULT_MAX_LENGTH = 120
+
+
+def validate_input(user_input: str | None, *, max_length: int = _DEFAULT_MAX_LENGTH) -> str:
+    """
+    Sanitize untrusted string input for safe storage and display.
+
+    Pipeline (order matters):
+        1. Unicode normalize (NFKC) — canonicalize before any byte-level ops.
+        2. Strip control characters (Unicode category C*).
+        3. Allowlist filter — keep only safe characters.
+        4. Collapse whitespace and trim.
+        5. Truncate to max_length — done last so we never slice mid-character.
+    """
+    if not user_input or not isinstance(user_input, str):
+        return ""
+
+    raw = user_input
+
+    # Canonicalize Unicode (e.g., ﬁ → fi, ℃ → °C)
+    cleaned = unicodedata.normalize("NFKC", raw)
+
+    # Strip control characters (null bytes, RTL overrides, zero-width joiners, etc.)
+    cleaned = "".join(ch for ch in cleaned if unicodedata.category(ch)[0] != "C")
+
+    # Allowlist filter — permits word chars, whitespace, and: - . / ( ) ' + ,
+    cleaned = _RE_ALLOWED.sub("", cleaned)
+
+    # Collapse runs of whitespace into a single space
+    cleaned = _RE_WHITESPACE.sub(" ", cleaned).strip()
+
+    # Truncate AFTER normalization so we never split a multi-byte sequence
+    cleaned = cleaned[:max_length]
+
+    if cleaned != raw:
+        logger.debug("validate_input: sanitized %r → %r", raw, cleaned)
+
+    return cleaned
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
