@@ -48,9 +48,10 @@ function getDeviceList(platform) {
   }
 }
 
-function populateModelDropdown(devices, selectEl) {
+function populateModelDropdown(devices, selectEl, platformName) {
   // Clear existing options except first placeholder
-  selectEl.innerHTML = '<option value="" disabled selected>Select your device model</option>';
+  const placeholderText = platformName ? `Select your ${platformName} model` : 'Select your device model';
+  selectEl.innerHTML = `<option value="" disabled selected>${placeholderText}</option>`;
   devices.forEach(device => {
     const option = document.createElement('option');
     option.value = device;
@@ -448,6 +449,16 @@ function showCodeEntry(urlCode = null) {
 
       if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
 
+      const platformNames = {
+        'iphone': 'iPhone',
+        'ipad': 'iPad',
+        'mac': 'Mac',
+        'android': 'Android',
+        'windows': 'Windows',
+        'linux': 'Linux'
+      };
+      const displayName = platformNames[platform] || 'device';
+
       const iosPlatforms = ['iphone', 'ipad', 'mac'];
       if (iosPlatforms.includes(platform)) {
         // Show dropdown for iOS devices
@@ -462,7 +473,7 @@ function showCodeEntry(urlCode = null) {
         
         // Populate device list
         const devices = getDeviceList(platform);
-        if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect);
+        if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect, displayName);
       } else {
         // Show text input for Android/Windows/Linux
         if (deviceModelSelect) {
@@ -471,7 +482,7 @@ function showCodeEntry(urlCode = null) {
         }
         if (deviceModelInput) {
           deviceModelInput.classList.remove('hidden');
-          deviceModelInput.placeholder = 'Enter your device model';
+          deviceModelInput.placeholder = `Enter your ${displayName} model`;
         }
         if (modelNote) modelNote.classList.remove('hidden');
       }
