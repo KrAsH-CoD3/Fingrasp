@@ -448,9 +448,15 @@ function showCodeEntry(urlCode = null) {
   }
 
   if (urlCode) {
-    if (codeInput) codeInput.classList.add('hidden');
+    if (codeInput) {
+      codeInput.classList.add('hidden');
+      codeInput.closest('.input-wrapper')?.classList.add('hidden');
+    }
   } else {
-    if (codeInput) codeInput.classList.remove('hidden');
+    if (codeInput) {
+      codeInput.classList.remove('hidden');
+      codeInput.closest('.input-wrapper')?.classList.remove('hidden');
+    }
   }
 
   // Handle platform dropdown change
@@ -479,9 +485,11 @@ function showCodeEntry(urlCode = null) {
         // Show dropdown for iOS devices
         if (deviceModelSelect) deviceModelSelect.classList.remove('hidden');
         if (deviceModelInput) {
+          const wrapper = deviceModelInput.closest('.input-wrapper');
+          if (wrapper) wrapper.classList.add('hidden');
           deviceModelInput.classList.add('hidden');
           deviceModelInput.value = '';
-          const btn = deviceModelInput.closest('.input-wrapper')?.querySelector('.clear-input-btn');
+          const btn = wrapper?.querySelector('.clear-input-btn');
           if (btn) btn.classList.add('hidden');
         }
         if (modelNote) modelNote.classList.add('hidden');
@@ -496,6 +504,8 @@ function showCodeEntry(urlCode = null) {
           deviceModelSelect.value = '';
         }
         if (deviceModelInput) {
+          const wrapper = deviceModelInput.closest('.input-wrapper');
+          if (wrapper) wrapper.classList.remove('hidden');
           deviceModelInput.classList.remove('hidden');
           deviceModelInput.placeholder = `Enter your ${displayName} model`;
         }
@@ -601,7 +611,10 @@ async function run() {
       const platformSelect = document.getElementById('platformSelect');
       const modelFieldContainer = document.getElementById('modelFieldContainer');
       if (platformSelect) platformSelect.classList.remove('hidden');
-      if (codeInput) codeInput.classList.add('hidden');
+      if (codeInput) {
+        codeInput.classList.add('hidden');
+        codeInput.closest('.input-wrapper')?.classList.add('hidden');
+      }
       showCodeEntry(urlCode);
     } else {
       loader.classList.add('hidden');
