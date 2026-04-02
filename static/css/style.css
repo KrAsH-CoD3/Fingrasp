@@ -1106,9 +1106,10 @@ margin-bottom: 16px;
 }
 
 .code-entry-card input[type="text"] {
+width: 100%;
 font-family: 'JetBrains Mono', monospace;
 font-size: 16px;
-padding: 14px 50px 14px 16px;
+padding: 14px 45px 14px 16px;
 background: var(--surface2);
 border: 1px solid var(--border);
 border-radius: 10px;

@@ -452,7 +452,12 @@ function showCodeEntry(urlCode = null) {
       if (iosPlatforms.includes(platform)) {
         // Show dropdown for iOS devices
         if (deviceModelSelect) deviceModelSelect.classList.remove('hidden');
-        if (deviceModelInput) deviceModelInput.classList.add('hidden');
+        if (deviceModelInput) {
+          deviceModelInput.classList.add('hidden');
+          deviceModelInput.value = '';
+          const btn = deviceModelInput.closest('.input-wrapper')?.querySelector('.clear-input-btn');
+          if (btn) btn.classList.add('hidden');
+        }
         if (modelNote) modelNote.classList.add('hidden');
         
         // Populate device list
@@ -460,7 +465,10 @@ function showCodeEntry(urlCode = null) {
         if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect);
       } else {
         // Show text input for Android/Windows/Linux
-        if (deviceModelSelect) deviceModelSelect.classList.add('hidden');
+        if (deviceModelSelect) {
+          deviceModelSelect.classList.add('hidden');
+          deviceModelSelect.value = '';
+        }
         if (deviceModelInput) {
           deviceModelInput.classList.remove('hidden');
           deviceModelInput.placeholder = 'Enter your device model';
