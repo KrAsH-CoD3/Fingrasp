@@ -567,7 +567,6 @@ async function run() {
       const platformSelect = document.getElementById('platformSelect');
       const modelFieldContainer = document.getElementById('modelFieldContainer');
       if (platformSelect) platformSelect.classList.remove('hidden');
-      if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
       if (codeInput) codeInput.classList.add('hidden');
       showCodeEntry(urlCode);
     } else {
