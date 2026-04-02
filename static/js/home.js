@@ -582,6 +582,33 @@ async function run() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-	setupNestedToggles();
-	run();
+ 	setupNestedToggles();
+ 	
+ 	// Add clear button functionality
+ 	document.querySelectorAll('.clear-input-btn').forEach(btn => {
+ 		const targetId = btn.dataset.target;
+ 		const input = document.getElementById(targetId);
+ 		if (!input) return;
+
+ 		// Show/hide clear button based on input content
+ 		const toggleVisibility = () => {
+ 			if (input.value.length > 0) {
+ 				btn.classList.remove('hidden');
+ 			} else {
+ 				btn.classList.add('hidden');
+ 			}
+ 		};
+
+ 		input.addEventListener('input', toggleVisibility);
+ 		// Also check on focus in case value was set programmatically
+ 		input.addEventListener('focus', toggleVisibility);
+
+ 		btn.addEventListener('click', () => {
+ 			input.value = '';
+ 			btn.classList.add('hidden');
+ 			input.focus();
+ 		});
+ 	});
+ 	
+ 	run();
 });

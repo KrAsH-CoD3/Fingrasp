@@ -1071,10 +1071,44 @@ margin-bottom: 16px;
   width: 100%;
 }
 
+.input-wrapper {
+  position: relative;
+}
+
+.clear-input-btn {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.clear-input-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.clear-input-btn:hover {
+  opacity: 1;
+}
+
 .code-entry-card input[type="text"] {
 font-family: 'JetBrains Mono', monospace;
 font-size: 16px;
-padding: 14px 16px;
+padding: 14px 50px 14px 16px;
 background: var(--surface2);
 border: 1px solid var(--border);
 border-radius: 10px;

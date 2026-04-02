@@ -37,9 +37,9 @@
         <select id="deviceModelSelect" autocomplete="off">
           <option value="" disabled selected>Select model</option>
         </select>
-        <input type="text" id="deviceModelInput" placeholder="Enter your device model" autocomplete="off" class="hidden" />
+        <div class="input-wrapper"><input type="text" id="deviceModelInput" placeholder="Enter your device model" autocomplete="off" class="hidden" /><button type="button" class="clear-input-btn hidden" data-target="deviceModelInput" aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       </div>
-      <input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" maxlength="8" />
+      <div class="input-wrapper"><input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" maxlength="8" /><button type="button" class="clear-input-btn hidden" data-target="codeInput" aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <button type="submit" id="codeSubmitBtn">Continue</button>
     </form>
                 <p class="code-hint">If you don't have a code, reach out to the researcher who invited you.</p>
