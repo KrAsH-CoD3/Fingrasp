@@ -424,6 +424,7 @@ function showCodeEntry(urlCode = null) {
   const deviceModelSelect = document.getElementById('deviceModelSelect');
   const deviceModelInput = document.getElementById('deviceModelInput');
   const attemptsDisplay = document.getElementById('attemptsRemaining');
+  const modelNote = document.getElementById('modelNote');
 
   if (attemptsDisplay) {
     attemptsDisplay.textContent = attemptsRemaining;
@@ -452,6 +453,7 @@ function showCodeEntry(urlCode = null) {
         // Show dropdown for iOS devices
         if (deviceModelSelect) deviceModelSelect.classList.remove('hidden');
         if (deviceModelInput) deviceModelInput.classList.add('hidden');
+        if (modelNote) modelNote.classList.add('hidden');
         
         // Populate device list
         const devices = getDeviceList(platform);
@@ -468,6 +470,7 @@ function showCodeEntry(urlCode = null) {
           };
           deviceModelInput.placeholder = placeholders[platform] || 'Enter your device model';
         }
+        if (modelNote) modelNote.classList.remove('hidden');
       }
     });
   }
@@ -490,7 +493,11 @@ function showCodeEntry(urlCode = null) {
     }
 
     if (!deviceModel) {
-      showToast('Please select or enter your device model.', 'error');
+      if (iosPlatforms.includes(platform)) {
+        showToast('Please select model.', 'error');
+      } else {
+        showToast('Please enter model.', 'error');
+      }
       return;
     }
 
