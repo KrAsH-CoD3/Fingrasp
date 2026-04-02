@@ -31,7 +31,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 class BodySizeLimitMiddleware:
     """Middleware to limit request body size before JSON parsing."""
 

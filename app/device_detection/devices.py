@@ -141,15 +141,15 @@ class DeviceStore:
             logger.warning("rapidfuzz import failed; fuzzy search unavailable.")
             return []
 
-        q = query.strip().lower()
+        query_lower = query.strip().lower()
         matches = process.extract(
-            q,
+            query_lower,
             self.by_model.keys(),
             scorer=fuzz.WRatio,
             limit=limit,
             score_cutoff=70,
         )
-        return [self.by_model[m[0]] for m in matches]
+        return [self.by_model[match[0]] for match in matches]
 
     # ------------------------------------------------------------------
     # Helpers

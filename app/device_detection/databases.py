@@ -70,6 +70,183 @@ IPAD_SCREEN_DB: list[tuple[tuple[int, int], int, str]] = [
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 2.5: Individual Device Models for Dropdown Selection
+# ═══════════════════════════════════════════════════════════════════════════════
+# Every model listed individually for accurate user selection.
+# The user's exact model is used as device_name in the DB.
+
+INDIVIDUAL_IPHONE_MODELS: list[str] = [
+    # 2026
+    "iPhone 17 Pro Max",
+    "iPhone 17 Pro",
+    "iPhone 17",
+    "iPhone 17e",
+    "iPhone Air",
+    # 2025
+    "iPhone 16 Pro Max",
+    "iPhone 16 Pro",
+    "iPhone 16 Plus",
+    "iPhone 16",
+    "iPhone 16e",
+    # 2024
+    "iPhone 15 Pro Max",
+    "iPhone 15 Pro",
+    "iPhone 15 Plus",
+    "iPhone 15",
+    # 2023
+    "iPhone 14 Pro Max",
+    "iPhone 14 Pro",
+    "iPhone 14 Plus",
+    "iPhone 14",
+    # 2022
+    "iPhone 13 Pro Max",
+    "iPhone 13 Pro",
+    "iPhone 13",
+    "iPhone 13 mini",
+    # 2021
+    "iPhone 12 Pro Max",
+    "iPhone 12 Pro",
+    "iPhone 12",
+    "iPhone 12 mini",
+    # 2020
+    "iPhone SE 3rd generation",
+    "iPhone SE 2nd generation",
+    # 2019
+    "iPhone 11 Pro Max",
+    "iPhone 11 Pro",
+    "iPhone 11",
+    # 2018
+    "iPhone XS Max",
+    "iPhone XS",
+    "iPhone XR",
+    "iPhone X",
+    # 2017
+    "iPhone 8 Plus",
+    "iPhone 8",
+    # 2016
+    "iPhone 7 Plus",
+    "iPhone 7",
+    # 2015
+    "iPhone 6S Plus",
+    "iPhone 6S",
+    "iPhone SE 1st generation",
+    # 2014
+    "iPhone 6 Plus",
+    "iPhone 6",
+    # 2013
+    "iPhone 5S",
+    "iPhone 5C",
+    # 2012
+    "iPhone 5",
+    # 2011
+    "iPhone 4S",
+    # 2010
+    "iPhone 4",
+    # 2009
+    "iPhone 3GS",
+    # 2008
+    "iPhone 3G",
+    # 2007
+    "iPhone 1st generation",
+]
+
+INDIVIDUAL_IPAD_MODELS: list[str] = [
+    # iPad Pro
+    'iPad Pro 13" (M4)',
+    'iPad Pro 12.9" (6th generation)',
+    'iPad Pro 12.9" (5th generation)',
+    'iPad Pro 12.9" (4th generation)',
+    'iPad Pro 12.9" (3rd generation)',
+    'iPad Pro 12.9" (2nd generation)',
+    'iPad Pro 12.9" (1st generation)',
+    'iPad Pro 11" (M4)',
+    'iPad Pro 11" (4th generation)',
+    'iPad Pro 11" (3rd generation)',
+    'iPad Pro 11" (2nd generation)',
+    'iPad Pro 11" (1st generation)',
+    'iPad Pro 10.5"',
+    'iPad Pro 9.7"',
+    # iPad Air
+    'iPad Air 13" (M2)',
+    'iPad Air 13" (7th generation)',
+    'iPad Air 13" (8th generation)',
+    'iPad Air 11" (M2)',
+    'iPad Air 11" (7th generation)',
+    'iPad Air 11" (8th generation)',
+    "iPad Air 5th generation (M1)",
+    "iPad Air 4th generation",
+    "iPad Air 3rd generation",
+    "iPad Air 2",
+    "iPad Air 1st generation",
+    # iPad
+    "iPad 11th generation",
+    "iPad 10th generation",
+    "iPad 9th generation",
+    "iPad 8th generation",
+    "iPad 7th generation",
+    "iPad 6th generation",
+    "iPad 5th generation",
+    # iPad Mini
+    "iPad Mini 7th generation",
+    "iPad Mini 6th generation",
+    "iPad Mini 5th generation",
+    "iPad Mini 4",
+    "iPad Mini 3",
+    "iPad Mini 2",
+    "iPad Mini 1st generation",
+]
+
+INDIVIDUAL_MAC_MODELS: list[str] = [
+    # MacBook Pro
+    'MacBook Pro 16" (M4 Max)',
+    'MacBook Pro 16" (M4 Pro)',
+    'MacBook Pro 14" (M4 Max)',
+    'MacBook Pro 14" (M4 Pro)',
+    'MacBook Pro 14" (M4)',
+    'MacBook Pro 16" (M3 Max)',
+    'MacBook Pro 16" (M3 Pro)',
+    'MacBook Pro 14" (M3 Max)',
+    'MacBook Pro 14" (M3 Pro)',
+    'MacBook Pro 14" (M3)',
+    'MacBook Pro 16" (M2 Max)',
+    'MacBook Pro 16" (M2 Pro)',
+    'MacBook Pro 14" (M2 Max)',
+    'MacBook Pro 14" (M2 Pro)',
+    'MacBook Pro 13" (M2)',
+    'MacBook Pro 16" (M1 Max)',
+    'MacBook Pro 16" (M1 Pro)',
+    'MacBook Pro 14" (M1 Max)',
+    'MacBook Pro 14" (M1 Pro)',
+    'MacBook Pro 13" (M1)',
+    # MacBook Air
+    'MacBook Air 15" (M3)',
+    'MacBook Air 13" (M3)',
+    'MacBook Air 15" (M2)',
+    'MacBook Air 13" (M2)',
+    "MacBook Air (M1)",
+    "MacBook Air (Intel)",
+    # iMac
+    'iMac 24" (M3)',
+    'iMac 24" (M1)',
+    'iMac 27" (Intel)',
+    'iMac 21.5" (Intel)',
+    # Mac Pro
+    "Mac Pro (M2 Ultra)",
+    "Mac Pro (Intel)",
+    # Mac Studio
+    "Mac Studio (M2 Ultra)",
+    "Mac Studio (M2 Max)",
+    "Mac Studio (M1 Ultra)",
+    "Mac Studio (M1 Max)",
+    # Mac Mini
+    "Mac Mini (M2 Pro)",
+    "Mac Mini (M2)",
+    "Mac Mini (M1)",
+    "Mac Mini (Intel)",
+]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # SECTION 3: Apple Silicon Patterns (Mac detection via WebGL GPU)
 # ═══════════════════════════════════════════════════════════════════════════════
 

@@ -9,7 +9,7 @@ the public API for device name extraction.
 from pathlib import Path
 import logging
 
-from app.device_detection.detection import extract_device_name
+from app.device_detection.detection import extract_device_name, validate_device_model
 from app.device_detection.devices import store
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 # The store is a module-level singleton shared across detection functions.
 _CSV_PATH = (
     Path(__file__).resolve().parent.parent.parent
-    / "static" / "assets" / "android_supported_devices.csv"
+    / "static"
+    / "assets"
+    / "android_supported_devices.csv"
 )
 
 if _CSV_PATH.exists():
@@ -33,4 +35,4 @@ else:
     )
 
 
-__all__ = ["extract_device_name", "store"]
+__all__ = ["extract_device_name", "validate_device_model", "store"]

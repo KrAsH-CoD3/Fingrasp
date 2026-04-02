@@ -152,6 +152,12 @@ class MixVisitPayload(FingerprintPayload):
         max_length=6,
         description="Access code from URL or manual entry",
     )
+    device_model: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=200,
+        description="User-provided device model",
+    )
 
 
 class ErrorResponse(BaseModel):

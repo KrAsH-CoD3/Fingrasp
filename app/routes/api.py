@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 
-from app.device_detection import extract_device_name
+from app.device_detection import validate_device_model
 from app.security import anonymize_ip
 from app.config import settings
 from app.limiter import limiter
@@ -121,7 +121,7 @@ async def save(
     client_ip = request.client.host if request.client else "0.0.0.0"
     anonymized_ip = anonymize_ip(client_ip)
 
-    device_name = extract_device_name(payload.fingerprint)
+    device_name = validate_device_model(payload.device_model, payload.fingerprint)
 
     fingerprint_doc = {
         "hash": payload.hash,

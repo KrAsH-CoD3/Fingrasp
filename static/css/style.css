@@ -1082,8 +1082,39 @@ box-shadow: 0 0 12px var(--glow);
 }
 
 .code-entry-card input[type="text"]::placeholder {
-color: var(--muted);
-letter-spacing: 0;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.code-entry-card select {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: 1px;
+  transition: border-color .2s, box-shadow .2s;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+.code-entry-card select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.code-entry-card select option {
+  background: var(--surface2);
+  color: var(--text);
+  padding: 8px;
 }
 
 .code-entry-card button[type="submit"] {
