@@ -432,6 +432,21 @@ function showCodeEntry(urlCode = null) {
   }
 
   const isMobile = isMobileDevice();
+  if (platformSelect) {
+    const mobilePlatforms = ['iphone', 'ipad', 'android'];
+    Array.from(platformSelect.options).forEach(opt => {
+      if (!opt.value) return;
+      const isMobileOpt = mobilePlatforms.includes(opt.value);
+      if (isMobile) {
+        // On mobile: Hide Mac, Windows, Linux
+        if (!isMobileOpt) opt.classList.add('hidden');
+      } else {
+        // On desktop: Hide iPhone, iPad, Android
+        if (isMobileOpt) opt.classList.add('hidden');
+      }
+    });
+  }
+
   if (urlCode) {
     if (codeInput) codeInput.classList.add('hidden');
   } else {
