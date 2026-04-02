@@ -463,12 +463,7 @@ function showCodeEntry(urlCode = null) {
         if (deviceModelSelect) deviceModelSelect.classList.add('hidden');
         if (deviceModelInput) {
           deviceModelInput.classList.remove('hidden');
-          const placeholders = {
-            'android': 'Enter your device model (e.g., Samsung Galaxy S24, Pixel 8)',
-            'windows': 'Enter your device model (e.g., Surface Pro 9, Dell XPS)',
-            'linux': 'Enter your device model (e.g., ThinkPad X1, Ubuntu PC)'
-          };
-          deviceModelInput.placeholder = placeholders[platform] || 'Enter your device model';
+          deviceModelInput.placeholder = 'Enter your device model';
         }
         if (modelNote) modelNote.classList.remove('hidden');
       }
