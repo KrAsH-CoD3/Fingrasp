@@ -1062,6 +1062,15 @@ gap: 12px;
 margin-bottom: 16px;
 }
 
+.code-entry-card #modelFieldContainer {
+  width: 100%;
+}
+
+.code-entry-card #modelFieldContainer select,
+.code-entry-card #modelFieldContainer input[type="text"] {
+  width: 100%;
+}
+
 .code-entry-card input[type="text"] {
 font-family: 'JetBrains Mono', monospace;
 font-size: 16px;
@@ -1088,7 +1097,7 @@ box-shadow: 0 0 12px var(--glow);
 
 .code-entry-card select {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 16px;
+  font-size: 14px;
   padding: 14px 16px;
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -1112,6 +1121,8 @@ box-shadow: 0 0 12px var(--glow);
 }
 
 .code-entry-card select option {
+  text-align: center;
+  letter-spacing: 1px;
   background: var(--surface2);
   color: var(--text);
   padding: 8px;
