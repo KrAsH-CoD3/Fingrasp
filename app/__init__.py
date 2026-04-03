@@ -157,6 +157,20 @@ async def lifespan(application: FastAPI):
     client, db = setup_db()
     application.state.db = db
 
+    # ── TTL Index for both access codes and temp sessions ──
+    from pymongo import ASCENDING
+    
+    for collection in [settings.ACCESS_CODE_COLLECTION_NAME, settings.TEMP_SESSION_COLLECTION_NAME]:
+        try:
+            await db._db[collection].create_index(
+                [("expires_at", ASCENDING)], 
+                expireAfterSeconds=0
+            )
+            logger.info(f"TTL index verified on {collection}")
+        except Exception as e:
+            logger.error(f"Failed to create TTL index for {collection}: {e}")
+
+    # ── Telegram Bot Initialization ──
     telegram_app: TelegramApplication | None = None
 
     if TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_URL:
@@ -175,7 +189,7 @@ async def lifespan(application: FastAPI):
 
     yield
 
-    # ── Shutdown Logic ──
+    # ── Shutdown ──
     if telegram_app:
         await telegram_app.bot.delete_webhook()
         await telegram_app.stop()

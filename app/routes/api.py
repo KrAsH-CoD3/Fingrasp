@@ -1,8 +1,9 @@
 """FastAPI API endpoints for fingerprint collection."""
 
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
-from datetime import datetime, timezone
+import uuid
 
 from app.device_detection import validate_device_model
 from app.security import anonymize_ip
@@ -13,6 +14,7 @@ from app.schemas import (
     ErrorResponse,
     MixVisitPayload,
     SuccessResponse,
+    SessionResponse,
 )
 
 
@@ -26,14 +28,14 @@ async def validate_code(
     body: CodeValidationRequest,
 ) -> JSONResponse:
     """
-    Pre-flight code check for manual flow.
-    Validates code exists and is not expired.
-    Does NOT delete the code (only validates).
+    Validate code and generate a short-lived session token.
     """
     db = request.app.state.db
 
-    code_doc = await db[settings.COLLECTION_NAME].find_one({"code": body.code})
-
+    # Atomic consumption: burn the code instantly regardless of what happens next
+    code_doc = await db[settings.ACCESS_CODE_COLLECTION_NAME].find_one_and_delete(
+        {"code": body.code}
+    )
     if not code_doc:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -43,6 +45,7 @@ async def validate_code(
             ).model_dump(),
         )
 
+    # Manual check in case the DB TTL cycle hasn't hit yet
     expires_at = code_doc.get("expires_at")
     if expires_at:
         if expires_at.tzinfo is None:
@@ -52,14 +55,22 @@ async def validate_code(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content=ErrorResponse(
                     error_code="FP_ERR_INVALID",
-                    message="Access code is not valid.",
+                    message="Access code is expired.",
                 ).model_dump(),
             )
 
+    # Generate a short-lived session token
+    session_token = str(uuid.uuid4())
+    await db[settings.TEMP_SESSION_COLLECTION_NAME].insert_one({
+        "session_token": session_token,
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=settings.TEMP_SESSION_EXPIRY_MINUTES)
+    })
+
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=SuccessResponse(
-            message="Code is valid.",
+        content=SessionResponse(
+            session_token=session_token,
+            message="Code valid. Session initiated.",
         ).model_dump(),
     )
 
@@ -81,21 +92,21 @@ async def save(
     e. Save fingerprint
     """
     db = request.app.state.db
-
-    code_doc = await db[settings.COLLECTION_NAME].find_one_and_delete(
-        {"code": payload.access_code}
+    # Atomically verify and consume the session token
+    session_doc = await db[settings.TEMP_SESSION_COLLECTION_NAME].find_one_and_delete(
+        {"session_token": payload.session_token}
     )
-
-    if not code_doc:
+    if not session_doc:
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=ErrorResponse(
-                error_code="FP_ERR_INVALID",
-                message="Access code is not valid.",
+                error_code="FP_ERR_SESSION_INVALID",
+                message="Session invalid or expired.",
             ).model_dump(),
         )
 
-    expires_at = code_doc.get("expires_at")
+    # Manual check in case the DB TTL cycle hasn't hit yet
+    expires_at = session_doc.get("expires_at")
     if expires_at:
         if expires_at.tzinfo is None:
             expires_at = expires_at.replace(tzinfo=timezone.utc)
@@ -103,12 +114,14 @@ async def save(
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content=ErrorResponse(
-                    error_code="FP_ERR_INVALID",
-                    message="Access code is not valid.",
+                    error_code="FP_ERR_SESSION_INVALID",
+                    message="Session has expired.",
                 ).model_dump(),
             )
 
-    existing = await db["fingerprints"].find_one({"hash": payload.hash})
+    existing = await db[settings.FINGERPRINT_COLLECTION_NAME].find_one(
+        {"hash": payload.hash}
+    )
     if existing:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
@@ -132,7 +145,7 @@ async def save(
         "created_at": datetime.now(timezone.utc),
     }
 
-    await db["fingerprints"].insert_one(fingerprint_doc)
+    await db[settings.FINGERPRINT_COLLECTION_NAME].insert_one(fingerprint_doc)
 
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,

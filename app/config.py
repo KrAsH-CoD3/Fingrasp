@@ -66,7 +66,12 @@ class Settings:
     TELEGRAM_WEBHOOK_URL: str = BASE_URL + "/webhook"
     TELEGRAM_WEBHOOK_SECRET: str = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
     CODE_EXPIRY_HOURS: int = int(os.getenv("CODE_EXPIRY_HOURS", "48"))
-    COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "collection_name")
+
+    # ── MongoDB Collections ──
+    ACCESS_CODE_COLLECTION_NAME: str = os.getenv("ACCESS_CODE_COLLECTION_NAME", "access_codes")
+    FINGERPRINT_COLLECTION_NAME: str = os.getenv("FINGERPRINT_COLLECTION_NAME", "fingers")
+    TEMP_SESSION_COLLECTION_NAME: str = os.getenv("TEMP_SESSION_COLLECTION_NAME", "temp_sessions")
+    TEMP_SESSION_EXPIRY_MINUTES: int = int(os.getenv("TEMP_SESSION_EXPIRY_MINUTES", "5"))
 
 
 settings = Settings()

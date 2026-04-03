@@ -1,6 +1,7 @@
 """Pydantic schemas for request validation on the /save endpoint."""
 
 from __future__ import annotations
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Any
 import re
@@ -144,13 +145,13 @@ class CodeValidationRequest(BaseModel):
 
 
 class MixVisitPayload(FingerprintPayload):
-    """Schema for fingerprint submission with access code."""
+    """Schema for fingerprint submission with session token."""
 
-    access_code: str = Field(
+    session_token: str = Field(
         ...,
-        min_length=6,
-        max_length=6,
-        description="Access code from URL or manual entry",
+        min_length=36,
+        max_length=36,
+        description="Session token from successful access code validation",
     )
     device_model: str | None = Field(
         default=None,
@@ -160,14 +161,19 @@ class MixVisitPayload(FingerprintPayload):
     )
 
 
-class ErrorResponse(BaseModel):
-    """Standard error response."""
-
-    error_code: str
-    message: str
-
+# --- Response Schemas ---
 
 class SuccessResponse(BaseModel):
     """Standard success response."""
 
     message: str
+
+class ErrorResponse(SuccessResponse):
+    """Standard error response."""
+
+    error_code: str
+
+class SessionResponse(SuccessResponse):
+    """Response containing the short-lived session token."""
+
+    session_token: str
