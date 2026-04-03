@@ -6,6 +6,9 @@ so data stays separate from logic.
 
 from __future__ import annotations
 
+SCREEN_DB = list[tuple[tuple[int, int], int, str]]
+IOS_MODELS = list[str]
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECTION 1: iPhone Screen-Based Detection
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -18,7 +21,7 @@ from __future__ import annotations
 # ALL models that match each profile so the user gets the full picture.
 
 
-IPHONE_SCREEN_DB: list[tuple[tuple[int, int], int, str]] = [
+IPHONE_SCREEN_DB: SCREEN_DB = [
     # ── 2026 / 2025 iPhones ──
     ((440, 956), 3, "iPhone 16 Pro Max / 17 Pro Max"),
     ((420, 912), 3, "iPhone Air"),
@@ -44,7 +47,7 @@ IPHONE_SCREEN_DB: list[tuple[tuple[int, int], int, str]] = [
 # ═══════════════════════════════════════════════════════════════════════════════
 # All modern iPads have DPR 2. Source: ios-resolution.com, Apple developer docs.
 
-IPAD_SCREEN_DB: list[tuple[tuple[int, int], int, str]] = [
+IPAD_SCREEN_DB: SCREEN_DB = [
     # ── Pro 13" / 12.9" ──
     ((1032, 1376), 2, 'iPad Pro 13" (M4 / 8th gen)'),
     (
@@ -75,7 +78,7 @@ IPAD_SCREEN_DB: list[tuple[tuple[int, int], int, str]] = [
 # Every model listed individually for accurate user selection.
 # The user's exact model is used as device_name in the DB.
 
-INDIVIDUAL_IPHONE_MODELS: list[str] = [
+INDIVIDUAL_IPHONE_MODELS: IOS_MODELS = [
     # 2026
     "iPhone 17 Pro Max",
     "iPhone 17 Pro",
@@ -150,7 +153,7 @@ INDIVIDUAL_IPHONE_MODELS: list[str] = [
     "iPhone 1st generation",
 ]
 
-INDIVIDUAL_IPAD_MODELS: list[str] = [
+INDIVIDUAL_IPAD_MODELS: IOS_MODELS = [
     # iPad Pro
     'iPad Pro 13" (M4)',
     'iPad Pro 12.9" (6th generation)',
@@ -196,7 +199,7 @@ INDIVIDUAL_IPAD_MODELS: list[str] = [
     "iPad Mini 1st generation",
 ]
 
-INDIVIDUAL_MAC_MODELS: list[str] = [
+INDIVIDUAL_MAC_MODELS: IOS_MODELS = [
     # MacBook Pro
     'MacBook Pro 16" (M4 Max)',
     'MacBook Pro 16" (M4 Pro)',
@@ -244,6 +247,94 @@ INDIVIDUAL_MAC_MODELS: list[str] = [
     "Mac Mini (M1)",
     "Mac Mini (Intel)",
 ]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 2.6: Screen Profile → Individual Model Mapping (for frontend filtering)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Explicit mapping from "WxHxDPR" screen profile keys to the exact individual
+# model names from the lists above. This is used by the frontend to filter the
+# dropdown to only show models matching the user's actual hardware.
+# Zero parsing ambiguity — every model is listed by name.
+
+IPHONE_SCREEN_MODELS: dict[str, list[str]] = {
+    "440x956x3": ["iPhone 16 Pro Max", "iPhone 17 Pro Max"],
+    "420x912x3": ["iPhone Air"],
+    "402x874x3": ["iPhone 16 Pro", "iPhone 17", "iPhone 17 Pro"],
+    "430x932x3": ["iPhone 14 Pro Max", "iPhone 15 Plus", "iPhone 15 Pro Max", "iPhone 16 Plus"],
+    "393x852x3": ["iPhone 14 Pro", "iPhone 15", "iPhone 15 Pro", "iPhone 16"],
+    "428x926x3": ["iPhone 12 Pro Max", "iPhone 13 Pro Max", "iPhone 14 Plus"],
+    "390x844x3": ["iPhone 12", "iPhone 12 Pro", "iPhone 13", "iPhone 13 Pro", "iPhone 14", "iPhone 16e", "iPhone 17e"],
+    "375x812x3": ["iPhone X", "iPhone XS", "iPhone 11 Pro", "iPhone 12 mini", "iPhone 13 mini"],
+    "414x896x3": ["iPhone XS Max", "iPhone 11 Pro Max"],
+    "414x896x2": ["iPhone XR", "iPhone 11"],
+    "414x736x3": ["iPhone 6 Plus", "iPhone 6S Plus", "iPhone 7 Plus", "iPhone 8 Plus"],
+    "375x667x2": ["iPhone 6", "iPhone 6S", "iPhone 7", "iPhone 8", "iPhone SE 2nd generation", "iPhone SE 3rd generation"],
+    "320x568x2": ["iPhone 5", "iPhone 5C", "iPhone 5S", "iPhone SE 1st generation"],
+    "320x480x2": ["iPhone 4", "iPhone 4S"],
+    "320x480x1": ["iPhone 3G", "iPhone 3GS", "iPhone 1st generation"],
+}
+
+IPAD_SCREEN_MODELS: dict[str, list[str]] = {
+    "1032x1376x2": [
+        'iPad Pro 13" (M4)',
+    ],
+    "1024x1366x2": [
+        'iPad Pro 12.9" (6th generation)',
+        'iPad Pro 12.9" (5th generation)',
+        'iPad Pro 12.9" (4th generation)',
+        'iPad Pro 12.9" (3rd generation)',
+        'iPad Pro 12.9" (2nd generation)',
+        'iPad Pro 12.9" (1st generation)',
+        'iPad Air 13" (M2)',
+        'iPad Air 13" (7th generation)',
+        'iPad Air 13" (8th generation)',
+    ],
+    "834x1210x2": [
+        'iPad Pro 11" (M4)',
+    ],
+    "834x1194x2": [
+        'iPad Pro 11" (4th generation)',
+        'iPad Pro 11" (3rd generation)',
+        'iPad Pro 11" (2nd generation)',
+        'iPad Pro 11" (1st generation)',
+        "iPad Air 5th generation (M1)",
+        "iPad Air 4th generation",
+    ],
+    "820x1180x2": [
+        "iPad 10th generation",
+        "iPad 11th generation",
+        'iPad Air 11" (M2)',
+        'iPad Air 11" (7th generation)',
+        'iPad Air 11" (8th generation)',
+    ],
+    "834x1112x2": [
+        "iPad Air 3rd generation",
+        'iPad Pro 10.5"',
+    ],
+    "810x1080x2": [
+        "iPad 7th generation",
+        "iPad 8th generation",
+        "iPad 9th generation",
+    ],
+    "768x1024x2": [
+        "iPad 5th generation",
+        "iPad 6th generation",
+        "iPad Air 2",
+        "iPad Air 1st generation",
+        "iPad Mini 2",
+        "iPad Mini 3",
+        "iPad Mini 4",
+        "iPad Mini 5th generation",
+    ],
+    "744x1133x2": [
+        "iPad Mini 6th generation",
+        "iPad Mini 7th generation",
+    ],
+    "768x1024x1": [
+        "iPad Mini 1st generation",
+    ],
+}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

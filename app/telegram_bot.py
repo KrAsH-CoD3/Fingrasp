@@ -21,7 +21,7 @@ ALLOWED_USER_ID = settings.TELEGRAM_ALLOWED_USER_ID
 BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 BASE_URL = settings.BASE_URL
 CODE_EXPIRY_HOURS = settings.CODE_EXPIRY_HOURS
-COLLECTION_NAME = settings.COLLECTION_NAME
+ACCESS_CODE_COLLECTION_NAME = settings.ACCESS_CODE_COLLECTION_NAME
 
 
 logger = logging.getLogger(__name__)
@@ -103,7 +103,7 @@ async def generate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     created_at = datetime.now(timezone.utc)
     expires_at = created_at + timedelta(hours=CODE_EXPIRY_HOURS)
 
-    await db[COLLECTION_NAME].insert_one(
+    await db[ACCESS_CODE_COLLECTION_NAME].insert_one(
         {
             "code": code,
             "created_at": created_at,
@@ -132,7 +132,7 @@ async def codes_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     """Handle /codes command - list all access codes."""
     db = context.bot_data["db"]
 
-    cursor = await db[COLLECTION_NAME].find({})
+    cursor = await db[ACCESS_CODE_COLLECTION_NAME].find({})
     cursor = cursor.sort("created_at", 1)
     codes = await cursor.to_list(length=None)
 
@@ -179,14 +179,14 @@ async def revoke_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     db = context.bot_data["db"]
 
-    existing = await db[COLLECTION_NAME].find_one({"code": code})
+    existing = await db[ACCESS_CODE_COLLECTION_NAME].find_one({"code": code})
     if not existing:
         await safe_reply(
             update, f"❌ Code <code>{code}</code> not found.", parse_mode="HTML"
         )
         return
 
-    await db[COLLECTION_NAME].delete_one({"code": code})
+    await db[ACCESS_CODE_COLLECTION_NAME].delete_one({"code": code})
 
     logger.info(
         "Access code revoked: user_id=%s",

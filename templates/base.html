@@ -9,10 +9,10 @@
     content="{% block description %}Fingrasp — Device fingerprint intelligence platform for research & fraud prevention.{% endblock %}" />
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/static/assets/favicon.png">
+  <link rel="icon" type="image/png" href="{{ url_for('static', path='assets/favicon.png') }}">
 
   <!-- Main Styles -->
-  <link rel="stylesheet" href="/static/css/style.css?v=1.1">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=1.1">
   {% block extra_css %}{% endblock %}
 
   <script nonce="{{ nonce }}">
@@ -69,7 +69,7 @@
   </button>
 
   <!-- Scripts -->
-  <script nonce="{{ nonce }}" type="module" src="/static/js/app.js?v=1.1"></script>
+  <script nonce="{{ nonce }}" type="module" src="{{ url_for('static', path='js/app.js') }}?v=1.1"></script>
   {% block extra_js %}{% endblock %}
 </body>
 

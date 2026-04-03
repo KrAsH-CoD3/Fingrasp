@@ -2,7 +2,7 @@
 
 {% block content %}
 <!-- Desktop Layout Container (side-by-side for desktop) -->
-<div class="desktop-layout show-code-entry" id="desktopLayout">
+<div class="desktop-layout" id="desktopLayout">
 <!-- Hero Section (always visible on left) -->
 <div class="hero" id="heroSection">
 <div id="heroWaiting">
@@ -17,8 +17,33 @@
 
     <!-- Right Panel (Code Entry or Fingerprint) -->
     <div class="right-panel" id="rightPanel">
-        <!-- Code Entry Prompt (shown when no code in URL) -->
-        <div class="code-entry-section" id="codeEntrySection">
+        <!-- Platform Detection State (shown while detecting) -->
+        <div class="platform-detect-section" id="platformDetectSection">
+            <div class="code-entry-card">
+                <div class="platform-detect-content">
+                    <div class="platform-spinner"></div>
+                    <p class="platform-detect-msg">Detecting device platform<span class="dot-anim"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform Error State (shown if detection fails) -->
+        <div class="platform-error-section hidden" id="platformErrorSection">
+            <div class="code-entry-card">
+                <div class="platform-error-content">
+                    <svg class="platform-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <h2>Unsupported Device</h2>
+                    <p>We couldn't detect your device platform. Please visit this page using a mobile device (iPhone, iPad, Android) or a desktop browser (Mac, Windows, Linux).</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Entry Prompt (hidden until platform detected) -->
+        <div class="code-entry-section hidden" id="codeEntrySection">
             <div class="code-entry-card">
                 <h2>Enter Access Code</h2>
                 <p>Please enter the access code provided by the researcher.</p>
@@ -39,7 +64,7 @@
         </select>
         <div class="input-wrapper"><input type="text" id="deviceModelInput" placeholder="Enter your device model" autocomplete="off" class="hidden" /><button type="button" class="clear-input-btn hidden" data-target="deviceModelInput" aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       </div>
-      <div class="input-wrapper"><input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" maxlength="8" /><button type="button" class="clear-input-btn hidden" data-target="codeInput" aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="input-wrapper"><input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" minlength="6" maxlength="6" /><button type="button" class="clear-input-btn hidden" data-target="codeInput" aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <button type="submit" id="codeSubmitBtn">Continue</button>
     </form>
                 <p class="code-hint">If you don't have a code, reach out to the researcher who invited you.</p>
@@ -98,7 +123,9 @@
 {
   "iphone": {{ iphone_models | tojson }},
   "ipad": {{ ipad_models | tojson }},
-  "mac": {{ mac_models | tojson }}
+  "mac": {{ mac_models | tojson }},
+  "iphone_screen_models": {{ iphone_screen_models | tojson }},
+  "ipad_screen_models": {{ ipad_screen_models | tojson }}
 }
 </script>
 
@@ -113,12 +140,12 @@
     <div class="loader-content">
         <div class="spinner"></div>
         <div class="loader-text">
-            <p id="loaderMessage">Loading…</p>
+            <p id="loaderMessage">Loading<span class="dot-anim"></span></p>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script nonce="{{ nonce }}" type="module" src="/static/js/home.js?v=1.1"></script>
+<script nonce="{{ nonce }}" type="module" src="{{ url_for('static', path='js/home.js') }}?v=1.1"></script>
 {% endblock %}
