@@ -187,7 +187,7 @@ def _detect_ipad_by_screen(screen_dims: tuple[int, int], dpr: int) -> str | None
     return None
 
 
-def _lookup_device_store(model: str) -> str | None:
+def _lookup_device_store(model: str, silent_log: bool = False) -> str | None:
     """
     Look up a device model in the CSV-backed DeviceStore.
 
@@ -205,12 +205,13 @@ def _lookup_device_store(model: str) -> str | None:
         name = device.marketing_name
         if not name.lower().startswith(device.brand.lower()):
             name = f"{device.brand} {name}"
-        logger.info(f"Device '{model}' matched in CSV Device Store: {name}")
+        if not silent_log:
+            logger.info(f"Device '{model}' matched in CSV Device Store: {name}")
         return name
     return None
 
 
-def _identify_model(model: str) -> str | None:
+def _identify_model(model: str, silent_log: bool = False) -> str | None:
     """
     Unified model identification using the CSV store.
     Returns the best human-readable name or None.
@@ -221,7 +222,7 @@ def _identify_model(model: str) -> str | None:
     normalized = _normalize_model(model)
 
     # Perform lookup in the official CSV device store
-    return _lookup_device_store(normalized)
+    return _lookup_device_store(normalized, silent_log=silent_log)
 
 
 def _detect_from_gpu(gpu_renderer: str) -> str | None:
@@ -327,10 +328,6 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
         _unwrap(fingerprint.get("highEntropyValues"))
         or nav.get("highEntropyValues")
         or {}
-    )
-
-    logger.info(
-        f"Signal extraction — UA: {user_agent[:20]}..., Platform: {platform}, user_agent_data: {user_agent_data}, high_entropy_values: {high_entropy_values}"
     )
 
     # ═══════════════════════════════════════════════════════════════════════════════
@@ -650,53 +647,70 @@ def validate_device_model(
     user_model = validate_input(device_model)
     user_model_lower = user_model.lower()
     
-    # 1. Get ground truth from fingerprint detection
+    # Get ground truth from fingerprint detection
     detected_name = extract_device_name(fingerprint) if fingerprint else "Unknown Device"
     detected_group = _get_platform_group(detected_name)
     
-    # 2. If user is 'Not Sure' or hasn't provided a model, use the detected one
+    # If user is 'Not Sure' or hasn't provided a model, use the detected one
     if not user_model or user_model_lower == "not_sure" or user_model_lower == "unknown device":
         logger.info(f"User selected 'Not Sure' or provided no model. Detected: {detected_name}")
         return detected_name
 
-    # 3. Handle Platform Consistency
+    # Handle Platform Consistency
     user_group = _get_platform_group(user_model)
     
     # If there is a fundamental platform mismatch (e.g. User says Android, Fingerprint says iOS)
     # trust the hard signals from the fingerprint.
     if user_group != "unknown" and detected_group != "unknown" and user_group != detected_group:
-        logger.warning(f"Platform mismatch! User claimed '{user_model}' ({user_group}), but signals detected '{detected_name}' ({detected_group}). Overriding user input.")
+        logger.warning(f"Platform mismatch! User claimed '{user_model}' ({user_group}), "
+            f"but signals detected '{detected_name}' ({detected_group}). Overriding user input."
+        )
         return detected_name
 
-    # 4. If platforms match or user input is generic, refine/enrich the user input
-    # Android refinement (Marketing name lookup)
-    if user_group == "android" or any(k in user_model_lower for k in ("samsung", "pixel", "galaxy", "sm-")):
-        from app.device_detection.devices import store
+    # Handle Android devices
+    # We must properly identify Android if the user entered unknown device model AND 
+    # _get_platform_group failed to categorize `the device model` as Android 
+    # because it lacks any of the keyword in the tuple ("samsung", "pixel", "galaxy", "sm-", "android").
+    exact_from_fingerprint = None
+    if fingerprint:
+        nav = _unwrap(fingerprint.get("navigator")) or {}
+        user_agent = nav.get("userAgent") or ""
         
-        # Exact model code match
-        device = store.get_by_model(user_model)
-        if device and device.marketing_name:
-            name = device.marketing_name
-            if not name.lower().startswith(device.brand.lower()):
-                name = f"{device.brand} {name}"
-            logger.info(f"User Android model enriched: {user_model} -> {name}")
-            return name
+        user_agent_data = _unwrap(fingerprint.get("userAgentData")) or nav.get("userAgentData") or {}
+        high_entropy_values = _unwrap(fingerprint.get("highEntropyValues")) or nav.get("highEntropyValues") or {}
+        
+        def _ext_model(source):
+            val = source.get("model") if isinstance(source, dict) else None
+            return val.strip() if isinstance(val, str) else None
+            
+        model_hint = _ext_model(high_entropy_values) or _ext_model(user_agent_data)
+        
+        if model_hint:
+            exact_from_fingerprint = _identify_model(model_hint, silent_log=True)
+        
+        if not exact_from_fingerprint and user_agent:
+            ua_model = _parse_android_model_from_ua(user_agent)
+            if ua_model:
+                exact_from_fingerprint = _identify_model(ua_model, silent_log=True)
+                
+    # If we found it in the Android store, it is 100% an Android device. 
+    # Otherwise, rely on the broader platform group heuristics.
+    is_android = bool(
+        exact_from_fingerprint or 
+        user_group == "android" or 
+        detected_group == "android" or 
+        any(k in user_model_lower for k in ("samsung", "pixel", "galaxy", "sm-", "android"))
+    )
+    
+    if is_android:
+        if exact_from_fingerprint:
+            logger.info(f"Android exact model found from fingerprint store lookup: '{exact_from_fingerprint}'. Overriding user input '{user_model}'.")
+            return exact_from_fingerprint
+        else:
+            logger.info(f"Could not get exact Android model from fingerprint store lookup. Using user inputted model '{user_model}'.")
+            return user_model
 
-        # Fuzzy search fallback
-        if store.total:
-            try:
-                matches = store.fuzzy_search(user_model, limit=1)
-                if matches:
-                    best = matches[0]
-                    name = best.marketing_name
-                    if not name.lower().startswith(best.brand.lower()):
-                        name = f"{best.brand} {name}"
-                    logger.info(f"User Android model fuzzy-enriched: {user_model} -> {name}")
-                    return name
-            except Exception:
-                pass
-
-    # 5. Handle iOS and Mac screen/GPU consistency (Request #1)
+    # Handle iOS and Mac screen/GPU consistency (Request #1)
     if detected_group in ("ios", "mac"):
         # For iOS, detected_name is like "iPhone 12 / 12 Pro / 13..."
         # For Mac, it's like "MacBook Pro (Apple M2 Pro)"
