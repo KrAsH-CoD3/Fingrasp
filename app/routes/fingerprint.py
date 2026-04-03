@@ -8,6 +8,8 @@ from app.device_detection.databases import (
     INDIVIDUAL_IPHONE_MODELS,
     INDIVIDUAL_IPAD_MODELS,
     INDIVIDUAL_MAC_MODELS,
+    IPHONE_SCREEN_MODELS,
+    IPAD_SCREEN_MODELS,
 )
 
 
@@ -27,6 +29,8 @@ async def index(request: Request):
             "iphone_models": INDIVIDUAL_IPHONE_MODELS,
             "ipad_models": INDIVIDUAL_IPAD_MODELS,
             "mac_models": INDIVIDUAL_MAC_MODELS,
+            "iphone_screen_models": IPHONE_SCREEN_MODELS,
+            "ipad_screen_models": IPAD_SCREEN_MODELS,
         },
     )
 

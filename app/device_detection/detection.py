@@ -696,8 +696,29 @@ def validate_device_model(
             except Exception:
                 pass
 
-    # For other platforms (iOS, Mac, Windows, Linux) where platforms match, trust the user input 
+    # 5. Handle iOS and Mac screen/GPU consistency (Request #1)
+    if detected_group in ("ios", "mac"):
+        # For iOS, detected_name is like "iPhone 12 / 12 Pro / 13..."
+        # For Mac, it's like "MacBook Pro (Apple M2 Pro)"
+        
+        # Check if the user model is consistent with the hardware ground truth
+        # We split by ' / ' for iOS groups and check for exact inclusion
+        ground_truth_variants = [v.strip().lower() for v in detected_name.replace('(', '').replace(')', '').split('/')]
+        
+        is_consistent = False
+        for variant in ground_truth_variants:
+            if variant in user_model_lower or user_model_lower in variant:
+                is_consistent = True
+                break
+        
+        # If mismatch (e.g. user says iPhone 15 but hardware is iPhone 8 screen size)
+        # or if the user is using a generic name.
+        if not is_consistent and detected_name not in ("iPhone", "iPad", "Mac"):
+            logger.warning(f"Hardware mismatch on {detected_group}! User selected '{user_model}', but hardware profile is '{detected_name}'.")
+            return f"{user_model} ({detected_name})"
+
+    # For all other cases where platforms match, trust the user input 
     # as it's often more specific about the exact model than we can be via browser APIs.
-    logger.info(f"User provided specific model '{user_model}' matching detected platform '{detected_group}'. Trusting user input.")
+    logger.info(f"User provided model '{user_model}' matching detected platform '{detected_group}'.")
     return user_model
 

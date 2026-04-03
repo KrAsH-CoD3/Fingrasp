@@ -6,7 +6,7 @@ let validatedCode = null;
 
 function setLoaderMessage(message) {
   const loaderMsg = document.getElementById('loaderMessage');
-  if (loaderMsg) loaderMsg.textContent = message;
+  if (loaderMsg) loaderMsg.innerHTML = message;
 }
 
 function showToast(message, type = 'error') {
@@ -41,27 +41,25 @@ function formatKey(key) {
  * Returns: 'iphone' | 'ipad' | 'mac' | 'android' | 'windows' | 'linux' | null
  */
 async function detectPlatform() {
+  let platform = null;
+  
   // ── Priority 1: High Entropy Values (Chromium browsers) ──
   if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
     try {
       const hints = await navigator.userAgentData.getHighEntropyValues(['platform', 'model', 'mobile']);
-      const platform = (hints.platform || '').toLowerCase();
+      const p = (hints.platform || '').toLowerCase();
       const model = (hints.model || '').toLowerCase();
-      const isMobile = hints.mobile === true;
 
-      if (platform === 'android') return 'android';
-      if (platform === 'windows') return 'windows';
-      if (platform === 'linux') return 'linux';
-      if (platform === 'ios') {
-        if (model.startsWith('ipad')) return 'ipad';
-        if (model.startsWith('iphone')) return 'iphone';
-        // Fallback: use screen size to differentiate
-        return _iosScreenHeuristic();
+      if (p === 'android') platform = 'android';
+      else if (p === 'windows') platform = 'windows';
+      else if (p === 'linux') platform = 'linux';
+      else if (p === 'ios') {
+        if (model.startsWith('ipad')) platform = 'ipad';
+        else if (model.startsWith('iphone')) platform = 'iphone';
+        else platform = _iosScreenHeuristic();
       }
-      if (platform === 'macos' || platform === 'mac os x') {
-        // Could be a real Mac or an iPad reporting as Mac (iPadOS 13+)
-        if (navigator.maxTouchPoints > 0) return 'ipad';
-        return 'mac';
+      else if (p === 'macos' || p === 'mac os x') {
+        platform = navigator.maxTouchPoints > 0 ? 'ipad' : 'mac';
       }
     } catch (e) {
       console.warn('High entropy values failed:', e);
@@ -69,49 +67,58 @@ async function detectPlatform() {
   }
 
   // ── Priority 2: navigator.userAgentData.platform (sync, Chromium) ──
-  if (navigator.userAgentData && navigator.userAgentData.platform) {
-    const platform = navigator.userAgentData.platform.toLowerCase();
-    if (platform === 'android') return 'android';
-    if (platform === 'windows') return 'windows';
-    if (platform === 'linux') return 'linux';
-    if (platform === 'ios') return _iosScreenHeuristic();
-    if (platform === 'macos') {
-      if (navigator.maxTouchPoints > 0) return 'ipad';
-      return 'mac';
-    }
+  if (!platform && navigator.userAgentData && navigator.userAgentData.platform) {
+    const p = navigator.userAgentData.platform.toLowerCase();
+    if (p === 'android') platform = 'android';
+    else if (p === 'windows') platform = 'windows';
+    else if (p === 'linux') platform = 'linux';
+    else if (p === 'ios') platform = _iosScreenHeuristic();
+    else if (p === 'macos') platform = navigator.maxTouchPoints > 0 ? 'ipad' : 'mac';
   }
 
   // ── Priority 3: navigator.platform + maxTouchPoints (Safari, Firefox) ──
-  const navPlatform = (navigator.platform || '').toLowerCase();
-  const touchPoints = navigator.maxTouchPoints || 0;
+  if (!platform) {
+    const navPlatform = (navigator.platform || '').toLowerCase();
+    const touchPoints = navigator.maxTouchPoints || 0;
 
-  if (navPlatform === 'iphone') return 'iphone';
-  if (navPlatform === 'ipad') return 'ipad';
-  if (navPlatform === 'macintel' || navPlatform === 'macarm') {
-    // iPadOS 13+ reports "MacIntel" but has touch
-    if (touchPoints > 0) return 'ipad';
-    return 'mac';
-  }
-  if (navPlatform.startsWith('win')) return 'windows';
-  if (navPlatform === 'linux' || navPlatform === 'x11') {
-    // Could be Android or desktop Linux
-    if (touchPoints > 0 && /android/i.test(navigator.userAgent)) return 'android';
-    return 'linux';
+    if (navPlatform === 'iphone') platform = 'iphone';
+    else if (navPlatform === 'ipad') platform = 'ipad';
+    else if (navPlatform === 'macintel' || navPlatform === 'macarm') {
+      platform = touchPoints > 0 ? 'ipad' : 'mac';
+    }
+    else if (navPlatform.startsWith('win')) platform = 'windows';
+    else if (navPlatform === 'linux' || navPlatform === 'x11') {
+      platform = (touchPoints > 0 && /android/i.test(navigator.userAgent)) ? 'android' : 'linux';
+    }
   }
 
   // ── Priority 4: User-Agent string (last resort) ──
-  const ua = (navigator.userAgent || '').toLowerCase();
-  if (ua.includes('android')) return 'android';
-  if (ua.includes('iphone')) return 'iphone';
-  if (ua.includes('ipad')) return 'ipad';
-  if (ua.includes('macintosh')) {
-    if (touchPoints > 0) return 'ipad';
-    return 'mac';
+  if (!platform) {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    const touchPoints = navigator.maxTouchPoints || 0;
+    if (ua.includes('android')) platform = 'android';
+    else if (ua.includes('iphone')) platform = 'iphone';
+    else if (ua.includes('ipad')) platform = 'ipad';
+    else if (ua.includes('macintosh')) platform = touchPoints > 0 ? 'ipad' : 'mac';
+    else if (ua.includes('windows')) platform = 'windows';
+    else if (ua.includes('linux')) platform = 'linux';
   }
-  if (ua.includes('windows')) return 'windows';
-  if (ua.includes('linux')) return 'linux';
 
-  return null;
+  if (!platform) return null;
+
+  // ── Calculate screen key for iOS model filtering ──
+  let screenKey = null;
+  if (platform === 'iphone' || platform === 'ipad') {
+    const w = Math.min(window.screen.width, window.screen.height);
+    const h = Math.max(window.screen.width, window.screen.height);
+    const scale = window.devicePixelRatio ? Math.round(window.devicePixelRatio) : 0;
+    screenKey = `${w}x${h}x${scale}`;
+    console.log(`[Fingrasp] Screen key: ${screenKey}`);
+  }
+  
+  console.log(`[Fingrasp] Platform: ${platform}, Screen Key: ${screenKey || 'N/A'}`);
+
+  return { platform, screenKey };
 }
 
 /**
@@ -486,7 +493,7 @@ async function collectAndSubmit(deviceModel, code) {
     if (loader) loader.classList.remove('hidden');
     if (codeEntry) codeEntry.classList.add('hidden');
 
-    setLoaderMessage('Validating access code...');
+    setLoaderMessage('Validating access code<span class="dot-anim"></span>');
     const sessionToken = await validateCode(code);
 
     if (!sessionToken) {
@@ -498,7 +505,7 @@ async function collectAndSubmit(deviceModel, code) {
       return;
     }
 
-    setLoaderMessage('Obtaining fingerprint...');
+    setLoaderMessage('Obtaining fingerprint<span class="dot-anim"></span>');
     const mv = new MixVisit();
     await mv.load();
 
@@ -536,6 +543,16 @@ async function collectAndSubmit(deviceModel, code) {
 
 function showCodeEntryUI(urlCode = null) {
   const desktopLayout = document.getElementById('desktopLayout');
+  const detectSection = document.getElementById('platformDetectSection');
+  const errorSection = document.getElementById('platformErrorSection');
+  const codeEntry = document.getElementById('codeEntrySection');
+
+  // Hide detection/error states
+  if (detectSection) detectSection.classList.add('hidden');
+  if (errorSection) errorSection.classList.add('hidden');
+
+  // Show code entry
+  if (codeEntry) codeEntry.classList.remove('hidden');
   if (desktopLayout) desktopLayout.classList.add('show-code-entry');
 
   const codeInput = document.getElementById('codeInput');
@@ -552,7 +569,17 @@ function showCodeEntryUI(urlCode = null) {
   }
 }
 
-async function initFormLogic() {
+function showPlatformError() {
+  const desktopLayout = document.getElementById('desktopLayout');
+  const detectSection = document.getElementById('platformDetectSection');
+  const errorSection = document.getElementById('platformErrorSection');
+
+  if (detectSection) detectSection.classList.add('hidden');
+  if (errorSection) errorSection.classList.remove('hidden');
+  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+}
+
+async function initFormLogic(detectedPlatform, screenKey = null) {
   const form = document.getElementById('codeForm');
   const platformSelect = document.getElementById('platformSelect');
   const modelFieldContainer = document.getElementById('modelFieldContainer');
@@ -564,9 +591,6 @@ async function initFormLogic() {
 
   if (!form) return;
 
-  // ── Auto-detect platform and lock the select ──
-  const detectedPlatform = await detectPlatform();
-
   const platformNames = {
     'iphone': 'iPhone',
     'ipad': 'iPad',
@@ -576,31 +600,17 @@ async function initFormLogic() {
     'linux': 'Linux'
   };
 
-  if (detectedPlatform && platformSelect) {
-    // Set the detected value and lock the dropdown
+  // Lock the platform select to the detected value
+  if (platformSelect) {
     platformSelect.value = detectedPlatform;
     platformSelect.disabled = true;
     platformSelect.classList.add('locked');
-
-    // Configure the model field for the detected platform
-    _configureModelField(detectedPlatform, {
-      modelFieldContainer, deviceModelSelect, deviceModelInput, modelNote, platformNames
-    });
-  } else if (platformSelect) {
-    // Detection failed: let user choose manually, but still wire up the change event
-    platformSelect.addEventListener('change', () => {
-      const platform = platformSelect.value;
-      if (!platform) {
-        if (modelFieldContainer) modelFieldContainer.classList.add('hidden');
-        return;
-      }
-      _configureModelField(platform, {
-        modelFieldContainer, deviceModelSelect, deviceModelInput, modelNote, platformNames
-      });
-    });
   }
 
-  // ── Form submission ──
+  // Configure the model field for the detected platform
+  _configureModelField(detectedPlatform, {
+    modelFieldContainer, deviceModelSelect, deviceModelInput, modelNote, platformNames
+  }, screenKey);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -650,7 +660,7 @@ async function initFormLogic() {
 /**
  * Configure the model field (dropdown vs text input) based on the selected platform.
  */
-function _configureModelField(platform, els) {
+function _configureModelField(platform, els, screenKey = null) {
   const { modelFieldContainer, deviceModelSelect, deviceModelInput, modelNote, platformNames } = els;
   const displayName = platformNames[platform] || 'device';
 
@@ -666,7 +676,29 @@ function _configureModelField(platform, els) {
       deviceModelInput.value = '';
     }
     if (modelNote) modelNote.classList.add('hidden');
-    const devices = getDeviceList(platform);
+    
+    let devices = getDeviceList(platform);
+    
+    // For iPhone/iPad: use direct screen-to-model mapping lookup
+    if (screenKey && (platform === 'iphone' || platform === 'ipad')) {
+      const el = document.getElementById('deviceLists');
+      if (el) {
+        try {
+          const lists = JSON.parse(el.textContent);
+          const lookupKey = platform === 'iphone' ? 'iphone_screen_models' : 'ipad_screen_models';
+          const screenModels = lists[lookupKey]?.[screenKey];
+          if (screenModels && screenModels.length > 0) {
+            devices = screenModels;
+            console.log(`[Fingrasp] Direct lookup matched ${devices.length} models for ${screenKey}`);
+          } else {
+            console.log(`[Fingrasp] No mapping for key "${screenKey}", showing all ${platform} models`);
+          }
+        } catch (err) {
+          console.error('Screen model lookup error:', err);
+        }
+      }
+    }
+
     if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect, displayName);
   } else {
     // Show text input (Android, Windows, Linux have too many models to list)
@@ -685,6 +717,23 @@ function _configureModelField(platform, els) {
 }
 
 async function run() {
+  // 1. Show detecting state (it's visible by default in HTML)
+  const desktopLayout = document.getElementById('desktopLayout');
+  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+
+  // 2. Detect platform
+  const detectedResult = await detectPlatform();
+
+  // 3. If detection failed, show error and stop
+  if (!detectedResult) {
+    showPlatformError();
+    return;
+  }
+
+  // 4. Configure the form with the detected platform
+  await initFormLogic(detectedResult.platform, detectedResult.screenKey);
+
+  // 5. Sanitize URL code and show the code entry UI
   const params = new URLSearchParams(window.location.search);
   let urlCode = params.get('code');
   if (urlCode && !/^[a-zA-Z0-9]{6}$/.test(urlCode)) {
@@ -694,7 +743,7 @@ async function run() {
   showCodeEntryUI(urlCode);
 }
 
-window.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('DOMContentLoaded', () => {
   setupNestedToggles();
 
   // Add clear button functionality
@@ -718,6 +767,5 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  await initFormLogic();
   run();
 });
