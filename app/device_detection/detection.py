@@ -19,8 +19,10 @@ import re
 from app.device_detection.databases import (
     APPLE_SILICON_PATTERNS,
     DESKTOP_GPU_PATTERNS,
-    IPAD_SCREEN_DB,
     IPHONE_SCREEN_DB,
+    IPAD_SCREEN_DB,
+    IPHONE_SCREEN_MODELS,
+    IPAD_SCREEN_MODELS,
 )
 from app.security import validate_input
 
@@ -710,29 +712,39 @@ def validate_device_model(
             logger.info(f"Could not get exact Android model from fingerprint store lookup. Using user inputted model '{user_model}'.")
             return user_model
 
-    # Handle iOS and Mac screen/GPU consistency (Request #1)
+    # Handle iOS and Mac screen/GPU consistency
     if detected_group in ("ios", "mac"):
-        # For iOS, detected_name is like "iPhone 12 / 12 Pro / 13..."
-        # For Mac, it's like "MacBook Pro (Apple M2 Pro)"
+        # We perform a strict validation for iOS using screen dimension keys
+        if detected_group == "ios" and fingerprint:
+            nav = _unwrap(fingerprint.get("navigator")) or {}
+            screen = _unwrap(fingerprint.get("screen")) or {}
+            
+            # Use same logic as extract_device_name to get hardware signals
+            w = min(screen.get("width", 0), screen.get("height", 0))
+            h = max(screen.get("width", 0), screen.get("height", 0))
+            dpr = nav.get("devicePixelRatio") or 1
+            screen_key = f"{int(w)}x{int(h)}x{int(float(dpr))}"
+            
+            # Determine if it's iphone or ipad
+            is_ipad = "ipad" in _get_platform_group(detected_name)
+            lookup_db = IPAD_SCREEN_MODELS if is_ipad else IPHONE_SCREEN_MODELS
+            
+            valid_models = lookup_db.get(screen_key, [])
+            
+            # Strict check: user input must be in the list of models valid for this screen
+            if valid_models and user_model not in valid_models:
+                logger.warning(f"Hardware mismatch! User claims {user_model}, but screen key {screen_key} only supports {valid_models}")
+                return f"{user_model} ({detected_name})"
         
-        # Check if the user model is consistent with the hardware ground truth
-        # We split by ' / ' for iOS groups and check for exact inclusion
+        # Generic consistency check for Mac or cases without full fingerprint
         ground_truth_variants = [v.strip().lower() for v in detected_name.replace('(', '').replace(')', '').split('/')]
+        is_consistent = any(variant in user_model_lower or user_model_lower in variant for variant in ground_truth_variants)
         
-        is_consistent = False
-        for variant in ground_truth_variants:
-            if variant in user_model_lower or user_model_lower in variant:
-                is_consistent = True
-                break
-        
-        # If mismatch (e.g. user says iPhone 15 but hardware is iPhone 8 screen size)
-        # or if the user is using a generic name.
         if not is_consistent and detected_name not in ("iPhone", "iPad", "Mac"):
-            logger.warning(f"Hardware mismatch on {detected_group}! User selected '{user_model}', but hardware profile is '{detected_name}'.")
+            logger.warning(f"Consistency check failed on {detected_group}! User: '{user_model}', Hardware Profile: '{detected_name}'.")
             return f"{user_model} ({detected_name})"
 
-    # For all other cases where platforms match, trust the user input 
-    # as it's often more specific about the exact model than we can be via browser APIs.
+    # For all other cases where platforms match or we trust the input
     logger.info(f"User provided model '{user_model}' matching detected platform '{detected_group}'.")
     return user_model
 
