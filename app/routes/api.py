@@ -135,7 +135,7 @@ async def save(
     await db["fingerprints"].insert_one(fingerprint_doc)
 
     return JSONResponse(
-        status_code=status.HTTP_200_OK,
+        status_code=status.HTTP_201_CREATED,
         content=SuccessResponse(
             message="Thank you for contributing to this research.",
         ).model_dump(),
