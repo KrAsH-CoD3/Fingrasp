@@ -31,9 +31,96 @@ function formatKey(key) {
     .replace(/^./, s => s.toUpperCase());
 }
 
-function isMobileDevice() {
-  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+/**
+ * Detect the user's platform using a priority-based signal hierarchy:
+ * 1. navigator.userAgentData.getHighEntropyValues() — most reliable (async, Chromium-only)
+ * 2. navigator.userAgentData.platform — modern sync fallback
+ * 3. navigator.platform + maxTouchPoints — legacy fallback for Safari/Firefox
+ *
+ * For iOS, uses screen dimensions to distinguish iPhone from iPad.
+ * Returns: 'iphone' | 'ipad' | 'mac' | 'android' | 'windows' | 'linux' | null
+ */
+async function detectPlatform() {
+  // ── Priority 1: High Entropy Values (Chromium browsers) ──
+  if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+    try {
+      const hints = await navigator.userAgentData.getHighEntropyValues(['platform', 'model', 'mobile']);
+      const platform = (hints.platform || '').toLowerCase();
+      const model = (hints.model || '').toLowerCase();
+      const isMobile = hints.mobile === true;
+
+      if (platform === 'android') return 'android';
+      if (platform === 'windows') return 'windows';
+      if (platform === 'linux') return 'linux';
+      if (platform === 'ios') {
+        if (model.startsWith('ipad')) return 'ipad';
+        if (model.startsWith('iphone')) return 'iphone';
+        // Fallback: use screen size to differentiate
+        return _iosScreenHeuristic();
+      }
+      if (platform === 'macos' || platform === 'mac os x') {
+        // Could be a real Mac or an iPad reporting as Mac (iPadOS 13+)
+        if (navigator.maxTouchPoints > 0) return 'ipad';
+        return 'mac';
+      }
+    } catch (e) {
+      console.warn('High entropy values failed:', e);
+    }
+  }
+
+  // ── Priority 2: navigator.userAgentData.platform (sync, Chromium) ──
+  if (navigator.userAgentData && navigator.userAgentData.platform) {
+    const platform = navigator.userAgentData.platform.toLowerCase();
+    if (platform === 'android') return 'android';
+    if (platform === 'windows') return 'windows';
+    if (platform === 'linux') return 'linux';
+    if (platform === 'ios') return _iosScreenHeuristic();
+    if (platform === 'macos') {
+      if (navigator.maxTouchPoints > 0) return 'ipad';
+      return 'mac';
+    }
+  }
+
+  // ── Priority 3: navigator.platform + maxTouchPoints (Safari, Firefox) ──
+  const navPlatform = (navigator.platform || '').toLowerCase();
+  const touchPoints = navigator.maxTouchPoints || 0;
+
+  if (navPlatform === 'iphone') return 'iphone';
+  if (navPlatform === 'ipad') return 'ipad';
+  if (navPlatform === 'macintel' || navPlatform === 'macarm') {
+    // iPadOS 13+ reports "MacIntel" but has touch
+    if (touchPoints > 0) return 'ipad';
+    return 'mac';
+  }
+  if (navPlatform.startsWith('win')) return 'windows';
+  if (navPlatform === 'linux' || navPlatform === 'x11') {
+    // Could be Android or desktop Linux
+    if (touchPoints > 0 && /android/i.test(navigator.userAgent)) return 'android';
+    return 'linux';
+  }
+
+  // ── Priority 4: User-Agent string (last resort) ──
+  const ua = (navigator.userAgent || '').toLowerCase();
+  if (ua.includes('android')) return 'android';
+  if (ua.includes('iphone')) return 'iphone';
+  if (ua.includes('ipad')) return 'ipad';
+  if (ua.includes('macintosh')) {
+    if (touchPoints > 0) return 'ipad';
+    return 'mac';
+  }
+  if (ua.includes('windows')) return 'windows';
+  if (ua.includes('linux')) return 'linux';
+
+  return null;
+}
+
+/**
+ * Distinguish iPhone from iPad using screen dimensions.
+ * iPads have a minimum dimension > 700px (logical pixels).
+ */
+function _iosScreenHeuristic() {
+  const minDim = Math.min(screen.width, screen.height);
+  return minDim > 700 ? 'ipad' : 'iphone';
 }
 
 function getDeviceList(platform) {
@@ -465,7 +552,7 @@ function showCodeEntryUI(urlCode = null) {
   }
 }
 
-function initFormLogic() {
+async function initFormLogic() {
   const form = document.getElementById('codeForm');
   const platformSelect = document.getElementById('platformSelect');
   const modelFieldContainer = document.getElementById('modelFieldContainer');
@@ -477,66 +564,43 @@ function initFormLogic() {
 
   if (!form) return;
 
-  // Filter platforms based on device type
-  const isMobile = isMobileDevice();
-  if (platformSelect) {
-    const mobilePlatforms = ['iphone', 'ipad', 'android'];
-    Array.from(platformSelect.options).forEach(opt => {
-      if (!opt.value) return;
-      const isMobileOpt = mobilePlatforms.includes(opt.value);
-      if (isMobile) {
-        if (!isMobileOpt) opt.classList.add('hidden');
-      } else {
-        if (isMobileOpt) opt.classList.add('hidden');
-      }
-    });
+  // ── Auto-detect platform and lock the select ──
+  const detectedPlatform = await detectPlatform();
 
+  const platformNames = {
+    'iphone': 'iPhone',
+    'ipad': 'iPad',
+    'mac': 'Mac',
+    'android': 'Android',
+    'windows': 'Windows',
+    'linux': 'Linux'
+  };
+
+  if (detectedPlatform && platformSelect) {
+    // Set the detected value and lock the dropdown
+    platformSelect.value = detectedPlatform;
+    platformSelect.disabled = true;
+    platformSelect.classList.add('locked');
+
+    // Configure the model field for the detected platform
+    _configureModelField(detectedPlatform, {
+      modelFieldContainer, deviceModelSelect, deviceModelInput, modelNote, platformNames
+    });
+  } else if (platformSelect) {
+    // Detection failed: let user choose manually, but still wire up the change event
     platformSelect.addEventListener('change', () => {
       const platform = platformSelect.value;
       if (!platform) {
         if (modelFieldContainer) modelFieldContainer.classList.add('hidden');
         return;
       }
-
-      if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
-
-      const platformNames = {
-        'iphone': 'iPhone',
-        'ipad': 'iPad',
-        'mac': 'Mac',
-        'android': 'Android',
-        'windows': 'Windows',
-        'linux': 'Linux'
-      };
-      const displayName = platformNames[platform] || 'device';
-
-      const iosPlatforms = ['iphone', 'ipad', 'mac'];
-      if (iosPlatforms.includes(platform)) {
-        if (deviceModelSelect) deviceModelSelect.classList.remove('hidden');
-        if (deviceModelInput) {
-          const wrapper = deviceModelInput.closest('.input-wrapper');
-          if (wrapper) wrapper.classList.add('hidden');
-          deviceModelInput.value = '';
-        }
-        if (modelNote) modelNote.classList.add('hidden');
-        const devices = getDeviceList(platform);
-        if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect, displayName);
-      } else {
-        if (deviceModelSelect) {
-          deviceModelSelect.classList.add('hidden');
-          deviceModelSelect.value = '';
-        }
-        if (deviceModelInput) {
-          const wrapper = deviceModelInput.closest('.input-wrapper');
-          if (wrapper) wrapper.classList.remove('hidden');
-          deviceModelInput.classList.remove('hidden');
-          deviceModelInput.placeholder = `Enter your ${displayName} model`;
-        }
-        if (modelNote) modelNote.classList.remove('hidden');
-      }
+      _configureModelField(platform, {
+        modelFieldContainer, deviceModelSelect, deviceModelInput, modelNote, platformNames
+      });
     });
   }
 
+  // ── Form submission ──
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -547,15 +611,15 @@ function initFormLogic() {
     }
 
     let deviceModel = '';
-    const iosPlatforms = ['iphone', 'ipad', 'mac'];
-    if (iosPlatforms.includes(platform)) {
+    const dropdownPlatforms = ['iphone', 'ipad', 'mac'];
+    if (dropdownPlatforms.includes(platform)) {
       deviceModel = deviceModelSelect ? deviceModelSelect.value : '';
     } else {
       deviceModel = deviceModelInput ? deviceModelInput.value.trim() : '';
     }
 
     if (!deviceModel) {
-      showToast(iosPlatforms.includes(platform) ? 'Please select model.' : 'Please enter model.', 'error');
+      showToast(dropdownPlatforms.includes(platform) ? 'Please select model.' : 'Please enter model.', 'error');
       return;
     }
 
@@ -583,6 +647,43 @@ function initFormLogic() {
   });
 }
 
+/**
+ * Configure the model field (dropdown vs text input) based on the selected platform.
+ */
+function _configureModelField(platform, els) {
+  const { modelFieldContainer, deviceModelSelect, deviceModelInput, modelNote, platformNames } = els;
+  const displayName = platformNames[platform] || 'device';
+
+  if (modelFieldContainer) modelFieldContainer.classList.remove('hidden');
+
+  const dropdownPlatforms = ['iphone', 'ipad', 'mac'];
+  if (dropdownPlatforms.includes(platform)) {
+    // Show model dropdown (Apple devices have a known, finite set of models)
+    if (deviceModelSelect) deviceModelSelect.classList.remove('hidden');
+    if (deviceModelInput) {
+      const wrapper = deviceModelInput.closest('.input-wrapper');
+      if (wrapper) wrapper.classList.add('hidden');
+      deviceModelInput.value = '';
+    }
+    if (modelNote) modelNote.classList.add('hidden');
+    const devices = getDeviceList(platform);
+    if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect, displayName);
+  } else {
+    // Show text input (Android, Windows, Linux have too many models to list)
+    if (deviceModelSelect) {
+      deviceModelSelect.classList.add('hidden');
+      deviceModelSelect.value = '';
+    }
+    if (deviceModelInput) {
+      const wrapper = deviceModelInput.closest('.input-wrapper');
+      if (wrapper) wrapper.classList.remove('hidden');
+      deviceModelInput.classList.remove('hidden');
+      deviceModelInput.placeholder = `Enter your ${displayName} model`;
+    }
+    if (modelNote) modelNote.classList.remove('hidden');
+  }
+}
+
 async function run() {
   const params = new URLSearchParams(window.location.search);
   let urlCode = params.get('code');
@@ -593,7 +694,7 @@ async function run() {
   showCodeEntryUI(urlCode);
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   setupNestedToggles();
 
   // Add clear button functionality
@@ -617,6 +718,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  initFormLogic();
+  await initFormLogic();
   run();
 });

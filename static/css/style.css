@@ -1159,6 +1159,14 @@ margin-bottom: 16px;
   padding-right: 40px;
 }
 
+.code-entry-card select.locked {
+  opacity: 0.7;
+  cursor: default;
+  pointer-events: none;
+  background-image: none;
+  padding-right: 16px;
+}
+
 .code-entry-card select:focus {
   outline: none;
   border-color: var(--accent);
