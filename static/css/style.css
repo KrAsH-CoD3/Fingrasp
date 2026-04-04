@@ -1357,7 +1357,7 @@ opacity: .7;
 position: fixed;
 top: 20px;
 right: 20px;
-z-index: 200;
+z-index: 3000;
 display: flex;
 flex-direction: column;
 gap: 10px;
