@@ -105,6 +105,10 @@ main {
 flex: 1;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* ── Header ── */
 header {
 display: flex;
@@ -337,17 +341,33 @@ to { transform: rotate(360deg); }
 }
 
 /* ── Platform Detection State ── */
-.platform-detect-section,
-.platform-error-section {
+.platform-detect-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  min-height: calc(100vh - 240px);
+  padding: 48px 20px;
+}
+
+.platform-error-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(100vh - 240px);
+  padding: 48px 20px;
 }
 
 .platform-detect-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 32px 16px;
+  gap: 20px;
+  max-width: 400px;
+  text-align: center;
 }
 
 .platform-spinner {

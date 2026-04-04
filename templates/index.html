@@ -1,46 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Desktop Layout Container (side-by-side for desktop) -->
-<div class="desktop-layout" id="desktopLayout">
-<!-- Hero Section (always visible on left) -->
-<div class="hero" id="heroSection">
-<div id="heroWaiting">
-<h1>Your Device<br /><em>Fingerprint</em></h1>
-<p>Enter your access code to begin the fingerprint collection process.<br />See our <a href="/privacy" class="link-privacy">Privacy Policy</a> to learn exactly what we collect and why.</p>
-</div>
-<div id="heroCollected" class="hidden">
-<h1>Your Device<br /><em>Fully Grasped</em></h1>
-<p>Device fingerprint collected for research &amp; fraud-prevention purposes.<br />See our <a href="/privacy" class="link-privacy">Privacy Policy</a> to learn exactly what we collect and why.</p>
-</div>
+<!-- Global Platform Detection Loader (horizontal/vertical center) -->
+<div class="platform-detect-section" id="platformDetectSection">
+    <div class="code-entry-card">
+        <div class="platform-detect-content">
+            <div class="platform-spinner"></div>
+            <p class="platform-detect-msg">Detecting device platform<span class="dot-anim"></span></p>
+        </div>
+    </div>
 </div>
 
-    <!-- Right Panel (Code Entry or Fingerprint) -->
-    <div class="right-panel" id="rightPanel">
-        <!-- Platform Detection State (shown while detecting) -->
-        <div class="platform-detect-section" id="platformDetectSection">
-            <div class="code-entry-card">
-                <div class="platform-detect-content">
-                    <div class="platform-spinner"></div>
-                    <p class="platform-detect-msg">Detecting device platform<span class="dot-anim"></span></p>
-                </div>
-            </div>
+<!-- Global Platform Error State -->
+<div class="platform-error-section hidden" id="platformErrorSection">
+    <div class="code-entry-card">
+        <div class="platform-error-content">
+            <svg class="platform-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <h2>Unsupported Device</h2>
+            <p>We couldn't detect your device platform. Please visit this page using a mobile device (iPhone, iPad, Android) or a desktop browser (Mac, Windows, Linux).</p>
         </div>
-
-        <!-- Platform Error State (shown if detection fails) -->
-        <div class="platform-error-section hidden" id="platformErrorSection">
-            <div class="code-entry-card">
-                <div class="platform-error-content">
-                    <svg class="platform-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    <h2>Unsupported Device</h2>
-                    <p>We couldn't detect your device platform. Please visit this page using a mobile device (iPhone, iPad, Android) or a desktop browser (Mac, Windows, Linux).</p>
-                </div>
-            </div>
-        </div>
+    </div>
+</div>
 
         <!-- Code Entry Prompt (hidden until platform detected) -->
         <div class="code-entry-section hidden" id="codeEntrySection">

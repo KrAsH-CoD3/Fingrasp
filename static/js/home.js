@@ -553,7 +553,10 @@ function showCodeEntryUI(urlCode = null) {
 
   // Show code entry
   if (codeEntry) codeEntry.classList.remove('hidden');
-  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+  if (desktopLayout) {
+    desktopLayout.classList.remove('hidden');
+    desktopLayout.classList.add('show-code-entry');
+  }
 
   const codeInput = document.getElementById('codeInput');
   const attemptsDisplay = document.getElementById('attemptsRemaining');
@@ -576,7 +579,11 @@ function showPlatformError() {
 
   if (detectSection) detectSection.classList.add('hidden');
   if (errorSection) errorSection.classList.remove('hidden');
-  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+  
+  if (desktopLayout) {
+    desktopLayout.classList.remove('hidden');
+    desktopLayout.classList.add('show-code-entry');
+  }
 }
 
 async function initFormLogic(detectedPlatform, screenKey = null) {
@@ -717,9 +724,8 @@ function _configureModelField(platform, els, screenKey = null) {
 }
 
 async function run() {
-  // 1. Show detecting state (it's visible by default in HTML)
-  const desktopLayout = document.getElementById('desktopLayout');
-  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+  // 1. Show detecting state (it's visible by default in HTML as an inline loader)
+  // We keep the desktopLayout hidden until detection is complete
 
   // 2. Detect platform
   const detectedResult = await detectPlatform();
