@@ -19,6 +19,10 @@ from app.schemas import (
     SuccessResponse,
     SessionResponse,
 )
+
+logger = logging.getLogger(__name__)
+
+
 def get_real_ip(request: Request) -> str:
     """Extract real user IP from Cloudflare or standard proxy headers."""
     cf_ip = request.headers.get("CF-Connecting-IP")
@@ -108,15 +112,30 @@ async def validate_turnstile(
             ).model_dump(),
         )
 
-    # 2. Check Timing Verification (e.g. less than 2.5 seconds is suspicious)
-    if body.time_to_solve is not None and body.time_to_solve < 2500:
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content=ErrorResponse(
-                error_code="FP_ERR_BOT_DETECTED",
-                message="Submission too fast.",
-            ).model_dump(),
-        )
+    # 2. Check Timing & Interaction Verification
+    # bots often have perfect timing or zero interaction
+    if body.time_to_solve is not None:
+        # Too fast is always suspicious
+        if body.time_to_solve < 2500:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content=ErrorResponse(
+                    error_code="FP_ERR_BOT_DETECTED",
+                    message="Submission too fast.",
+                ).model_dump(),
+            )
+        
+        # Zero interaction after significant time is highly suspicious of headless automation
+        # We check if score is < 5 (e.g. they solved turnstile but never moved mouse/typed)
+        if body.interaction_score is not None and body.interaction_score < 5:
+             logger.warning(f"Bot suspected for {get_real_ip(request)}: Low interaction score ({body.interaction_score})")
+             return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content=ErrorResponse(
+                    error_code="FP_ERR_BOT_DETECTED",
+                    message="Unusual behavior detected.",
+                ).model_dump(),
+            )
 
     # 3. Verify Turnstile token with Cloudflare
     if not settings.TURNSTILE_SECRET_KEY:

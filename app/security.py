@@ -181,20 +181,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         else:
             # Strict CSP for the rest of the app
             csp_parts = [
-                # Trusted scripts: added https: as fallback for strict-dynamic on older browsers
-                f"script-src 'nonce-{nonce}' 'strict-dynamic' https: 'unsafe-inline' 'unsafe-eval'",
-                # Trusted styles
-                f"style-src 'self' 'nonce-{nonce}' 'unsafe-inline'",
-                # Allow images
+                # Trusted scripts via nonce or dynamic loading
+                f"script-src 'nonce-{nonce}' 'strict-dynamic'",
+                # Trusted styles via our domain or specific nonce
+                f"style-src 'self' 'nonce-{nonce}'",
+                # Allow images from our domain or base64 data: URIs and cloudflare
                 "img-src 'self' data: https://challenges.cloudflare.com",
-                # Restrict XHR/Fetch/WebSockets
+                # Restrict XHR/Fetch/WebSockets to ipgeo.myip.link and ourself
                 "connect-src 'self' https://ipgeo.myip.link https://challenges.cloudflare.com",
-                "form-action 'self'",
-                "font-src 'self' data:",
-                "base-uri 'self'",
-                "frame-ancestors 'none'",
-                "frame-src 'self' https://challenges.cloudflare.com",
-                "object-src 'none'",
+                "form-action 'self'",  # Prevent form-data theft
+                "font-src 'self'",  # Only allow fonts from our own domain
+                "base-uri 'self'",  # Prevent <base> hijack
+                "frame-ancestors 'none'",  # Prevent site from being framed (Clickjacking)
+                "frame-src 'self' https://challenges.cloudflare.com",  # Allow Cloudflare Turnstile iframe
+                "object-src 'none'",  # Block plugins (Flash, etc.)
             ]
 
         # ── Environment Specific (Applied only in production) ──

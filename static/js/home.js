@@ -1,6 +1,22 @@
 import { MixVisit } from '/static/js/mixvisit.js';
 
 const PAGE_LOAD_TIME = Date.now();
+let INTERACTION_SCORE = 0;
+let lastInteractionTime = Date.now();
+
+// Track human interactions (throttled/capped to prevent noise but prove presence)
+const trackInteraction = (inc = 1) => {
+    const now = Date.now();
+    if (now - lastInteractionTime > 100) { // Max 10 increments per second
+        INTERACTION_SCORE = Math.min(INTERACTION_SCORE + inc, 100);
+        lastInteractionTime = now;
+    }
+};
+window.addEventListener('mousemove', () => trackInteraction(1), { passive: true });
+window.addEventListener('keydown', () => trackInteraction(5), { passive: true });
+window.addEventListener('scroll', () => trackInteraction(2), { passive: true });
+window.addEventListener('click', () => trackInteraction(10), { passive: true });
+
 let validatedCode = null;
 
 function setLoaderMessage(message) {
@@ -462,14 +478,15 @@ function copySection(id) {
   });
 }
 
-async function validateTurnstile(turnstileToken, honeypotEmail, timeToSolve) {
+async function validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, interactionScore) {
   try {
     const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
     const csrfToken = csrfMatch ? csrfMatch[1] : '';
     const payload = {
         cf_turnstile_response: turnstileToken,
         honeypot_email: honeypotEmail,
-        time_to_solve: timeToSolve
+        time_to_solve: timeToSolve,
+        interaction_score: interactionScore
     };
     const res = await fetch('/api/validate-turnstile', {
       method: 'POST',
@@ -497,7 +514,7 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, time
     if (codeEntry) codeEntry.classList.add('hidden');
 
     setLoaderMessage('Verifying security check<span class="dot-anim"></span>');
-    const sessionToken = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve);
+    const sessionToken = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, INTERACTION_SCORE);
 
     if (!sessionToken) {
       showToast('Security verification failed. Please try again.', 'error');
@@ -591,7 +608,7 @@ window.onTurnstileError = function() {
   const errorEl = document.getElementById('turnstileError');
   if (widget) widget.classList.add('hidden');
   if (errorEl) errorEl.classList.remove('hidden');
-  showToast('Security verification service failed to initialize.', 'error');
+  showToast('Security verification could not be loaded. Please try refreshing the page.', 'error');
 };
 
 async function initFormLogic(detectedPlatform, screenKey = null) {

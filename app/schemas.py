@@ -161,6 +161,10 @@ class TurnstileValidationRequest(BaseModel):
         default=None,
         description="Time taken between page load and submission in milliseconds",
     )
+    interaction_score: int | None = Field(
+        default=0,
+        description="Behavioral interaction score based on mouse/keyboard events",
+    )
 
 
 class MixVisitPayload(FingerprintPayload):
