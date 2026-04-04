@@ -64,7 +64,14 @@
         <option value="linux">Linux</option>
       </select>
       <div id="modelFieldContainer" class="hidden">
-        <p class="model-note hidden" id="modelNote">For Android, Windows, and Linux platforms, please manually enter your device model in the field below, as there are too many different models from various manufacturers to list them all in a dropdown menu.<br/>Examples include: Samsung Galaxy S24, Surface Pro 9, and ThinkPad X1.</p>
+        <div id="modelNote" class="model-note-trigger-wrapper hidden">
+            <div class="note-trigger" id="noteHelpTrigger">
+                <span class="note-trigger-text">Click to know why you need to manually write your model</span>
+                <span class="note-icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </span>
+            </div>
+        </div>
         <select id="deviceModelSelect" autocomplete="off">
           <option value="" disabled selected>Select model</option>
         </select>
@@ -127,6 +134,21 @@
                 </div>
             </div>
             <div class="fp-body" id="fpBody"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Model Help Modal -->
+<div id="modelHelpModal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close modal">&times;</button>
+        <div class="modal-body">
+            <h3>Manual Entry Required</h3>
+            <p>For Android, Windows, and Linux platforms, please manually enter your device model. There are too many different models of these devices from various manufacturers to list them all in a single menu.</p>
+            <div class="example-box">
+                <span class="example-label">Examples:</span>
+                <span class="example-val">Samsung Galaxy S24, Surface Pro 9, ThinkPad X1.</span>
+            </div>
         </div>
     </div>
 </div>

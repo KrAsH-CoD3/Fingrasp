@@ -590,6 +590,19 @@ async function initFormLogic(detectedPlatform, screenKey = null) {
   const deviceModelInput = document.getElementById('deviceModelInput');
   const honeypotEmailInput = document.getElementById('honeypotEmail');
   const modelNote = document.getElementById('modelNote');
+  const noteHelpTrigger = document.getElementById('noteHelpTrigger');
+  const modelHelpModal = document.getElementById('modelHelpModal');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+  if (noteHelpTrigger && modelHelpModal) {
+    noteHelpTrigger.addEventListener('click', () => {
+      modelHelpModal.classList.remove('hidden');
+    });
+
+    modalCloseBtn?.addEventListener('click', () => {
+      modelHelpModal.classList.add('hidden');
+    });
+  }
 
   if (!form) return;
 
