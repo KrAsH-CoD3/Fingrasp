@@ -11,11 +11,13 @@ from app.config import settings
 from app.limiter import limiter
 from app.schemas import (
     CodeValidationRequest,
+    TurnstileValidationRequest,
     ErrorResponse,
     MixVisitPayload,
     SuccessResponse,
     SessionResponse,
 )
+import httpx
 
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -71,6 +73,78 @@ async def validate_code(
         content=SessionResponse(
             session_token=session_token,
             message="Code valid. Session initiated.",
+        ).model_dump(),
+    )
+
+
+@limiter.limit("5/minute")
+@router.post("/validate-turnstile")
+async def validate_turnstile(
+    request: Request,
+    body: TurnstileValidationRequest,
+) -> JSONResponse:
+    """
+    Validate Turnstile challenge and behavioral metrics, then generate a session token.
+    """
+    # 1. Check Honeypot
+    if body.honeypot_email:
+        # Silently fail for bots
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=ErrorResponse(
+                error_code="FP_ERR_BOT_DETECTED",
+                message="Invalid submission.",
+            ).model_dump(),
+        )
+
+    # 2. Check Timing Verification (e.g. less than 2.5 seconds is suspicious)
+    if body.time_to_solve is not None and body.time_to_solve < 2500:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=ErrorResponse(
+                error_code="FP_ERR_BOT_DETECTED",
+                message="Submission too fast.",
+            ).model_dump(),
+        )
+
+    # 3. Verify Turnstile token with Cloudflare
+    if not settings.TURNSTILE_SECRET_KEY:
+        # If no key is set, we bypass validation for local dev (warning: only for dev)
+        pass
+    else:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": settings.TURNSTILE_SECRET_KEY,
+                    "response": body.cf_turnstile_response,
+                    "remoteip": request.client.host if request.client else None,
+                },
+                timeout=10.0,
+            )
+            data = response.json()
+            if not data.get("success"):
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content=ErrorResponse(
+                        error_code="FP_ERR_CAPTCHA_FAILED",
+                        message="CAPTCHA validation failed.",
+                    ).model_dump(),
+                )
+
+    # 4. Generate Session Token
+    db = request.app.state.db
+    session_token = str(uuid.uuid4())
+    await db[settings.TEMP_SESSION_COLLECTION_NAME].insert_one({
+        "session_token": session_token,
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=settings.TEMP_SESSION_EXPIRY_MINUTES)
+    })
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=SessionResponse(
+            session_token=session_token,
+            message="Verification successful. Session initiated.",
         ).model_dump(),
     )
 

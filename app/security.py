@@ -188,11 +188,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 # Allow images from our domain or base64 data: URIs
                 "img-src 'self' data:",
                 # Restrict XHR/Fetch/WebSockets to ipgeo.myip.link and ourself
-                "connect-src 'self' https://ipgeo.myip.link",
+                "connect-src 'self' https://ipgeo.myip.link https://challenges.cloudflare.com",
                 "form-action 'self'",  # Prevent form-data theft
                 "font-src 'self'",  # Only allow fonts from our own domain
                 "base-uri 'self'",  # Prevent <base> hijack
                 "frame-ancestors 'none'",  # Prevent site from being framed (Clickjacking)
+                "frame-src 'self' https://challenges.cloudflare.com",  # Allow Cloudflare Turnstile iframe
                 "object-src 'none'",  # Block plugins (Flash, etc.)
             ]
 

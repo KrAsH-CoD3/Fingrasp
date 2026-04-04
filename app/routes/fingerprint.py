@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 import logging
 
 from app.limiter import limiter
+from app.config import settings
 from app.device_detection.databases import (
     INDIVIDUAL_IPHONE_MODELS,
     INDIVIDUAL_IPAD_MODELS,
@@ -31,6 +32,7 @@ async def index(request: Request):
             "mac_models": INDIVIDUAL_MAC_MODELS,
             "iphone_screen_models": IPHONE_SCREEN_MODELS,
             "ipad_screen_models": IPAD_SCREEN_MODELS,
+            "turnstile_site_key": settings.TURNSTILE_SITE_KEY,
         },
     )
 

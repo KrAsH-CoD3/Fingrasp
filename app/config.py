@@ -59,6 +59,10 @@ class Settings:
     # before saving to the database.
     ANONYMIZE_IP: bool = os.getenv("ANONYMIZE_IP", "true").lower() in TRUE_VALUES
 
+    # ── Cloudflare Turnstile ──
+    TURNSTILE_SITE_KEY: str = os.getenv("TURNSTILE_SITE_KEY", "")
+    TURNSTILE_SECRET_KEY: str = os.getenv("TURNSTILE_SECRET_KEY", "")
+
     # ── Telegram Bot ──
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")

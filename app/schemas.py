@@ -144,6 +144,25 @@ class CodeValidationRequest(BaseModel):
     )
 
 
+class TurnstileValidationRequest(BaseModel):
+    """Schema for public self-service flow using Turnstile and honeypot."""
+
+    cf_turnstile_response: str = Field(
+        ...,
+        min_length=1,
+        description="Turnstile challenge token",
+    )
+    honeypot_email: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Honeypot field that must be empty",
+    )
+    time_to_solve: int | None = Field(
+        default=None,
+        description="Time taken between page load and submission in milliseconds",
+    )
+
+
 class MixVisitPayload(FingerprintPayload):
     """Schema for fingerprint submission with session token."""
 

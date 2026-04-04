@@ -15,4 +15,5 @@ dependencies = [
     "python-telegram-bot[webhooks]",
     "redis",
     "rapidfuzz>=3.14.3",
+    "httpx>=0.28.1",
 ]
