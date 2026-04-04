@@ -1,7 +1,6 @@
 import { MixVisit } from '/static/js/mixvisit.js';
 
 const MAX_ATTEMPTS = 3;
-let attemptsRemaining = MAX_ATTEMPTS;
 let validatedCode = null;
 
 function setLoaderMessage(message) {
@@ -497,9 +496,7 @@ async function collectAndSubmit(deviceModel, code) {
     const sessionToken = await validateCode(code);
 
     if (!sessionToken) {
-      attemptsRemaining--;
-      if (attemptsDisplay) attemptsDisplay.textContent = attemptsRemaining;
-      showToast(attemptsRemaining > 0 ? 'Invalid access code' : 'No attempts remaining.', 'error');
+      showToast('Invalid access code', 'error');
       if (loader) loader.classList.add('hidden');
       if (codeEntry) codeEntry.classList.remove('hidden');
       return;
@@ -553,14 +550,12 @@ function showCodeEntryUI(urlCode = null) {
 
   // Show code entry
   if (codeEntry) codeEntry.classList.remove('hidden');
-  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+  if (desktopLayout) {
+    desktopLayout.classList.remove('hidden');
+    desktopLayout.classList.add('show-code-entry');
+  }
 
   const codeInput = document.getElementById('codeInput');
-  const attemptsDisplay = document.getElementById('attemptsRemaining');
-
-  if (attemptsDisplay) {
-    attemptsDisplay.textContent = attemptsRemaining;
-  }
 
   if (urlCode && codeInput) {
     codeInput.value = urlCode;
@@ -576,7 +571,11 @@ function showPlatformError() {
 
   if (detectSection) detectSection.classList.add('hidden');
   if (errorSection) errorSection.classList.remove('hidden');
-  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+  
+  if (desktopLayout) {
+    desktopLayout.classList.remove('hidden');
+    desktopLayout.classList.add('show-code-entry');
+  }
 }
 
 async function initFormLogic(detectedPlatform, screenKey = null) {
@@ -636,11 +635,6 @@ async function initFormLogic(detectedPlatform, screenKey = null) {
     const code = codeInput ? codeInput.value.trim() : '';
     if (!code) {
       showToast('Please enter an access code.', 'error');
-      return;
-    }
-
-    if (attemptsRemaining <= 0) {
-      showToast('No attempts remaining. Please request a new code.', 'error');
       return;
     }
 
@@ -717,9 +711,8 @@ function _configureModelField(platform, els, screenKey = null) {
 }
 
 async function run() {
-  // 1. Show detecting state (it's visible by default in HTML)
-  const desktopLayout = document.getElementById('desktopLayout');
-  if (desktopLayout) desktopLayout.classList.add('show-code-entry');
+  // 1. Show detecting state (it's visible by default in HTML as an inline loader)
+  // We keep the desktopLayout hidden until detection is complete
 
   // 2. Detect platform
   const detectedResult = await detectPlatform();
