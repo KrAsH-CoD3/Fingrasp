@@ -2,6 +2,7 @@
 
 {% block extra_head %}
 <link rel="preconnect" href="https://challenges.cloudflare.com" />
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="{{ nonce }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -162,6 +163,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="{{ nonce }}"></script>
 <script nonce="{{ nonce }}" type="module" src="{{ url_for('static', path='js/home.js') }}?v=1.2"></script>
 {% endblock %}
