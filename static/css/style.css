@@ -111,10 +111,27 @@ flex: 1;
 
 /* ── Header ── */
 header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 24px;
+  position: sticky;
+  top: 16px;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  margin-bottom: 32px;
+  background: var(--surface);
+  background: rgba(17, 22, 32, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+[data-theme="light"] header {
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 8px 32px rgba(49, 130, 206, 0.08);
 }
 
 .logo {
