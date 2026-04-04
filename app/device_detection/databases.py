@@ -10,7 +10,7 @@ SCREEN_DB = list[tuple[tuple[int, int], int, str]]
 IOS_MODELS = list[str]
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 1: iPhone Screen-Based Detection
+# --- iPhone Device Detection Mapping ---
 # ═══════════════════════════════════════════════════════════════════════════════
 # iOS user agents NEVER reveal the model — they all just say "iPhone".
 # The only reliable browser-side signals are logical screen dimensions + DPR.
@@ -43,7 +43,7 @@ IPHONE_SCREEN_DB: SCREEN_DB = [
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 2: iPad Screen-Based Detection
+# --- iPad Device Detection Mapping ---
 # ═══════════════════════════════════════════════════════════════════════════════
 # All modern iPads have DPR 2. Source: ios-resolution.com, Apple developer docs.
 
@@ -73,7 +73,7 @@ IPAD_SCREEN_DB: SCREEN_DB = [
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 2.5: Individual Device Models for Dropdown Selection
+# --- Curated Device Models for Web Interface ---
 # ═══════════════════════════════════════════════════════════════════════════════
 # Every model listed individually for accurate user selection.
 # The user's exact model is used as device_name in the DB.
@@ -250,7 +250,7 @@ INDIVIDUAL_MAC_MODELS: IOS_MODELS = [
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 2.6: Screen Profile → Individual Model Mapping (for frontend filtering)
+# --- Screen Profile to Model Lookup Mappings ---
 # ═══════════════════════════════════════════════════════════════════════════════
 # Explicit mapping from "WxHxDPR" screen profile keys to the exact individual
 # model names from the lists above. This is used by the frontend to filter the
@@ -338,7 +338,7 @@ IPAD_SCREEN_MODELS: dict[str, list[str]] = {
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 3: Apple Silicon Patterns (Mac detection via WebGL GPU)
+# --- Mac & Apple Silicon WebGL Identification Patterns ---
 # ═══════════════════════════════════════════════════════════════════════════════
 
 APPLE_SILICON_PATTERNS: list[tuple[str, str]] = [
@@ -362,7 +362,7 @@ APPLE_SILICON_PATTERNS: list[tuple[str, str]] = [
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 7: Desktop & Mobile GPU Pattern Matching
+# --- Desktop & Mobile GPU Vendor Pattern Matching ---
 # ═══════════════════════════════════════════════════════════════════════════════
 
 DESKTOP_GPU_PATTERNS: list[tuple[str, str]] = [

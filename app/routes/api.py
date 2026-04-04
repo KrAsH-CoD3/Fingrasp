@@ -89,7 +89,7 @@ async def validate_turnstile(
     """
     Validate Turnstile challenge and behavioral metrics, then generate a session token.
     """
-    # 1. Check Honeypot
+    # Check Honeypot
     if body.honeypot_email:
         # Silently fail for bots
         return JSONResponse(
@@ -100,7 +100,7 @@ async def validate_turnstile(
             ).model_dump(),
         )
 
-    # 2. Check Timing & Interaction Verification
+    # Check Timing & Interaction Verification
     # bots often have perfect timing or zero interaction
     if body.time_to_solve is not None:
         # Too fast is always suspicious
@@ -125,7 +125,7 @@ async def validate_turnstile(
                 ).model_dump(),
             )
 
-    # 3. Verify Turnstile token with Cloudflare
+    # Verify Turnstile token with Cloudflare
     if not settings.TURNSTILE_SECRET_KEY:
         # If no key is set, we bypass validation for local dev (warning: only for dev)
         pass
@@ -163,7 +163,7 @@ async def validate_turnstile(
                 ).model_dump(),
             )
 
-    # 4. Generate Session Token
+    # Generate Session Token
     db = request.app.state.db
     session_token = str(uuid.uuid4())
     await db[settings.TEMP_SESSION_COLLECTION_NAME].insert_one({
@@ -189,11 +189,11 @@ async def save(
     """
     Save fingerprint payload.
 
-    Validation order per Section 7:
-    a. Validate code exists, not expired (Section 7.1)
-    b. Delete code immediately (prevent race conditions)
-    c. Validate payload fields (Section 7.2)
-    d. Check for duplicates using SHA-256 hash (Section 7.3)
+    Validation order:
+    a. Validate session token exists and is valid
+    b. Delete session token immediately (prevent race conditions)
+    c. Validate payload fields
+    d. Check for duplicates using SHA-256 hash
     e. Save fingerprint
     """
     db = request.app.state.db
