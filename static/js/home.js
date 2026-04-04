@@ -582,6 +582,18 @@ function showPlatformError() {
   }
 }
 
+/**
+ * Handle Turnstile widget initialization errors (e.g. invalid site key).
+ * Called via data-error-callback in index.html.
+ */
+window.onTurnstileError = function() {
+  const widget = document.getElementById('turnstileWidget');
+  const errorEl = document.getElementById('turnstileError');
+  if (widget) widget.classList.add('hidden');
+  if (errorEl) errorEl.classList.remove('hidden');
+  showToast('Security verification service failed to initialize.', 'error');
+};
+
 async function initFormLogic(detectedPlatform, screenKey = null) {
   const form = document.getElementById('codeForm');
   const platformSelect = document.getElementById('platformSelect');

@@ -4,6 +4,8 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 import uuid
+import logging
+import httpx
 
 from app.device_detection import validate_device_model
 from app.security import anonymize_ip
@@ -17,8 +19,17 @@ from app.schemas import (
     SuccessResponse,
     SessionResponse,
 )
-import httpx
-
+def get_real_ip(request: Request) -> str:
+    """Extract real user IP from Cloudflare or standard proxy headers."""
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip
+    
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    
+    return request.client.host if request.client else "0.0.0.0"
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -112,25 +123,38 @@ async def validate_turnstile(
         # If no key is set, we bypass validation for local dev (warning: only for dev)
         pass
     else:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-                data={
-                    "secret": settings.TURNSTILE_SECRET_KEY,
-                    "response": body.cf_turnstile_response,
-                    "remoteip": request.client.host if request.client else None,
-                },
-                timeout=10.0,
-            )
-            data = response.json()
-            if not data.get("success"):
-                return JSONResponse(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    content=ErrorResponse(
-                        error_code="FP_ERR_CAPTCHA_FAILED",
-                        message="CAPTCHA validation failed.",
-                    ).model_dump(),
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                    data={
+                        "secret": settings.TURNSTILE_SECRET_KEY,
+                        "response": body.cf_turnstile_response,
+                        "remoteip": get_real_ip(request),
+                    },
+                    timeout=settings.API_TIMEOUT,
                 )
+                response.raise_for_status()
+                data = response.json()
+                
+                if not data.get("success"):
+                    logger.warning(f"Turnstile failed for {get_real_ip(request)}: {data.get('error-codes')}")
+                    return JSONResponse(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        content=ErrorResponse(
+                            error_code="FP_ERR_CAPTCHA_FAILED",
+                            message="Security check failed. Please refresh.",
+                        ).model_dump(),
+                    )
+        except httpx.HTTPError as exc:
+            logger.error(f"Cloudflare Turnstile API error: {exc}")
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content=ErrorResponse(
+                    error_code="FP_ERR_EXTERNAL_SERVICE",
+                    message="Verification service temporarily unavailable.",
+                ).model_dump(),
+            )
 
     # 4. Generate Session Token
     db = request.app.state.db
@@ -205,7 +229,7 @@ async def save(
             ).model_dump(),
         )
 
-    client_ip = request.client.host if request.client else "0.0.0.0"
+    client_ip = get_real_ip(request)
     anonymized_ip = anonymize_ip(client_ip)
 
     device_name = validate_device_model(payload.device_model, payload.fingerprint)

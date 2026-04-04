@@ -86,7 +86,17 @@
 
       <!-- Cloudflare Turnstile Widget -->
       <div class="turnstile-wrapper">
-        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="dark"></div>
+        {% if turnstile_site_key %}
+          <div class="cf-turnstile" id="turnstileWidget" data-sitekey="{{ turnstile_site_key }}" data-theme="auto" data-error-callback="onTurnstileError"></div>
+          <!-- Placeholder for dynamic errors (e.g. invalid site key detected by SDK) -->
+          <div id="turnstileError" class="code-error hidden">
+            <p>Verification failed to initialize. Please check your network or contact the administrator.</p>
+          </div>
+        {% else %}
+          <div class="code-error">
+            <p>Security service is not configured. (Missing Site Key)</p>
+          </div>
+        {% endif %}
       </div>
 
       <button type="submit" id="codeSubmitBtn">Continue</button>
