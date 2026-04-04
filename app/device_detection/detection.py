@@ -709,8 +709,15 @@ def validate_device_model(
             logger.info(f"Android exact model found from fingerprint store lookup: '{exact_from_fingerprint}'. Overriding user input '{user_model}'.")
             return exact_from_fingerprint
         else:
-            logger.info(f"Could not get exact Android model from fingerprint store lookup. Using user inputted model '{user_model}'.")
-            return user_model
+            # Try to validate the user's manual text input against the store
+            identified = _identify_model(user_model, silent_log=True)
+            if identified:
+                logger.info(f"Android user input '{user_model}' validated against store as '{identified}'.")
+                return identified
+            
+            # Still unrecognized? Tag it with the hardware reality from signals
+            logger.info(f"Unrecognized Android model '{user_model}'. Tagging with hardware profile.")
+            return f"{user_model} ({detected_name})"
 
     # Handle iOS and Mac screen/GPU consistency
     if detected_group in ("ios", "mac"):
@@ -740,9 +747,14 @@ def validate_device_model(
         ground_truth_variants = [v.strip().lower() for v in detected_name.replace('(', '').replace(')', '').split('/')]
         is_consistent = any(variant in user_model_lower or user_model_lower in variant for variant in ground_truth_variants)
         
-        if not is_consistent and detected_name not in ("iPhone", "iPad", "Mac"):
+        if not is_consistent and detected_name not in ("iPhone", "iPad", "Mac", "Unknown Device"):
             logger.warning(f"Consistency check failed on {detected_group}! User: '{user_model}', Hardware Profile: '{detected_name}'.")
             return f"{user_model} ({detected_name})"
+    
+    # For all other cases (Windows, Linux, etc.), if the user input doesn't match 
+    # the detected hardware profile, append the truth as a suffix.
+    if user_model_lower != detected_name.lower() and detected_name != "Unknown Device":
+        return f"{user_model} ({detected_name})"
 
     # For all other cases where platforms match or we trust the input
     logger.info(f"User provided model '{user_model}' matching detected platform '{detected_group}'.")
