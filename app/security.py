@@ -43,6 +43,20 @@ def anonymize_ip(ip: str) -> str:
         logger.warning(f"Could not parse IP for anonymization: {ip!r}")
         return "0.0.0.0"
 
+def get_real_ip(request: Request) -> str:
+    """Extract real user IP from Cloudflare or standard proxy headers."""
+    # Priority: CF-Connecting-IP > X-Forwarded-For > remote_addr
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip
+    
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        # Get the first IP in the list
+        return forwarded.split(",")[0].strip()
+    
+    return request.client.host if request.client else "0.0.0.0"
+
 
 def is_trusted_origin(request: Request) -> bool:
     """

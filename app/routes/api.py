@@ -8,7 +8,7 @@ import logging
 import httpx
 
 from app.device_detection import validate_device_model
-from app.security import anonymize_ip
+from app.security import anonymize_ip, get_real_ip
 from app.config import settings
 from app.limiter import limiter
 from app.schemas import (
@@ -22,18 +22,6 @@ from app.schemas import (
 
 logger = logging.getLogger(__name__)
 
-
-def get_real_ip(request: Request) -> str:
-    """Extract real user IP from Cloudflare or standard proxy headers."""
-    cf_ip = request.headers.get("CF-Connecting-IP")
-    if cf_ip:
-        return cf_ip
-    
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    
-    return request.client.host if request.client else "0.0.0.0"
 
 router = APIRouter(prefix="/api", tags=["api"])
 
