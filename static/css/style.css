@@ -1048,10 +1048,11 @@ color: #fc8181;
 }
 
 /* Specific button/link variants to avoid style attributes */
-.link-privacy {
-color: var(--accent);
-text-decoration: none;
-font-weight: 600;
+.link-privacy,
+.link-how {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
 }
 
 .link-home {
