@@ -1,6 +1,6 @@
 import { MixVisit } from '/static/js/mixvisit.js';
 
-const MAX_ATTEMPTS = 3;
+const PAGE_LOAD_TIME = Date.now();
 let validatedCode = null;
 
 function setLoaderMessage(message) {
@@ -462,14 +462,19 @@ function copySection(id) {
   });
 }
 
-async function validateCode(code) {
+async function validateTurnstile(turnstileToken, honeypotEmail, timeToSolve) {
   try {
     const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
     const csrfToken = csrfMatch ? csrfMatch[1] : '';
-    const res = await fetch('/api/validate-code', {
+    const payload = {
+        cf_turnstile_response: turnstileToken,
+        honeypot_email: honeypotEmail,
+        time_to_solve: timeToSolve
+    };
+    const res = await fetch('/api/validate-turnstile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-      body: JSON.stringify({ code })
+      body: JSON.stringify(payload)
     });
     
     if (res.ok) {
@@ -483,20 +488,19 @@ async function validateCode(code) {
   }
 }
 
-async function collectAndSubmit(deviceModel, code) {
+async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, timeToSolve) {
   const loader = document.getElementById('loader');
   const codeEntry = document.getElementById('codeEntrySection');
-  const attemptsDisplay = document.getElementById('attemptsRemaining');
 
   try {
     if (loader) loader.classList.remove('hidden');
     if (codeEntry) codeEntry.classList.add('hidden');
 
-    setLoaderMessage('Validating access code<span class="dot-anim"></span>');
-    const sessionToken = await validateCode(code);
+    setLoaderMessage('Verifying security check<span class="dot-anim"></span>');
+    const sessionToken = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve);
 
     if (!sessionToken) {
-      showToast('Invalid access code', 'error');
+      showToast('Security verification failed. Please try again.', 'error');
       if (loader) loader.classList.add('hidden');
       if (codeEntry) codeEntry.classList.remove('hidden');
       return;
@@ -584,9 +588,8 @@ async function initFormLogic(detectedPlatform, screenKey = null) {
   const modelFieldContainer = document.getElementById('modelFieldContainer');
   const deviceModelSelect = document.getElementById('deviceModelSelect');
   const deviceModelInput = document.getElementById('deviceModelInput');
-  const codeInput = document.getElementById('codeInput');
+  const honeypotEmailInput = document.getElementById('honeypotEmail');
   const modelNote = document.getElementById('modelNote');
-  const attemptsDisplay = document.getElementById('attemptsRemaining');
 
   if (!form) return;
 
@@ -632,16 +635,25 @@ async function initFormLogic(detectedPlatform, screenKey = null) {
       return;
     }
 
-    const code = codeInput ? codeInput.value.trim() : '';
-    if (!code) {
-      showToast('Please enter an access code.', 'error');
+    // Get Turnstile token
+    let turnstileToken = '';
+    const turnstileResponseInput = document.querySelector('input[name="cf-turnstile-response"]');
+    if (turnstileResponseInput) {
+        turnstileToken = turnstileResponseInput.value;
+    }
+    
+    if (!turnstileToken) {
+      showToast('Please complete the Cloudflare Turnstile challenge.', 'error');
       return;
     }
+
+    const honeypotEmail = honeypotEmailInput ? honeypotEmailInput.value : '';
+    const timeToSolve = Date.now() - PAGE_LOAD_TIME;
 
     const loader = document.getElementById('loader');
     const codeEntry = document.getElementById('codeEntrySection');
     try {
-      await collectAndSubmit(deviceModel, code);
+      await collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, timeToSolve);
     } catch (err) {
       console.error('Submit error:', err);
       loader?.classList.add('hidden');
@@ -726,14 +738,8 @@ async function run() {
   // 4. Configure the form with the detected platform
   await initFormLogic(detectedResult.platform, detectedResult.screenKey);
 
-  // 5. Sanitize URL code and show the code entry UI
-  const params = new URLSearchParams(window.location.search);
-  let urlCode = params.get('code');
-  if (urlCode && !/^[a-zA-Z0-9]{6}$/.test(urlCode)) {
-    urlCode = null;
-    showToast('Invalid access code', 'error');
-  }
-  showCodeEntryUI(urlCode);
+  // 5. Show the UI (URL code parsing is removed since code flow is replaced)
+  showCodeEntryUI(null);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
