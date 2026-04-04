@@ -1,7 +1,6 @@
 import { MixVisit } from '/static/js/mixvisit.js';
 
 const MAX_ATTEMPTS = 3;
-let attemptsRemaining = MAX_ATTEMPTS;
 let validatedCode = null;
 
 function setLoaderMessage(message) {
@@ -497,9 +496,7 @@ async function collectAndSubmit(deviceModel, code) {
     const sessionToken = await validateCode(code);
 
     if (!sessionToken) {
-      attemptsRemaining--;
-      if (attemptsDisplay) attemptsDisplay.textContent = attemptsRemaining;
-      showToast(attemptsRemaining > 0 ? 'Invalid access code' : 'No attempts remaining.', 'error');
+      showToast('Invalid access code', 'error');
       if (loader) loader.classList.add('hidden');
       if (codeEntry) codeEntry.classList.remove('hidden');
       return;
@@ -559,11 +556,6 @@ function showCodeEntryUI(urlCode = null) {
   }
 
   const codeInput = document.getElementById('codeInput');
-  const attemptsDisplay = document.getElementById('attemptsRemaining');
-
-  if (attemptsDisplay) {
-    attemptsDisplay.textContent = attemptsRemaining;
-  }
 
   if (urlCode && codeInput) {
     codeInput.value = urlCode;
@@ -643,11 +635,6 @@ async function initFormLogic(detectedPlatform, screenKey = null) {
     const code = codeInput ? codeInput.value.trim() : '';
     if (!code) {
       showToast('Please enter an access code.', 'error');
-      return;
-    }
-
-    if (attemptsRemaining <= 0) {
-      showToast('No attempts remaining. Please request a new code.', 'error');
       return;
     }
 
