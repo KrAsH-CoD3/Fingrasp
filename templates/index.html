@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<link rel="preconnect" href="https://challenges.cloudflare.com" />
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="{{ nonce }}"></script>
+{% endblock %}
+
 {% block content %}
 <!-- Global Platform Detection Loader (horizontal/vertical center) -->
 <div class="platform-detect-section" id="platformDetectSection">
@@ -43,11 +48,11 @@
     <!-- Right Panel (Code Entry or Fingerprint) -->
     <div class="right-panel" id="rightPanel">
 
-        <!-- Code Entry Prompt (hidden until platform detected) -->
+        <!-- Access / Verification Section (hidden until platform detected) -->
         <div class="code-entry-section hidden" id="codeEntrySection">
             <div class="code-entry-card">
-                <h2>Enter Access Code</h2>
-                <p>Please enter the access code provided by the researcher.</p>
+                <h2>Human Verification</h2>
+                <p>Please complete the security check to continue.</p>
 <form id="codeForm">
       <select id="platformSelect" autocomplete="off">
         <option value="" disabled selected>Select platform</option>
@@ -59,16 +64,44 @@
         <option value="linux">Linux</option>
       </select>
       <div id="modelFieldContainer" class="hidden">
-        <p class="model-note hidden" id="modelNote">For Android, Windows, and Linux platforms, please manually enter your device model in the field below, as there are too many different models from various manufacturers to list them all in a dropdown menu.<br/>Examples include: Samsung Galaxy S24, Surface Pro 9, and ThinkPad X1.</p>
+        <div id="modelNote" class="model-note-trigger-wrapper hidden">
+            <div class="note-trigger" id="noteHelpTrigger">
+                <span class="note-trigger-text">Click to know why you need to manually write your model</span>
+                <span class="note-icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </span>
+            </div>
+        </div>
         <select id="deviceModelSelect" autocomplete="off">
           <option value="" disabled selected>Select model</option>
         </select>
         <div class="input-wrapper"><input type="text" id="deviceModelInput" placeholder="Enter your device model" autocomplete="off" class="hidden" /><button type="button" class="clear-input-btn hidden" data-target="deviceModelInput" aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       </div>
-      <div class="input-wrapper"><input type="text" id="codeInput" placeholder="Enter code" autocomplete="off" minlength="6" maxlength="6" /><button type="button" class="clear-input-btn hidden" data-target="codeInput" aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      
+      <!-- Honeypot Field (invisible to users) -->
+      <div class="hidden" aria-hidden="true">
+        <label for="honeypotEmail">Email</label>
+        <input type="email" id="honeypotEmail" name="email" tabindex="-1" autocomplete="new-password">
+      </div>
+
+      <!-- Cloudflare Turnstile Widget -->
+      <div class="turnstile-wrapper">
+        {% if turnstile_site_key %}
+          <div class="cf-turnstile" id="turnstileWidget" data-sitekey="{{ turnstile_site_key }}" data-theme="auto" data-error-callback="onTurnstileError"></div>
+          <!-- Placeholder for dynamic errors (e.g. invalid site key detected by SDK) -->
+          <div id="turnstileError" class="code-error hidden">
+            <p>We're having trouble loading the security check. Please try refreshing the page or temporarily disabling any ad-blockers.</p>
+          </div>
+        {% else %}
+          <div class="code-error">
+            <p>Security service is not configured. (Missing Site Key)</p>
+          </div>
+        {% endif %}
+      </div>
+
       <button type="submit" id="codeSubmitBtn">Continue</button>
     </form>
-                <p class="code-hint">If you don't have a code, reach out to the researcher who invited you.</p>
+                <p class="code-hint">Automated verification protects our research integrity.</p>
             </div>
         </div>
 
@@ -115,6 +148,21 @@
     </div>
 </div>
 
+<!-- Manual Model Help Modal -->
+<div id="modelHelpModal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close modal">&times;</button>
+        <div class="modal-body">
+            <h3>Manual Entry Required</h3>
+            <p>For Android, Windows, and Linux platforms, please manually enter your device model. There are too many different models of these devices from various manufacturers to list them all in a single menu.</p>
+            <div class="example-box">
+                <span class="example-label">Examples:</span>
+                <span class="example-val">Samsung Galaxy S24, Surface Pro 9, ThinkPad X1.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container for error messages -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -147,5 +195,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script nonce="{{ nonce }}" type="module" src="{{ url_for('static', path='js/home.js') }}?v=1.1"></script>
+<script nonce="{{ nonce }}" type="module" src="{{ url_for('static', path='js/home.js') }}?v=1.2"></script>
 {% endblock %}

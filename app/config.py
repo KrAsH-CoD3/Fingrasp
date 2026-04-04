@@ -59,6 +59,10 @@ class Settings:
     # before saving to the database.
     ANONYMIZE_IP: bool = os.getenv("ANONYMIZE_IP", "true").lower() in TRUE_VALUES
 
+    # ── Cloudflare Turnstile ──
+    TURNSTILE_SITE_KEY: str = os.getenv("TURNSTILE_SITE_KEY", "").strip()
+    TURNSTILE_SECRET_KEY: str = os.getenv("TURNSTILE_SECRET_KEY", "").strip()
+
     # ── Telegram Bot ──
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
@@ -72,6 +76,10 @@ class Settings:
     FINGERPRINT_COLLECTION_NAME: str = os.getenv("FINGERPRINT_COLLECTION_NAME", "fingers")
     TEMP_SESSION_COLLECTION_NAME: str = os.getenv("TEMP_SESSION_COLLECTION_NAME", "temp_sessions")
     TEMP_SESSION_EXPIRY_MINUTES: int = int(os.getenv("TEMP_SESSION_EXPIRY_MINUTES", "5"))
+
+    # ── External APIs ──
+    # Timeout for external requests like Turnstile siteverify
+    API_TIMEOUT: float = float(os.getenv("API_TIMEOUT", "15.0"))
 
 
 settings = Settings()

@@ -10,9 +10,9 @@ import unicodedata
 import ipaddress
 import secrets
 import logging
+import hmac
 import re
 
-import hmac
 
 from app.config import settings
 
@@ -42,6 +42,20 @@ def anonymize_ip(ip: str) -> str:
         # return a safe placeholder instead of leaking the raw value.
         logger.warning(f"Could not parse IP for anonymization: {ip!r}")
         return "0.0.0.0"
+
+def get_real_ip(request: Request) -> str:
+    """Extract real user IP from Cloudflare or standard proxy headers."""
+    # Priority: CF-Connecting-IP > X-Forwarded-For > remote_addr
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip
+    
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        # Get the first IP in the list
+        return forwarded.split(",")[0].strip()
+    
+    return request.client.host if request.client else "0.0.0.0"
 
 
 def is_trusted_origin(request: Request) -> bool:
@@ -185,14 +199,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 f"script-src 'nonce-{nonce}' 'strict-dynamic'",
                 # Trusted styles via our domain or specific nonce
                 f"style-src 'self' 'nonce-{nonce}'",
-                # Allow images from our domain or base64 data: URIs
-                "img-src 'self' data:",
+                # Allow images from our domain or base64 data: URIs and cloudflare
+                "img-src 'self' data: https://challenges.cloudflare.com",
                 # Restrict XHR/Fetch/WebSockets to ipgeo.myip.link and ourself
-                "connect-src 'self' https://ipgeo.myip.link",
+                "connect-src 'self' https://ipgeo.myip.link https://challenges.cloudflare.com",
                 "form-action 'self'",  # Prevent form-data theft
                 "font-src 'self'",  # Only allow fonts from our own domain
                 "base-uri 'self'",  # Prevent <base> hijack
                 "frame-ancestors 'none'",  # Prevent site from being framed (Clickjacking)
+                "frame-src 'self' https://challenges.cloudflare.com",  # Allow Cloudflare Turnstile iframe
                 "object-src 'none'",  # Block plugins (Flash, etc.)
             ]
 
