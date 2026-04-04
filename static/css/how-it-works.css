@@ -317,9 +317,18 @@
   gap: 16px;
   margin: 24px 0;
 }
+.card-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
 .card-grid-3 {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
+}
+@media (max-width: 600px) {
+  .card-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 .hiw-card {
   background: var(--surface);
