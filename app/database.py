@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 MAX_QUERY_DEPTH = 5
 MAX_QUERY_KEYS = 20
 
+# Server-side operators allowed in UPDATE documents.
+# Filters remain strict (zero operators) to prevent NoSQL injection.
+ALLOWED_UPDATE_OPERATORS = {"$set", "$inc", "$setOnInsert", "$push", "$pull", "$unset"}
+
 
 class QueryValidationError(Exception):
     pass
@@ -61,32 +65,34 @@ def _count_query_keys(query: Any, count: int = 0) -> int:
     return count
 
 
-def _validate_query_structure(query: Any) -> None:
-    """Validate that query contains no MongoDB operators.
+def _validate_query_structure(query: Any, allowed: set[str] | None = None) -> None:
+    """Validate that query contains no unauthorized MongoDB operators.
 
-    For maximum security, we only allow plain field queries.
-    Any key starting with '$' is rejected as a potential security risk.
+    Filters allow ZERO operators for maximum security.
+    Updates allow a whitelist of approved operators (ALLOWED_UPDATE_OPERATORS).
     """
     if not isinstance(query, dict):
         return
 
-    def check_no_operators(obj: Any, path: str = "root") -> None:
+    allowed = allowed or set()
+
+    def check_operators(obj: Any, path: str = "root") -> None:
         if isinstance(obj, dict):
             for key, value in obj.items():
                 if isinstance(key, str) and key.startswith("$"):
-                    logger.warning(
-                        f"Blocked MongoDB operator in query at {path}: {key}"
-                    )
-                    raise DangerousOperatorError(
-                        f"MongoDB operators are not allowed. Found: {key}"
-                    )
-                check_no_operators(value, f"{path}.{key}")
+                    if key not in allowed:
+                        logger.warning(
+                            f"Blocked unauthorized MongoDB operator at {path}: {key}"
+                        )
+                        raise DangerousOperatorError(
+                            f"Unauthorized MongoDB operator: {key}"
+                        )
+                check_operators(value, f"{path}.{key}")
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
-                check_no_operators(item, f"{path}[{i}]")
+                check_operators(item, f"{path}[{i}]")
 
-    check_no_operators(query)
-
+    check_operators(query)
     _validate_query_depth(query)
 
     key_count = _count_query_keys(query)
@@ -110,31 +116,34 @@ class SanitizedCollection:
     def __init__(self, collection):
         self._collection = collection
 
-    def _sanitize_for_mongodb(self, obj: Any) -> Any:
+    def _validate_and_sanitize_query(self, query: dict, allowed: set[str] | None = None) -> dict:
+        _validate_query_structure(query, allowed=allowed)
+        return self._sanitize_query(query, allowed=allowed)
+
+    def _sanitize_query(self, query: dict, allowed: set[str] | None = None) -> dict:
+        return self._sanitize_for_mongodb(query, allowed=allowed)
+
+    def _sanitize_for_mongodb(self, obj: Any, allowed: set[str] | None = None) -> Any:
         if isinstance(obj, dict):
             sanitized = {}
+            allowed = allowed or set()
             for key, value in obj.items():
                 if isinstance(key, str):
-                    if key.startswith("$") or "." in key:
+                    # Key is malicious if it starts with $ and isn't in whitelist, or if it contains a dot
+                    is_operator = key.startswith("$")
+                    if (is_operator and key not in allowed) or "." in key:
                         logger.warning(
-                            f"Removed potentially malicious key from data: {key[:20]}"
+                            f"Removed unauthorized/malicious key: {key[:20]}"
                         )
                         continue
-                    sanitized[key] = self._sanitize_for_mongodb(value)
+                    sanitized[key] = self._sanitize_for_mongodb(value, allowed=allowed)
                 else:
-                    sanitized[key] = self._sanitize_for_mongodb(value)
+                    sanitized[key] = self._sanitize_for_mongodb(value, allowed=allowed)
             return sanitized
         elif isinstance(obj, list):
-            return [self._sanitize_for_mongodb(item) for item in obj]
+            return [self._sanitize_for_mongodb(item, allowed=allowed) for item in obj]
         else:
             return obj
-
-    def _sanitize_query(self, query: dict) -> dict:
-        return self._sanitize_for_mongodb(query)
-
-    def _validate_and_sanitize_query(self, query: dict) -> dict:
-        _validate_query_structure(query)
-        return self._sanitize_query(query)
 
     async def insert_one(self, document: dict) -> Any:
         _validate_document_size(document)
@@ -161,13 +170,13 @@ class SanitizedCollection:
 
     async def update_one(self, filter: dict, update: dict, *args, **kwargs) -> Any:
         filter = self._validate_and_sanitize_query(filter)
-        update = self._validate_and_sanitize_query(update)
+        update = self._validate_and_sanitize_query(update, allowed=ALLOWED_UPDATE_OPERATORS)
         logger.debug("update_one: filter and update validated and sanitized")
         return await self._collection.update_one(filter, update, *args, **kwargs)
 
     async def update_many(self, filter: dict, update: dict, *args, **kwargs) -> Any:
         filter = self._validate_and_sanitize_query(filter)
-        update = self._validate_and_sanitize_query(update)
+        update = self._validate_and_sanitize_query(update, allowed=ALLOWED_UPDATE_OPERATORS)
         logger.debug("update_many: filter and update validated and sanitized")
         return await self._collection.update_many(filter, update, *args, **kwargs)
 
@@ -200,7 +209,7 @@ class SanitizedCollection:
         self, filter: dict, update: dict, *args, **kwargs
     ) -> Any:
         filter = self._validate_and_sanitize_query(filter)
-        update = self._validate_and_sanitize_query(update)
+        update = self._validate_and_sanitize_query(update, allowed=ALLOWED_UPDATE_OPERATORS)
         logger.debug("find_one_and_update: filter and update validated and sanitized")
         return await self._collection.find_one_and_update(
             filter, update, *args, **kwargs
