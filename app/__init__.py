@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from starlette.responses import Response
 from telegram import Update
+import warnings
 import logging
 
 from app.telegram_bot import get_telegram_app, setup_bot_database
@@ -30,6 +31,14 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+# Suppress httptools GIL warning
+warnings.filterwarnings(
+    "ignore",
+    category=RuntimeWarning,
+    message=r".*httptools.parser.parser.*GIL.*"
+)
 
 class BodySizeLimitMiddleware:
     """Middleware to limit request body size before JSON parsing."""
