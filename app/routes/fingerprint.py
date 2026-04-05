@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
-@limiter.limit("20/minute")
+@limiter.limit(settings.RATE_LIMIT_FRONTEND)
 async def index(request: Request):
     return templates.TemplateResponse(
         "index.html",
@@ -38,7 +38,7 @@ async def index(request: Request):
 
 
 @router.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
-@limiter.limit("20/minute")
+@limiter.limit(settings.RATE_LIMIT_FRONTEND)
 async def privacy(request: Request):
     return templates.TemplateResponse(
         "privacy.html", {"request": request, "nonce": request.state.csp_nonce}
@@ -46,7 +46,7 @@ async def privacy(request: Request):
 
 
 @router.get("/how-it-works", response_class=HTMLResponse, include_in_schema=False)
-@limiter.limit("20/minute")
+@limiter.limit(settings.RATE_LIMIT_FRONTEND)
 async def how_it_works(request: Request):
     return templates.TemplateResponse(
         "how-it-works.html", {"request": request, "nonce": request.state.csp_nonce}

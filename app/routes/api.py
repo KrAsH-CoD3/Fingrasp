@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["api"])
 
 
-@limiter.limit("10/minute")
+@limiter.limit(settings.RATE_LIMIT_API)
 @router.post("/validate-code")
 async def validate_code(
     request: Request,
@@ -80,7 +80,7 @@ async def validate_code(
     )
 
 
-@limiter.limit("5/minute")
+@limiter.limit(settings.RATE_LIMIT_API)
 @router.post("/validate-turnstile")
 async def validate_turnstile(
     request: Request,
@@ -180,7 +180,7 @@ async def validate_turnstile(
     )
 
 
-@limiter.limit("10/minute")
+@limiter.limit(settings.RATE_LIMIT_SAVE)
 @router.post("/save")
 async def save(
     request: Request,

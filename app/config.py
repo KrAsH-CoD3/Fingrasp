@@ -52,7 +52,9 @@ class Settings:
     )
 
     # ── Rate Limiting ──
-    RATE_LIMIT_SAVE: str = os.getenv("RATE_LIMIT_SAVE", "5/minute")
+    RATE_LIMIT_SAVE: str = os.getenv("RATE_LIMIT_SAVE", "1/minute")
+    RATE_LIMIT_API: str = os.getenv("RATE_LIMIT_API", "10/minute")
+    RATE_LIMIT_FRONTEND: str = os.getenv("RATE_LIMIT_FRONTEND", "30/minute")
 
     # ── IP Anonymization ──
     # When True, the last octet of IPv4 (or last 80 bits of IPv6) is zeroed
