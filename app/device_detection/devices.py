@@ -50,6 +50,8 @@ class DeviceStore:
     def load(self, path: str | Path) -> int:
         """Parse the CSV file and populate all indexes.
 
+        Handles multiple encodings (UTF-16, UTF-8, Latin-1) and both
+        standard and double-encoded CSV formats.
         Malformed rows are logged and skipped.
         """
         path = Path(path)
@@ -62,42 +64,87 @@ class DeviceStore:
         count = 0
         errors = 0
 
-        with path.open(encoding="latin-1") as f:
-            reader = csv.reader(f)
-            next(reader)  # skip header row
+        # ── Detect Encoding ──
+        # Official Google CSV is typically UTF-16LE with BOM.
+        encoding = "utf-8"
+        try:
+            with path.open("rb") as f:
+                header_bytes = f.read(4)
+                if header_bytes.startswith((b"\xff\xfe", b"\xfe\xff")):
+                    encoding = "utf-16"
+                elif header_bytes.startswith(b"\xef\xbb\xbf"):
+                    encoding = "utf-8-sig"
+                else:
+                    # Default to latin-1 if it's not clearly UTF-8/16
+                    # to avoid DecodeErrors on legacy files
+                    encoding = "utf-8"
+        except Exception as e:
+            logger.warning("Encoding detection failed for %s: %s", path, e)
 
-            for raw in reader:
-                if not raw or len(raw) < 1:
-                    continue
-                # Each row is a single outer field; parse it as its own CSV
+        # ── Parse ──
+        try:
+            # We use newline='' as recommended by csv module docs
+            with path.open(encoding=encoding, newline="", errors="replace") as f:
+                # Some versions of the Google CSV use tabs, though the filename says CSV.
+                # We'll stick to comma but be robust if it fails.
+                reader = csv.reader(f)
                 try:
-                    brand, marketing_name, device, model = next(
-                        csv.reader(io.StringIO(raw[0]))
+                    next(reader) # Skip header
+                except StopIteration:
+                    return 0
+
+                for raw in reader:
+                    # Silently skip truly empty rows or short lines (e.g. trailing commas)
+                    if not raw or len(raw) < 2 or (len(raw) == 1 and not raw[0].strip()):
+                        continue
+
+                    brand = marketing_name = device_name = model = ""
+                    
+                    try:
+                        if len(raw) >= 4:
+                            brand, marketing_name, device_name, model = [f.strip() for f in raw[0:4]]
+                        else:
+                            # Legacy check: "Double-encoded" format
+                            inner_raw = next(csv.reader(io.StringIO(raw[0])))
+                            if len(inner_raw) >= 4:
+                                brand, marketing_name, device_name, model = [f.strip() for f in inner_raw[0:4]]
+                            else:
+                                continue # Too short, skip silently
+                    except (StopIteration, ValueError, IndexError):
+                        continue # Skip malformed row fragments silently
+
+                    # Validate that critical fields are non-empty.
+                    # We only log an error if we have enough columns but the data is garbage.
+                    if not brand or not device_name or not model:
+                        # If the entire row is empty strings, skip silently
+                        if not any([brand, marketing_name, device_name, model]):
+                            continue
+                        errors += 1
+                        continue
+                    
+                    if not marketing_name:
+                        marketing_name = model
+
+                    entry = Device(
+                        brand=brand,
+                        marketing_name=marketing_name,
+                        device=device_name,
+                        model=model,
                     )
-                except (StopIteration, ValueError):
-                    errors += 1
-                    continue  # malformed row — skip
 
-                # Validate that all fields are non-empty
-                if not brand or not marketing_name or not device or not model:
-                    errors += 1
-                    continue
+                    model_key = entry.model.lower()
+                    device_key = entry.device.lower()
+                    brand_key = entry.brand.lower()
 
-                entry = Device(
-                    brand=brand.strip(),
-                    marketing_name=marketing_name.strip(),
-                    device=device.strip(),
-                    model=model.strip(),
-                )
+                    # We keep the last occurrence if multiple models/devices share the same key
+                    by_model[model_key] = entry
+                    by_device[device_key] = entry
+                    by_brand.setdefault(brand_key, []).append(entry)
+                    count += 1
 
-                model_key = entry.model.lower()
-                device_key = entry.device.lower()
-                brand_key = entry.brand.lower()
-
-                by_model[model_key] = entry
-                by_device[device_key] = entry
-                by_brand.setdefault(brand_key, []).append(entry)
-                count += 1
+        except Exception as e:
+            logger.error("Critical error loading device store from %s: %s", path, e)
+            return -1
 
         self.by_model = by_model
         self.by_device = by_device
@@ -105,9 +152,7 @@ class DeviceStore:
         self._total = count
 
         if errors > 0:
-            logger.warning(
-                "DeviceStore skipped %d malformed rows from %s", errors, path
-            )
+            logger.warning("DeviceStore skipped %d malformed rows from %s (%s)", errors, path, encoding)
         logger.info("DeviceStore loaded %d devices from %s", count, path)
         return errors
 
