@@ -75,8 +75,9 @@ class Settings:
 
     # ── MongoDB Collections ──
     ACCESS_CODE_COLLECTION_NAME: str = os.getenv("ACCESS_CODE_COLLECTION_NAME", "access_codes")
-    FINGERPRINT_COLLECTION_NAME: str = os.getenv("FINGERPRINT_COLLECTION_NAME", "fingers")
+    FINGERPRINT_COLLECTION_NAME: str = os.getenv("FINGERPRINT_COLLECTION_NAME", "fingerprints")
     TEMP_SESSION_COLLECTION_NAME: str = os.getenv("TEMP_SESSION_COLLECTION_NAME", "temp_sessions")
+    COUNTERS_COLLECTION_NAME: str = os.getenv("COUNTERS_COLLECTION_NAME", "stats_counters")
     TEMP_SESSION_EXPIRY_MINUTES: int = int(os.getenv("TEMP_SESSION_EXPIRY_MINUTES", "5"))
 
     # ── External APIs ──

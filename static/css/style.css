@@ -72,6 +72,7 @@ padding: 0;
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 100px; /* Offset for sticky header */
 }
 
 body {
@@ -97,6 +98,8 @@ body {
 .staggered-fade > * {
   opacity: 0;
   animation: fadeInUp 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
 }
 
 .staggered-fade > *:nth-child(2) { animation-delay: 0.1s; }
@@ -159,12 +162,13 @@ body {
 .reason-list { display: flex; flex-direction: column; gap: 16px; margin: 32px 0; }
 .reason {
   display: flex; gap: 20px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 24px; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  border-radius: 16px; padding: 24px; transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
   will-change: transform, box-shadow; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  backface-visibility: hidden;
 }
 .reason:hover {
   border-color: var(--accent); box-shadow: 0 12px 48px -12px var(--glow);
-  transform: translateY(-4px) scale(1.01);
+  transform: translateY(-4px);
 }
 .reason-icon {
   width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center;
@@ -290,24 +294,25 @@ opacity: .3
 }
 
 .toggle {
-width: 40px;
-height: 40px;
-border-radius: 10px;
-border: 1px solid var(--border);
-background: var(--surface);
-color: var(--text);
-font-size: 17px;
-cursor: pointer;
-display: flex;
-align-items: center;
-justify-content: center;
-transition: border-color .2s, box-shadow .2s;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+  backface-visibility: hidden;
 }
 
 .toggle:hover {
   border-color: var(--accent);
   box-shadow: 0 4px 20px -4px var(--glow);
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.08) rotate(5deg);
 }
 
 .toggle:active {
@@ -318,7 +323,56 @@ transition: border-color .2s, box-shadow .2s;
 .hero {
 text-align: center;
 margin-bottom: 48px;
-display: block;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+
+.hero-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+  width: 100%;
+}
+
+.status-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(99, 179, 237, 0.1);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge svg { width: 12px; height: 12px; margin-right: 4px; }
+.status-badge.success { color: var(--success); background: rgba(104, 211, 145, 0.1); border-color: rgba(104, 211, 145, 0.3); }
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.status-stats {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .hero h1 {

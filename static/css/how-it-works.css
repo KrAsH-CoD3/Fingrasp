@@ -219,12 +219,13 @@
   border-radius: 16px;
   padding: 16px 20px;
   flex: 1;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+  backface-visibility: hidden;
 }
 .step-content:hover {
   border-color: var(--accent);
-  box-shadow: 0 12px 48px -12px var(--glow);
-  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 32px -8px var(--glow);
+  transform: translateY(-4px);
 }
 .step-content h3 {
   font-family: 'Syne', sans-serif;
@@ -272,16 +273,17 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
   position: relative;
   display: flex;
   flex-direction: column;
+  backface-visibility: hidden;
 }
 
 .hiw-card:hover {
   border-color: var(--accent);
-  box-shadow: 0 12px 48px -12px var(--glow);
-  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 32px -8px var(--glow);
+  transform: translateY(-4px);
 }
 
 .hiw-card-icon {
@@ -338,12 +340,13 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+  backface-visibility: hidden;
 }
 .vf-card:hover {
   border-color: var(--accent);
-  box-shadow: 0 12px 48px -12px var(--glow);
-  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 32px -8px var(--glow);
+  transform: translateY(-4px);
 }
 .vf-header {
   display: flex;
@@ -390,12 +393,13 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 20px 24px;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+  backface-visibility: hidden;
 }
 .sl-item:hover {
   border-color: var(--accent);
-  box-shadow: 0 12px 48px -12px var(--glow);
-  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 32px -8px var(--glow);
+  transform: translateY(-4px);
 }
 .sl-icon {
   width: 36px;
@@ -484,4 +488,67 @@
   .hiw-dt-row {
     grid-template-columns: 0.5fr 2fr 1fr;
   }
+}
+/* ── Flow Map ── */
+.flow-map-container {
+  margin-top: 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: 18px;
+  text-align: center;
+}
+.flow-title {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+.flow-map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.flow-node {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 16px 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  transition: all 0.25s ease;
+  backface-visibility: hidden;
+}
+.flow-node.highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--glow);
+}
+.node-icon { font-size: 18px; }
+.node-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+.flow-arrow {
+  color: var(--muted);
+  font-size: 14px;
+  opacity: 0.5;
+}
+
+@media (max-width: 600px) {
+  .flow-map {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .flow-arrow {
+    transform: rotate(90deg);
+    margin: 4px 0;
+  }
+  .flow-node { width: 100%; }
 }
