@@ -695,7 +695,7 @@ def validate_device_model(
             if ua_model:
                 exact_from_fingerprint = _identify_model(ua_model, silent_log=True)
                 
-    # If we found it in the Android store, it is 100% an Android device. 
+    # If we found it in the Android store, it's 100% Android. 
     # Otherwise, rely on the broader platform group heuristics.
     is_android = bool(
         exact_from_fingerprint or 
