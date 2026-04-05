@@ -252,6 +252,19 @@ async def save(
 
     await db[settings.FINGERPRINT_COLLECTION_NAME].insert_one(fingerprint_doc)
 
+    # ── Persistent Atomic Counter Increment ──
+    try:
+        await db[settings.COUNTERS_COLLECTION_NAME].update_one(
+            {"_id": "total_fingerprints"},
+            {"$inc": {"count": 1}},
+            upsert=True
+        )
+        # Immediate update for this worker's memory cache
+        if hasattr(request.app.state, "total_collected"):
+             request.app.state.total_collected += 1
+    except Exception as e:
+        logger.error(f"Failed to increment persistent counter: {e}")
+
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content=SuccessResponse(

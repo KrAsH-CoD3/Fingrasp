@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 @limiter.limit(settings.RATE_LIMIT_FRONTEND)
 async def index(request: Request):
+    total_collected = getattr(request.app.state, "total_collected", 0)
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -33,6 +35,7 @@ async def index(request: Request):
             "iphone_screen_models": IPHONE_SCREEN_MODELS,
             "ipad_screen_models": IPAD_SCREEN_MODELS,
             "turnstile_site_key": settings.TURNSTILE_SITE_KEY,
+            "total_collected": total_collected,
         },
     )
 

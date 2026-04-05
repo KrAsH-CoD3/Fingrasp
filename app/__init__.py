@@ -166,7 +166,23 @@ async def lifespan(application: FastAPI):
     client, db = setup_db()
     application.state.db = db
 
-    # ── TTL Index for both access codes and temp sessions ──
+    # ── Persistent Global Counter Setup ──
+    # Load once on startup for high-speed page loads
+    try:
+        counter_doc = await db[settings.COUNTERS_COLLECTION_NAME].find_one({"_id": "total_fingerprints"})
+        if not counter_doc:
+            initial_count = await db[settings.FINGERPRINT_COLLECTION_NAME].count_documents({})
+            await db[settings.COUNTERS_COLLECTION_NAME].insert_one({"_id": "total_fingerprints", "count": initial_count})
+        else:
+            initial_count = counter_doc.get("count", 0)
+        
+        application.state.total_collected = initial_count
+        logger.info(f"Persistent counter initialized at {initial_count}")
+    except Exception as e:
+        logger.error(f"Failed to initialize persistent counter: {e}")
+        application.state.total_collected = 0
+
+    # ── Database Index Verification (TTL) ──
     from pymongo import ASCENDING
     
     for collection in [settings.ACCESS_CODE_COLLECTION_NAME, settings.TEMP_SESSION_COLLECTION_NAME]:
@@ -175,35 +191,39 @@ async def lifespan(application: FastAPI):
                 [("expires_at", ASCENDING)], 
                 expireAfterSeconds=0
             )
-            logger.info(f"TTL index verified on {collection}")
+            logger.info(f"Verified TTL index on {collection}")
         except Exception as e:
-            logger.error(f"Failed to create TTL index for {collection}: {e}")
+            logger.error(f"TTL index sync error: {e}")
 
     # ── Telegram Bot Initialization ──
     telegram_app: TelegramApplication | None = None
 
     if TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_URL:
-        telegram_app = get_telegram_app()
-        await telegram_app.bot.set_webhook(
-            url=TELEGRAM_WEBHOOK_URL,
-            secret_token=TELEGRAM_WEBHOOK_SECRET,
-            allowed_updates=Update.ALL_TYPES,
-        )
+        try:
+            telegram_app = get_telegram_app()
+            await telegram_app.bot.set_webhook(
+                url=TELEGRAM_WEBHOOK_URL,
+                secret_token=TELEGRAM_WEBHOOK_SECRET,
+                allowed_updates=Update.ALL_TYPES,
+            )
 
-        await setup_bot_database(telegram_app, client, db)
-        application.state.telegram_app = telegram_app
-        logger.info("Telegram bot initialized\n"
-                    f">>>>>> Webhook URL: {TELEGRAM_WEBHOOK_URL}"
-        )
+            await setup_bot_database(telegram_app, client, db)
+            application.state.telegram_app = telegram_app
+            logger.info("Telegram bot initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize Telegram bot: {e}")
 
     yield
 
     # ── Shutdown ──
     if telegram_app:
-        await telegram_app.bot.delete_webhook()
-        await telegram_app.stop()
-        await telegram_app.shutdown()
-        logger.info("Telegram bot shutdown complete")
+        try:
+            await telegram_app.bot.delete_webhook()
+            await telegram_app.stop()
+            await telegram_app.shutdown()
+            logger.info("Telegram bot shutdown complete")
+        except Exception as e:
+            logger.error(f"Error during Telegram bot shutdown: {e}")
         
     if client:
         client.close()
