@@ -1,1 +1,1 @@
-uv run main.py
+uv run dev.py
