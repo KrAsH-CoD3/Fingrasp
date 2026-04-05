@@ -19,32 +19,33 @@
   <ol>
     <li><a href="#overview">Overview & Scope</a></li>
     <li><a href="#what-we-collect">Data Points Collected</a></li>
-    <li><a href="#why-fingerprint">Research Purpose</a></li>
-    <li><a href="#how-we-use">Data Processing</a></li>
-    <li><a href="#storage">Security & Retention</a></li>
-    <li><a href="#rights">User Data Rights</a></li>
-    <li><a href="#contact">Inquiries</a></li>
+    <li><a href="#overview">Overview & Governance</a></li>
+    <li><a href="#what-we-collect">Signal Taxonomy</a></li>
+    <li><a href="#why-fingerprint">Research Mandate</a></li>
+    <li><a href="#third-party">Third-Party Processing</a></li>
+    <li><a href="#storage">Retention & Security</a></li>
+    <li><a href="#rights">Compliance & Rights</a></li>
   </ol>
 </div>
 
 <div class="doc-body staggered-fade">
-
   <section id="overview">
-    <h2><span class="sec-num">01</span>Overview & Scope</h2>
+    <h2><span class="sec-num">01</span>Overview & Governance</h2>
     <p>
-      This policy describes the data collection practices of Fingrasp, a dedicated research tool for browser fingerprinting. 
-      When you interact with this application, your browser communicates specific technical attributes to our server. 
-      We process and store a structured snapshot of these attributes—a device fingerprint—to evaluate browser uniqueness and stability.
+      Fingrasp is a specialized research instrument engineered to study the landscape of browser fingerprinting. 
+      This policy delineates our data governance framework, ensuring that all technical signal collection adheres to 
+      principles of <strong>Data Minimization</strong> and <strong>Purpose Limitation</strong>.
     </p>
     <p>
-      Our goal is to be fully transparent about the technical signals we record. This document provides a detailed breakdown 
-      of our data lifecycle, from the moment of collection to archival.
+      By participating in this research, you are contributing to a dataset used to evaluate the entropy and stability 
+      of modern web APIs. We operate under a "Privacy by Design" mandate, where technical signal collection is 
+      strictly decoupled from personal identity.
     </p>
   </section>
 
   <section id="what-we-collect">
-    <h2><span class="sec-num">02</span>Data Points Collected</h2>
-    <p>Fingrasp records the following technical metrics from your browser environment:</p>
+    <h2><span class="sec-num">02</span>Signal Taxonomy</h2>
+    <p>The following technical signals are processed during a collection event:</p>
     <div class="data-table">
       <div class="dt-row dt-head">
         <span>Signal Category</span>
@@ -53,131 +54,93 @@
       </div>
       <div class="dt-row">
         <span>Environment metadata</span>
-        <span>User-agent, language preference, timezone offset</span>
+        <span>User-agent, locale, timezone, DNT status</span>
         <span class="tag low">Technical</span>
       </div>
       <div class="dt-row">
-        <span>Hardware profile</span>
-        <span>CPU core count, memory estimate, screen dimensions</span>
+        <span>Hardware Architecture</span>
+        <span>Platform, CPU cores, memory, Screen/DPR profile</span>
         <span class="tag low">Technical</span>
       </div>
       <div class="dt-row">
-        <span>Render signature</span>
-        <span>WebGL renderer, GPU vendor, Canvas-based hashes</span>
-        <span class="tag med">Unique</span>
+        <span>Entropy Drivers</span>
+        <span>WebGL renderer info, Canvas/AudioContext hashes</span>
+        <span class="tag med">High Entropy</span>
       </div>
       <div class="dt-row">
-        <span>Audio pipeline</span>
-        <span>AudioContext oscillator characteristics</span>
-        <span class="tag med">Unique</span>
+        <span>Network Indicators</span>
+        <span>Anonymized IP (Masked), Connection Type</span>
+        <span class="tag med">Pseudonymous</span>
       </div>
       <div class="dt-row">
-        <span>Network context</span>
-        <span>Masked IP address, connection type (4G, WiFi, etc.)</span>
-        <span class="tag med">Identifying</span>
-      </div>
-      <div class="dt-row">
-        <span>Composite fingerprint</span>
-        <span>A one-way SHA-256 hash of all combined signals</span>
-        <span class="tag high">Primary ID</span>
+        <span>Composite Identifier</span>
+        <span>SHA-256 cryptographic hash of collected strings</span>
+        <span class="tag high">Primary Key</span>
       </div>
     </div>
-    <p>We do <strong>not</strong> collect PII such as names, physical addresses, email accounts, or financial data.</p>
+    <p>We explicitly <strong>strictly prohibit</strong> the collection of Protected Health Information (PHI), Financial Records, or PII such as names and addresses.</p>
   </section>
 
   <section id="why-fingerprint">
-    <h2><span class="sec-num">03</span>Research Purpose</h2>
-
+    <h2><span class="sec-num">03</span>Research Mandate</h2>
     <div class="callout callout-blue">
       <div class="callout-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
       </div>
       <div>
-        <strong>Anonymity by Design:</strong> Every fingerprint is treated as a technical data point, not a personal profile. 
-        Raw signals are never correlated with real-world identities or contact information.
+        <strong>Non-Identification Principle:</strong> Our processing logic is incapable of reversing a fingerprint hash into a person. 
+        Records are stored as independent technical snapshots with no cross-site tracking capabilities.
       </div>
     </div>
-
-    <p>Our research focuses on the following domains:</p>
-
     <div class="reason-list">
       <div class="reason">
-        <div class="reason-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
+        <div class="reason-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
         <div>
-          <h3>System Security & Bot Detection</h3>
-          <p>
-            By analyzing thousands of genuine device fingerprints, we study patterns that help security systems 
-            distinguish between legitimate human users and automated scripts, reducing the friction of 
-            bot-prevention tools.
-          </p>
+          <h3>Bot Detection Benchmarking</h3>
+          <p>Analyzing legitimate device variability to improve the accuracy of bot-detection algorithms across different platforms.</p>
         </div>
       </div>
       <div class="reason">
-        <div class="reason-icon">
-          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
+        <div class="reason-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         <div>
-          <h3>Entropy Measurements</h3>
-          <p>
-            We measure the "uniqueness" of specific APIs. This data is shared with the security community 
-            to help browser vendors understand which features might unintentionally leak identifying data.
-          </p>
-        </div>
-      </div>
-      <div class="reason">
-        <div class="reason-icon">
-          <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        </div>
-        <div>
-          <h3>Fingerprint Stability</h3>
-          <p>
-            We track how often fingerprints change after OS updates or browser patches. Understanding the 
-            lifespan of a fingerprint helps in evaluating the reliability of device-based session management.
-          </p>
+          <h3>Entropy & Privacy Analysis</h3>
+          <p>Identifying which browser features contribute most significantly to device uniqueness to inform future privacy standards.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="how-we-use">
-    <h2><span class="sec-num">04</span>Data Processing</h2>
-    <p>Data processing is limited to the following actions:</p>
-    <ul class="pp-list">
-      <li>Anonymized aggregation of browser entropy across the entire dataset.</li>
-      <li>Stability analysis to measure signal drift over time.</li>
-      <li>Development of refined detection logic for identifying spoofed platforms.</li>
-    </ul>
-    <p>We <strong>do not</strong> sell data, use fingerprints for advertising, or share records for commercial gain.</p>
+  <section id="third-party">
+    <h2><span class="sec-num">04</span>Third-Party Processing</h2>
+    <p>
+      To maintain research integrity and prevent automated abuse, we utilize <strong>Cloudflare Turnstile</strong>. 
+      Turnstile captures specific interaction and network signals to verify human presence. This processing is 
+      subject to <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer" class="inline-link">Cloudflare's Privacy Policy</a>. 
+      Fingrasp does not share your generated fingerprint with Cloudflare.
+    </p>
   </section>
 
   <section id="storage">
-    <h2><span class="sec-num">05</span>Security & Retention</h2>
+    <h2><span class="sec-num">05</span>Retention & Security</h2>
     <p>
-      Fingerprints are stored on encrypted infrastructure with role-based access controls. We adhere 
-      to strict data minimization: records are kept only as long as necessary for research validity. 
-      Once the research lifecycle concludes, data is irreversibly archived as high-level statistics.
+      Data is hosted within secure, encrypted environments with strict access controls. 
+      IP addresses are anonymized at the point of ingestion (masking the final octet/bits). 
+      Records are subject to a defined retention period, after which they are either purged or 
+      transformed into high-level statistical aggregates that cannot be linked to the original device state.
     </p>
   </section>
 
   <section id="rights">
-    <h2><span class="sec-num">06</span>User Data Rights</h2>
+    <h2><span class="sec-num">06</span>Compliance & Rights</h2>
     <p>
-      Depending on your location, you may have legal rights to access, delete, or limit the processing 
-      of your technical data. To exercise these rights, you must provide your <strong>fingerprint hash</strong> 
-      (displayed on the homepage) so we can locate your record in our anonymous database.
+      While our data is pseudonymous, we honor the spirit of the <strong>GDPR</strong> and <strong>CCPA</strong>. 
+      Participants may request deletion of their specific fingerprint record by providing their 
+      <strong>Fingerprint Hash</strong>, which is the only key capable of identifying a record in our system.
     </p>
-  </section>
-
-  <section id="contact">
-    <h2><span class="sec-num">07</span>Inquiries</h2>
-    <p>Address all privacy-related correspondence to:</p>
     <div class="contact-block">
-      <div class="contact-row"><span class="ck">Contact</span><span class="cv">privacy@fingrasp.dev</span></div>
-      <div class="contact-row"><span class="ck">Requirement</span><span class="cv">Include your Fingerprint Hash for identification</span></div>
+      <div class="contact-row"><span class="ck">General Inquiries</span><span class="cv">privacy@fingrasp.dev</span></div>
+      <div class="contact-row"><span class="ck">Deletion Request</span><span class="cv">Must include Hash ID</span></div>
     </div>
   </section>
-
-</div><!-- /.pp-body -->
+</div>
 {% endblock %}
