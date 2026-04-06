@@ -494,14 +494,14 @@ async function validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, int
       body: JSON.stringify(payload)
     });
     
+    const body = await res.json().catch(() => ({}));
     if (res.ok) {
-        const body = await res.json();
-        return body.session_token;
+        return { token: body.session_token, error: null };
     }
-    return null;
+    return { token: null, error: body.message || 'Security verification failed.' };
   } catch (err) {
     console.error('Validation fetch error:', err);
-    return null;
+    return { token: null, error: 'Could not connect to verification service.' };
   }
 }
 
@@ -514,14 +514,21 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, time
     if (codeEntry) codeEntry.classList.add('hidden');
 
     setLoaderMessage('Verifying security check<span class="dot-anim"></span>');
-    const sessionToken = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, INTERACTION_SCORE);
+    const { token, error } = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, INTERACTION_SCORE);
 
-    if (!sessionToken) {
-      showToast('Security verification failed. Please try again.', 'error');
+    if (error) {
+      showToast(error, 'error');
       if (loader) loader.classList.add('hidden');
       if (codeEntry) codeEntry.classList.remove('hidden');
+      
+      // If Turnstile failed specific check, reset it
+      if (window.turnstile) {
+         window.turnstile.reset('#turnstileWidget');
+      }
       return;
     }
+    
+    const sessionToken = token;
 
     setLoaderMessage('Obtaining fingerprint<span class="dot-anim"></span>');
     const mv = new MixVisit();
@@ -603,12 +610,24 @@ function showPlatformError() {
  * Handle Turnstile widget initialization errors (e.g. invalid site key).
  * Called via data-error-callback in index.html.
  */
-window.onTurnstileError = function() {
+window.onTurnstileSuccess = function(token) {
+  console.log('[Fingrasp] Turnstile token obtained');
+};
+
+window.onTurnstileExpired = function() {
+  console.warn('[Fingrasp] Turnstile token expired');
+  showToast('Challenge expired. Please solve it again.', 'error');
+  if (window.turnstile) window.turnstile.reset('#turnstileWidget');
+};
+
+window.onTurnstileError = function(code) {
+  console.error('[Fingrasp] Turnstile error:', code);
   const widget = document.getElementById('turnstileWidget');
   const errorEl = document.getElementById('turnstileError');
   if (widget) widget.classList.add('hidden');
   if (errorEl) errorEl.classList.remove('hidden');
-  showToast('Security verification could not be loaded. Please try refreshing the page.', 'error');
+  
+  showToast('Security verification failed (Check ad-blockers or site configuration).', 'error');
 };
 
 async function initFormLogic(detectedPlatform, screenKey = null) {
@@ -758,29 +777,35 @@ function _configureModelField(platform, els, screenKey = null) {
       const wrapper = deviceModelInput.closest('.input-wrapper');
       if (wrapper) wrapper.classList.remove('hidden');
       deviceModelInput.classList.remove('hidden');
-      deviceModelInput.placeholder = `Enter your ${displayName} model`;
+      
+      let placeholder = `Enter your ${displayName} model`;
+      if (platform === 'android') placeholder = 'e.g. Pixel 8, Galaxy S24';
+      else if (platform === 'windows') placeholder = 'e.g. Surface Pro 9, XPS 15';
+      else if (platform === 'linux') placeholder = 'e.g. ThinkPad X1 Carbon';
+      
+      deviceModelInput.placeholder = placeholder;
     }
     if (modelNote) modelNote.classList.remove('hidden');
   }
 }
 
 async function run() {
-  // 1. Show detecting state (it's visible by default in HTML as an inline loader)
+  // Show detecting state (it's visible by default in HTML as an inline loader)
   // We keep the desktopLayout hidden until detection is complete
 
-  // 2. Detect platform
+  // Detect platform
   const detectedResult = await detectPlatform();
 
-  // 3. If detection failed, show error and stop
+  // If detection failed, show error and stop
   if (!detectedResult) {
     showPlatformError();
     return;
   }
 
-  // 4. Configure the form with the detected platform
+  // Configure the form with the detected platform
   await initFormLogic(detectedResult.platform, detectedResult.screenKey);
 
-  // 5. Show the UI (URL code parsing is removed since code flow is replaced)
+  // Show the UI (URL code parsing is removed since code flow is replaced)
   showCodeEntryUI(null);
 }
 

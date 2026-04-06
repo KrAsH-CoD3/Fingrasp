@@ -195,8 +195,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         else:
             # Strict CSP for the rest of the app
             csp_parts = [
-                # Trusted scripts via nonce or dynamic loading
-                f"script-src 'nonce-{nonce}' 'strict-dynamic'",
+                # Fallback: only allow resources from our own domain (MUST be first)
+                "default-src 'self'",
+                # Trusted scripts: nonce for our own scripts, strict-dynamic so they
+                # can load sub-scripts, and explicit Turnstile origin.
+                f"script-src 'nonce-{nonce}' 'strict-dynamic' https://challenges.cloudflare.com",
                 # Trusted styles via our domain or specific nonce
                 f"style-src 'self' 'nonce-{nonce}'",
                 # Allow images from our domain or base64 data: URIs and cloudflare
@@ -208,6 +211,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "base-uri 'self'",  # Prevent <base> hijack
                 "frame-ancestors 'none'",  # Prevent site from being framed (Clickjacking)
                 "frame-src 'self' https://challenges.cloudflare.com",  # Allow Cloudflare Turnstile iframe
+                "worker-src 'self' blob:",  # Turnstile may spawn workers
+                "child-src 'self' https://challenges.cloudflare.com blob:",  # Turnstile child frames
                 "object-src 'none'",  # Block plugins (Flash, etc.)
             ]
 
@@ -221,8 +226,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             # Only force HTTPS upgrades
             csp_parts.append("upgrade-insecure-requests")
 
-        # Fallback: only allow resources from our own domain
-        csp_parts.append("default-src 'self'")
         response.headers["Content-Security-Policy"] = "; ".join(csp_parts)
 
         return response

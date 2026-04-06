@@ -668,6 +668,10 @@ background: var(--surface);
 border: 1px solid var(--border);
 border-radius: 16px;
 overflow: hidden;
+width: fit-content;
+max-width: 100%;
+min-width: 340px;
+margin: 0 auto;
 }
 
 .fp-section.visible {
@@ -699,9 +703,27 @@ display: none;
 .fp-outer-header {
 display: none;
 align-items: center;
-justify-content: space-between;
-margin-bottom: 12px;
-padding: 0 4px;
+justify-content: center;
+margin-bottom: 24px;
+padding: 0;
+}
+
+.fp-header-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 100px; /* Capsule pill shape */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.bar-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+  opacity: 0.5;
 }
 
 .fp-outer-header.visible {
@@ -711,7 +733,7 @@ display: flex !important;
 .fp-header-left {
 display: flex;
 align-items: center;
-gap: 12px;
+gap: 10px;
 }
 
 .fp-bar-title {
@@ -1701,7 +1723,7 @@ animation: toastSlideOut 0.3s ease-in forwards;
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 12px;
 }
 
 .example-label {
@@ -1856,17 +1878,19 @@ overflow: hidden; /* Header itself shouldn't scroll */
 }
 
 .fp-bar-meta {
-flex: 1;
-min-width: 0; /* Critical for inner scrolling */
-display: flex;
-align-items: center;
-background: rgba(0, 0, 0, 0.2);
-padding: 6px 10px;
-border-radius: 8px;
-border: 1px solid var(--border);
-overflow-x: auto;
-scrollbar-width: none;
--ms-overflow-style: none;
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .fp-bar-meta::-webkit-scrollbar {
@@ -1920,15 +1944,15 @@ gap: 8px;
 }
 
 .fp-outer-header {
-flex-wrap: wrap;
-gap: 10px;
-justify-content: space-between;
-flex-direction: column;
-align-items: flex-start;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
-.fp-outer-header .bar-item {
-font-size: 9px;
+.fp-header-row {
+  width: auto;
+  max-width: 100%;
 }
 
 /* Site footer */
