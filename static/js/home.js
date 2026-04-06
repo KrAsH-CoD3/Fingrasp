@@ -758,29 +758,35 @@ function _configureModelField(platform, els, screenKey = null) {
       const wrapper = deviceModelInput.closest('.input-wrapper');
       if (wrapper) wrapper.classList.remove('hidden');
       deviceModelInput.classList.remove('hidden');
-      deviceModelInput.placeholder = `Enter your ${displayName} model`;
+      
+      let placeholder = `Enter your ${displayName} model`;
+      if (platform === 'android') placeholder = 'e.g. Pixel 8, Galaxy S24';
+      else if (platform === 'windows') placeholder = 'e.g. Surface Pro 9, XPS 15';
+      else if (platform === 'linux') placeholder = 'e.g. ThinkPad X1 Carbon';
+      
+      deviceModelInput.placeholder = placeholder;
     }
     if (modelNote) modelNote.classList.remove('hidden');
   }
 }
 
 async function run() {
-  // 1. Show detecting state (it's visible by default in HTML as an inline loader)
+  // Show detecting state (it's visible by default in HTML as an inline loader)
   // We keep the desktopLayout hidden until detection is complete
 
-  // 2. Detect platform
+  // Detect platform
   const detectedResult = await detectPlatform();
 
-  // 3. If detection failed, show error and stop
+  // If detection failed, show error and stop
   if (!detectedResult) {
     showPlatformError();
     return;
   }
 
-  // 4. Configure the form with the detected platform
+  // Configure the form with the detected platform
   await initFormLogic(detectedResult.platform, detectedResult.screenKey);
 
-  // 5. Show the UI (URL code parsing is removed since code flow is replaced)
+  // Show the UI (URL code parsing is removed since code flow is replaced)
   showCodeEntryUI(null);
 }
 
