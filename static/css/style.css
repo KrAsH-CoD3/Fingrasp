@@ -668,6 +668,10 @@ background: var(--surface);
 border: 1px solid var(--border);
 border-radius: 16px;
 overflow: hidden;
+width: fit-content;
+max-width: 100%;
+min-width: 340px;
+margin: 0 auto;
 }
 
 .fp-section.visible {
@@ -1874,17 +1878,19 @@ overflow: hidden; /* Header itself shouldn't scroll */
 }
 
 .fp-bar-meta {
-flex: 1;
-min-width: 0; /* Critical for inner scrolling */
-display: flex;
-align-items: center;
-background: rgba(0, 0, 0, 0.2);
-padding: 6px 10px;
-border-radius: 8px;
-border: 1px solid var(--border);
-overflow-x: auto;
-scrollbar-width: none;
--ms-overflow-style: none;
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .fp-bar-meta::-webkit-scrollbar {
