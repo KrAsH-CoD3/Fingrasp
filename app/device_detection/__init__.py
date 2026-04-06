@@ -24,11 +24,7 @@ _CSV_PATH = (
 )
 
 if _CSV_PATH.exists():
-    errors = store.load(_CSV_PATH)
-    if errors:
-        logger.warning(
-            "Android device CSV loaded with %d malformed rows skipped", errors
-        )
+    store.load(_CSV_PATH)
 else:
     logger.warning(
         "Android device CSV not found at %s — CSV lookups disabled", _CSV_PATH

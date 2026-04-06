@@ -47,7 +47,7 @@ class DeviceStore:
         self.by_brand: dict[str, list[Device]] = {}
         self._total: int = 0
 
-    def load(self, path: str | Path) -> int:
+    def load(self, path: str | Path) -> None:
         """Parse the CSV file and populate all indexes using a robust, modular approach."""
         path = Path(path)
         if not path.exists():
@@ -70,12 +70,12 @@ class DeviceStore:
                 logger.info("DeviceStore loaded %d devices using encoding '%s'", count, attempt_encoding)
                 if errors > 0:
                     logger.warning("DeviceStore skipped %d malformed rows during import", errors)
-                return errors
+                return
             
             logger.warning("DeviceStore got 0 devices with %s, checking alternatives...", attempt_encoding)
 
         logger.error("DeviceStore failed to load any data from %s", path)
-        return -1
+        return
 
     def _detect_encoding(self, path: Path) -> str:
         """Identify the file encoding by inspecting the Byte Order Mark (BOM)."""
