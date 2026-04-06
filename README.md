@@ -13,8 +13,7 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 - **Research-Oriented Storage:** Fingerprint records are persisted to MongoDB Atlas for entropy analysis and stability tracking.
 - **Privacy-First Approach:** No names, emails, or personal data are collected. A full privacy policy is included.
 - **Responsive Interface:** Dark-mode technical aesthetic, optimized for desktop and mobile viewports.
-- **Access Code System:** One-time-use codes control who can submit fingerprints (generated via Telegram bot).
-- **Telegram Bot Integration:** Admin bot for generating, listing, and revoking access codes.
+- **Access Code System:** One-time-use codes control who can submit fingerprints.
 - **Rate Limiting:** API endpoints are rate-limited using SlowAPI to prevent abuse.
 - **CSRF Protection:** Double-submit cookie pattern validates all state-changing requests.
 - **Strict Security Headers:** CSP, HSTS, X-Frame-Options, and more for defense in depth.
@@ -31,18 +30,16 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 │   ├── database.py          # MongoDB Atlas connection lifecycle
 │   ├── limiter.py           # SlowAPI rate limiter instance
 │   ├── schemas.py           # Pydantic models for request/response validation
-│   ├── security.py          # IP anonymization, origin validation, headers middleware
-│   ├── telegram_bot.py      # Telegram bot for access code management
-│   └── routes/
+│ ├── security.py # IP anonymization, origin validation, headers middleware
+│ └── routes/
 │       ├── fingerprint.py   # Page rendering endpoints
 │       └── api.py           # API endpoints (code validation, fingerprint submission)
 ├── static/
 │   ├── css/                 # Theming and layout
 │   └── js/                  # MixVisit integration and UI rendering
-├── templates/               # Jinja2 HTML templates
-├── main.py                  # Application entry point
-├── run_bot.py               # Telegram bot entry point (standalone)
-├── pyproject.toml           # UV project configuration
+├── templates/ # Jinja2 HTML templates
+├── main.py # Application entry point
+├── pyproject.toml # UV project configuration
 └── uv.lock                  # Dependency lockfile
 ```
 
@@ -65,10 +62,6 @@ Create a `.env` file in the project root:
 MONGODB_URI="your_mongodb_atlas_connection_string"
 DB_NAME="fingrasp"
 
-# Telegram Bot (required for access code generation)
-TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
-TELEGRAM_ALLOWED_USER_ID="your_telegram_user_id"
-
 # Optional
 BASE_URL="http://localhost:8000"
 CODE_EXPIRY_HOURS="48"
@@ -82,31 +75,16 @@ uv run -m uvicorn main:app --reload
 ```
 The application will be available at `http://localhost:8000`.
 
-### 4. Running the Telegram Bot
-```bash
-uv run -m run_bot
-```
-
 ---
 
 ## Access Code Flow
 
 Fingrasp uses a one-time access code system to control fingerprint submissions:
 
-1. **Admin generates code** via Telegram bot (`/generate` command)
+1. **Admin generates code** via admin interface
 2. **Visitor receives link** with embedded code (e.g., `/?code=123456`)
 3. **Visitor submits fingerprint** - code is consumed and cannot be reused
 4. **Fingerprint stored** with anonymized IP address
-
-### Telegram Bot Commands
-
-| Command | Description |
-| :--- | :--- |
-| `/start` | Show welcome message |
-| `/generate` | Generate a new 6-digit access code and link |
-| `/codes` | List all active access codes |
-| `/revoke <code>` | Immediately revoke a specific code |
-| `/help` | Show help message |
 
 ---
 
@@ -131,11 +109,6 @@ Fingrasp is a standard FastAPI application deployable on any Python-compatible h
 2. Set environment variables (see Configuration section).
 3. Enable `STRICT_SECURITY=true` for production.
 4. Start the application with `uvicorn main:app`.
-5. (Optional) Configure Telegram webhook for bot:
-   ```env
-   TELEGRAM_WEBHOOK_URL="https://your-domain.com"
-   TELEGRAM_WEBHOOK_SECRET="random_secret_token"
-   ```
 
 ---
 
