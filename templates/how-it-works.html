@@ -31,10 +31,9 @@
   <!-- ─── Section 1: User Journey ─── -->
   <section id="journey">
     <h2><span class="sec-num">01</span>The User Journey</h2>
-    <p>
-      Fingrasp uses an <strong>access-code gated</strong> approach. You cannot submit a fingerprint
-      without a valid, single-use access code provided by the researcher. Here is the full flow:
-    </p>
+<p>
+  Fingrasp collects device fingerprints through a secure, automated process. Here is the full flow:
+</p>
 
     <div class="step-flow">
       <div class="step">
@@ -54,39 +53,30 @@
             <strong>locked</strong> — you cannot change it. This prevents platform spoofing at the UI level.</p>
         </div>
       </div>
-      <div class="step-connector"></div>
-      <div class="step">
-        <div class="step-marker">3</div>
-        <div class="step-content">
-          <h3>Enter Access Code</h3>
-          <p>You enter the 6-digit access code provided by the researcher. The code is
-            validated against the database and <strong>consumed immediately</strong> — it can never be reused.</p>
-        </div>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step">
-        <div class="step-marker">4</div>
-        <div class="step-content">
-          <h3>Select Device Model</h3>
+<div class="step-connector"></div>
+<div class="step">
+ <div class="step-marker">3</div>
+ <div class="step-content">
+ <h3>Select Device Model</h3>
           <p>For Apple devices, you pick your exact model from a <strong>hardware-filtered dropdown</strong> that
             only shows models matching your screen dimensions. For Android, you type your model name.
             For desktops, a text input is provided.</p>
         </div>
       </div>
       <div class="step-connector"></div>
-      <div class="step">
-        <div class="step-marker">5</div>
-        <div class="step-content">
-          <h3>Fingerprint Collection</h3>
+<div class="step">
+ <div class="step-marker">4</div>
+ <div class="step-content">
+ <h3>Fingerprint Collection</h3>
           <p>Once validated, the system silently collects your device fingerprint using the MixVisit library,
             generates a SHA-256 hash, and submits everything to the server.</p>
         </div>
       </div>
       <div class="step-connector"></div>
-      <div class="step">
-        <div class="step-marker">6</div>
-        <div class="step-content">
-          <h3>Done</h3>
+<div class="step">
+ <div class="step-marker">5</div>
+ <div class="step-content">
+ <h3>Done</h3>
           <p>Your fingerprint is stored and you see a confirmation screen. The entire process typically
             takes under 30 seconds.</p>
         </div>
@@ -100,13 +90,8 @@
           <span class="node-icon">🛰️</span>
           <span class="node-text">Detect Platform</span>
         </div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node">
-          <span class="node-icon">🔑</span>
-          <span class="node-text">Consume Code</span>
-        </div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node highlight">
+<div class="flow-arrow">→</div>
+ <div class="flow-node highlight">
           <span class="node-icon">🧩</span>
           <span class="node-text">Generate Fingerprint</span>
         </div>
@@ -122,10 +107,10 @@
   <!-- ─── Section 2: Device Detection ─── -->
   <section id="detection">
     <h2><span class="sec-num">02</span>Device Detection</h2>
-    <p>
-      Before the access code form even appears, Fingrasp runs a multi-signal detection cascade
-      to identify your device platform. This happens entirely in your browser.
-    </p>
+<p>
+ Before the submission form appears, Fingrasp runs a multi-signal detection cascade
+ to identify your device platform. This happens entirely in your browser.
+</p>
 
     <div class="hiw-callout hiw-callout-blue">
       <div class="hiw-callout-icon">
@@ -212,11 +197,11 @@
   <!-- ─── Section 3: Fingerprint Collection ─── -->
   <section id="fingerprint">
     <h2><span class="sec-num">03</span>Fingerprint Collection</h2>
-    <p>
-      Once your access code is validated, the system collects a comprehensive set of browser and hardware
-      signals using the <a href="https://www.mixvisit.com" target="_blank" rel="noopener noreferrer" class="inline-link">MixVisit</a>
-      fingerprinting library. Here is what gets collected:
-    </p>
+<p>
+ Once validated, the system collects a comprehensive set of browser and hardware
+ signals using the <a href="https://www.mixvisit.com" target="_blank" rel="noopener noreferrer" class="inline-link">MixVisit</a>
+ fingerprinting library. Here is what gets collected:
+</p>
 
     <div class="card-grid card-grid-3">
       <div class="hiw-card">
@@ -334,19 +319,8 @@
       layers before any data touches the database.
     </p>
 
-    <div class="security-layers">
-      <div class="sl-item">
-        <div class="sl-icon">
-          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        </div>
-        <div>
-          <h4>Access Code Gate</h4>
-          <p>No fingerprint can be submitted without a valid, single-use access code. Codes are
-            <strong>atomically consumed</strong> — deleted from the database the instant they are
-            validated, preventing race conditions and replay attacks.</p>
-        </div>
-      </div>
-      <div class="sl-item">
+<div class="security-layers">
+ <div class="sl-item">
         <div class="sl-icon">
           <svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 9 8 12 2 12"/></svg>
         </div>
@@ -382,9 +356,9 @@
           <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
         </div>
         <div>
-          <h4>Input Validation</h4>
-          <p>Every user-provided value (access codes, device models, fingerprints) is validated
-            through Pydantic schemas and sanitized before processing.</p>
+<h4>Input Validation</h4>
+ <p>Every user-provided value (device models, fingerprints) is validated
+ through Pydantic schemas and sanitized before processing.</p>
         </div>
       </div>
       <div class="sl-item">

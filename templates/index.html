@@ -39,9 +39,9 @@
     <div class="hero staggered-fade" id="heroSection">
         <div id="heroWaiting">
             <h1>Your Device<br /><em>Fingerprint</em></h1>
-            <p>Enter your access code to begin the fingerprint collection process.<br />See our <a href="/privacy"
-                    class="link-privacy">Privacy Policy</a> and <a href="/how-it-works" class="link-how">How It
-                    Works</a> to learn exactly what we collect and why.</p>
+<p>Begin the fingerprint collection process.<br />See our <a href="/privacy"
+class="link-privacy">Privacy Policy</a> and <a href="/how-it-works" class="link-how">How It
+Works</a> to learn exactly what we collect and why.</p>
             <div class="hero-status staggered-fade">
                 <span class="status-badge"><span class="status-dot"></span>Aggregating</span>
                 <span class="status-stats">{{ "{:,}".format(total_collected) }} samples collected</span>
@@ -64,78 +64,7 @@
     <!-- Right Panel (Code Entry or Fingerprint) -->
     <div class="right-panel" id="rightPanel">
 
-        <!-- Access / Verification Section (hidden until platform detected) -->
-        <div class="code-entry-section hidden" id="codeEntrySection">
-            <div class="code-entry-card">
-                <h2>Human Verification</h2>
-                <p>Please complete the security check to continue.</p>
-                <form id="codeForm">
-                    <select id="platformSelect" autocomplete="off">
-                        <option value="" disabled selected>Select platform</option>
-                        <option value="iphone">iPhone</option>
-                        <option value="ipad">iPad</option>
-                        <option value="mac">Mac</option>
-                        <option value="android">Android</option>
-                        <option value="windows">Windows</option>
-                        <option value="linux">Linux</option>
-                    </select>
-                    <div id="modelFieldContainer" class="hidden">
-                        <div id="modelNote" class="model-note-trigger-wrapper hidden">
-                            <div class="note-trigger" id="noteHelpTrigger">
-                                <span class="note-trigger-text">Click to know why you need to manually write your
-                                    model</span>
-                                <span class="note-icon-btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <line x1="12" y1="16" x2="12" y2="12" />
-                                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-                        <select id="deviceModelSelect" autocomplete="off">
-                            <option value="" disabled selected>Select model</option>
-                        </select>
-                        <div class="input-wrapper"><input type="text" id="deviceModelInput"
-                                placeholder="Enter your device model" autocomplete="off" class="hidden" /><button
-                                type="button" class="clear-input-btn hidden" data-target="deviceModelInput"
-                                aria-label="Clear input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg></button></div>
-                    </div>
 
-                    <!-- Honeypot Field (invisible to users) -->
-                    <div class="hidden" aria-hidden="true">
-                        <label for="honeypotEmail">Email</label>
-                        <input type="email" id="honeypotEmail" name="email" tabindex="-1" autocomplete="new-password">
-                    </div>
-
-                    <!-- Cloudflare Turnstile Widget -->
-                    <div class="turnstile-wrapper">
-                        {% if turnstile_site_key %}
-                        <div class="cf-turnstile" id="turnstileWidget" data-sitekey="{{ turnstile_site_key }}"
-                            data-theme="auto" data-callback="onTurnstileSuccess"
-                            data-expired-callback="onTurnstileExpired" data-error-callback="onTurnstileError"></div>
-                        <!-- Placeholder for dynamic errors (e.g. invalid site key detected by SDK) -->
-                        <div id="turnstileError" class="code-error hidden">
-                            <p>We're having trouble loading the security check. Please try refreshing the page or
-                                temporarily disabling any ad-blockers.</p>
-                        </div>
-                        {% else %}
-                        <div class="code-error">
-                            <p>Security service is not configured. (Missing Site Key)</p>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <button type="submit" id="codeSubmitBtn">Continue</button>
-                </form>
-                <p class="code-hint">Automated verification protects our research integrity.</p>
-            </div>
-        </div>
 
         <!-- Shown after fingerprint is collected -->
         <div class="fp-outer-header hidden" id="fpOuterHeader">
@@ -212,7 +141,6 @@
 <!-- Toast Container for error messages -->
 <div class="toast-container" id="toastContainer"></div>
 
-<input type="hidden" id="validatedCode" value="" />
 <script id="deviceLists" type="application/json">
 {
   "iphone": {{ iphone_models | tojson }},

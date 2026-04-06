@@ -67,12 +67,8 @@ class Settings:
 
     # ── App Configuration ──
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
-    CODE_EXPIRY_HOURS: int = int(os.getenv("CODE_EXPIRY_HOURS", "48"))
 
     # ── MongoDB Collections ──
-    ACCESS_CODE_COLLECTION_NAME: str = os.getenv(
-        "ACCESS_CODE_COLLECTION_NAME", "access_codes"
-    )
     FINGERPRINT_COLLECTION_NAME: str = os.getenv(
         "FINGERPRINT_COLLECTION_NAME", "fingerprints"
     )

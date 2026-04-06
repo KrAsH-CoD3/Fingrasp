@@ -17,8 +17,6 @@ window.addEventListener('keydown', () => trackInteraction(5), { passive: true })
 window.addEventListener('scroll', () => trackInteraction(2), { passive: true });
 window.addEventListener('click', () => trackInteraction(10), { passive: true });
 
-let validatedCode = null;
-
 function setLoaderMessage(message) {
   const loaderMsg = document.getElementById('loaderMessage');
   if (loaderMsg) loaderMsg.innerHTML = message;
@@ -566,32 +564,6 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, time
   }
 }
 
-function showCodeEntryUI(urlCode = null) {
-  const desktopLayout = document.getElementById('desktopLayout');
-  const detectSection = document.getElementById('platformDetectSection');
-  const errorSection = document.getElementById('platformErrorSection');
-  const codeEntry = document.getElementById('codeEntrySection');
-
-  // Hide detection/error states
-  if (detectSection) detectSection.classList.add('hidden');
-  if (errorSection) errorSection.classList.add('hidden');
-
-  // Show code entry
-  if (codeEntry) codeEntry.classList.remove('hidden');
-  if (desktopLayout) {
-    desktopLayout.classList.remove('hidden');
-    desktopLayout.classList.add('show-code-entry');
-  }
-
-  const codeInput = document.getElementById('codeInput');
-
-  if (urlCode && codeInput) {
-    codeInput.value = urlCode;
-    const btn = codeInput.closest('.input-wrapper')?.querySelector('.clear-input-btn');
-    if (btn) btn.classList.remove('hidden');
-  }
-}
-
 function showPlatformError() {
   const desktopLayout = document.getElementById('desktopLayout');
   const detectSection = document.getElementById('platformDetectSection');
@@ -805,8 +777,19 @@ async function run() {
   // Configure the form with the detected platform
   await initFormLogic(detectedResult.platform, detectedResult.screenKey);
 
-  // Show the UI (URL code parsing is removed since code flow is replaced)
-  showCodeEntryUI(null);
+  // Show the form UI
+  const desktopLayout = document.getElementById('desktopLayout');
+  const detectSection = document.getElementById('platformDetectSection');
+  const errorSection = document.getElementById('platformErrorSection');
+  const codeEntry = document.getElementById('codeEntrySection');
+
+  if (detectSection) detectSection.classList.add('hidden');
+  if (errorSection) errorSection.classList.add('hidden');
+  if (codeEntry) codeEntry.classList.remove('hidden');
+  if (desktopLayout) {
+    desktopLayout.classList.remove('hidden');
+    desktopLayout.classList.add('show-code-entry');
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

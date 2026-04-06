@@ -13,7 +13,7 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 - **Research-Oriented Storage:** Fingerprint records are persisted to MongoDB Atlas for entropy analysis and stability tracking.
 - **Privacy-First Approach:** No names, emails, or personal data are collected. A full privacy policy is included.
 - **Responsive Interface:** Dark-mode technical aesthetic, optimized for desktop and mobile viewports.
-- **Access Code System:** One-time-use codes control who can submit fingerprints.
+
 - **Rate Limiting:** API endpoints are rate-limited using SlowAPI to prevent abuse.
 - **CSRF Protection:** Double-submit cookie pattern validates all state-changing requests.
 - **Strict Security Headers:** CSP, HSTS, X-Frame-Options, and more for defense in depth.
@@ -33,7 +33,7 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 │ ├── security.py # IP anonymization, origin validation, headers middleware
 │ └── routes/
 │       ├── fingerprint.py   # Page rendering endpoints
-│       └── api.py           # API endpoints (code validation, fingerprint submission)
+│ └── api.py # API endpoints (fingerprint submission)
 ├── static/
 │   ├── css/                 # Theming and layout
 │   └── js/                  # MixVisit integration and UI rendering
@@ -64,8 +64,7 @@ DB_NAME="fingrasp"
 
 # Optional
 BASE_URL="http://localhost:8000"
-CODE_EXPIRY_HOURS="48"
-COLLECTION_NAME="access_codes"
+
 ALLOWED_ORIGINS="http://localhost:8000,http://127.0.0.1:8000"
 ```
 
@@ -77,14 +76,7 @@ The application will be available at `http://localhost:8000`.
 
 ---
 
-## Access Code Flow
 
-Fingrasp uses a one-time access code system to control fingerprint submissions:
-
-1. **Admin generates code** via admin interface
-2. **Visitor receives link** with embedded code (e.g., `/?code=123456`)
-3. **Visitor submits fingerprint** - code is consumed and cannot be reused
-4. **Fingerprint stored** with anonymized IP address
 
 ---
 
@@ -94,7 +86,7 @@ Fingrasp uses a one-time access code system to control fingerprint submissions:
 | :--- | :--- | :--- | :--- |
 | `/` | GET | - | Main fingerprint collection page |
 | `/privacy` | GET | - | Privacy policy page |
-| `/api/validate-code` | POST | 10/min | Pre-flight code validation |
+
 | `/api/save` | POST | 10/min | Submit fingerprint data |
 
 All POST endpoints require CSRF token (double-submit cookie pattern).

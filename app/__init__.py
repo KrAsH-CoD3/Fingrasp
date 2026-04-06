@@ -177,11 +177,10 @@ async def lifespan(application: FastAPI):
     from pymongo import ASCENDING
 
     for collection in [
-        settings.ACCESS_CODE_COLLECTION_NAME,
         settings.TEMP_SESSION_COLLECTION_NAME,
     ]:
         try:
-            await db._db[collection].create_index(
+            await db[collection].create_index(
                 [("expires_at", ASCENDING)], expireAfterSeconds=0
             )
             logger.info(f"Verified TTL index on {collection}")
