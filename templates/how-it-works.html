@@ -26,22 +26,19 @@
   </ol>
 </div>
 
-<div class="doc-body staggered-fade">
-
-  <!-- ─── Section 1: User Journey ─── -->
+<div class="doc-body staggered-fa  <!-- ─── Section 1: User Journey ─── -->
   <section id="journey">
     <h2><span class="sec-num">01</span>The User Journey</h2>
-<p>
-  Fingrasp collects device fingerprints through a secure, automated process. Here is the full flow:
-</p>
+    <p>
+      Fingrasp collects device fingerprints through a secure, multi-stage automated process. Here is the full flow:
+    </p>
 
     <div class="step-flow">
       <div class="step">
         <div class="step-marker">1</div>
         <div class="step-content">
-          <h3>Land on the Page</h3>
-          <p>When you visit Fingrasp, the system immediately begins detecting your device platform
-            in the background. You will see a brief "Detecting device platform..." state before anything else appears.</p>
+          <h3>Land & Detect</h3>
+          <p>When you visit, the system immediately begins identifying your platform (iPhone, Android, Mac, etc.) using high-entropy client hints and hardware signals.</p>
         </div>
       </div>
       <div class="step-connector"></div>
@@ -49,36 +46,31 @@
         <div class="step-marker">2</div>
         <div class="step-content">
           <h3>Platform Lock</h3>
-          <p>Once your platform is identified (iPhone, Android, Mac, Windows, etc.), the platform field is
-            <strong>locked</strong> — you cannot change it. This prevents platform spoofing at the UI level.</p>
-        </div>
-      </div>
-<div class="step-connector"></div>
-<div class="step">
- <div class="step-marker">3</div>
- <div class="step-content">
- <h3>Select Device Model</h3>
-          <p>For Apple devices, you pick your exact model from a <strong>hardware-filtered dropdown</strong> that
-            only shows models matching your screen dimensions. For Android, you type your model name.
-            For desktops, a text input is provided.</p>
+          <p>Once identified, the platform field is <strong>locked</strong> to prevent spoofing. This ensure the data we collect matches the actual operating environment.</p>
         </div>
       </div>
       <div class="step-connector"></div>
-<div class="step">
- <div class="step-marker">4</div>
- <div class="step-content">
- <h3>Fingerprint Collection</h3>
-          <p>Once validated, the system silently collects your device fingerprint using the MixVisit library,
-            generates a SHA-256 hash, and submits everything to the server.</p>
+      <div class="step">
+        <div class="step-marker">3</div>
+        <div class="step-content">
+          <h3>Anti-Bot Verification</h3>
+          <p>We use a combination of <strong>Cloudflare Turnstile</strong>, hidden honeypots, and behavioral analysis to verify you are a human. This stage protects the research database from bot noise.</p>
         </div>
       </div>
       <div class="step-connector"></div>
-<div class="step">
- <div class="step-marker">5</div>
- <div class="step-content">
- <h3>Done</h3>
-          <p>Your fingerprint is stored and you see a confirmation screen. The entire process typically
-            takes under 30 seconds.</p>
+      <div class="step">
+        <div class="step-marker">4</div>
+        <div class="step-content">
+          <h3>Select Model</h3>
+          <p>You select or enter your device model. For hardware-constrained platforms like iOS, we provide a pre-filtered list based on your specific screen and hardware profile.</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-marker">5</div>
+        <div class="step-content">
+          <h3>Collection & Submit</h3>
+          <p>The system collects the full signal breakdown, generates a SHA-256 composite hash, and submits the validated record via a secure session tunnel.</p>
         </div>
       </div>
     </div>
@@ -90,16 +82,19 @@
           <span class="node-icon">🛰️</span>
           <span class="node-text">Detect Platform</span>
         </div>
-<div class="flow-arrow">→</div>
- <div class="flow-node highlight">
-          <span class="node-icon">🧩</span>
-          <span class="node-text">Generate Fingerprint</span>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node highlight">
+          <span class="node-icon">🛡️</span>
+          <span class="node-text">Human Verification</span>
         </div>
         <div class="flow-arrow">→</div>
         <div class="flow-node">
           <span class="node-icon">🗳️</span>
           <span class="node-text">Secure Archival</span>
         </div>
+      </div>
+    </div>
+  </section>
       </div>
     </div>
   </section>
@@ -316,19 +311,30 @@
     <h2><span class="sec-num">05</span>Security Architecture</h2>
     <p>
       Fingrasp is designed with defense-in-depth. Every interaction passes through multiple security
-      layers before any data touches the database.
+      layers before any data touches our research database.
     </p>
 
-<div class="security-layers">
- <div class="sl-item">
+    <div class="security-layers">
+      <div class="sl-item">
+        <div class="sl-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <h4>Layered Anti-Bot Filtering</h4>
+          <p>We employ a 3-phase check: <strong>Cloudflare Turnstile</strong> for cryptographic proof of humanity, 
+            <strong>hidden honeypots</strong> to catch headless bots, and <strong>interaction scoring</strong> 
+            to verify legitimate behavioral patterns before granting session access.</p>
+        </div>
+      </div>
+      <div class="sl-item">
         <div class="sl-icon">
           <svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 9 8 12 2 12"/></svg>
         </div>
         <div>
-          <h4>Session Token Handshake</h4>
-          <p>After code validation, a short-lived session token is issued. The fingerprint submission
-            must include this token. Like codes, session tokens are <strong>single-use</strong> and
-            auto-expire from the database via TTL indexes.</p>
+          <h4>Secure Tunnel Handshake</h4>
+          <p>Upon passing anti-bot checks, the backend issues a <strong>single-use session token</strong>. 
+            All submissions must traverse this "secure tunnel," and tokens are immediately invalidated 
+            upon use to prevent replay attacks.</p>
         </div>
       </div>
       <div class="sl-item">
@@ -336,19 +342,9 @@
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
         <div>
-          <h4>Rate Limiting</h4>
-          <p>All endpoints are rate-limited (10 requests/minute for API endpoints, 20/minute for page loads)
-            to prevent brute-force attacks and denial-of-service.</p>
-        </div>
-      </div>
-      <div class="sl-item">
-        <div class="sl-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div>
-          <h4>Content Security Policy</h4>
-          <p>All scripts and styles use CSP nonces. Inline scripts are blocked. External resource
-            loading is restricted to trusted origins only.</p>
+          <h4>Hardened Rate Limiting</h4>
+          <p>All endpoints are governed by <strong>SlowAPI</strong> (10 req/min for API, 30 req/min for frontend). 
+            Static assets are also dynamically rate-limited to preserve server resources and mitigate scraping.</p>
         </div>
       </div>
       <div class="sl-item">
@@ -356,9 +352,10 @@
           <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
         </div>
         <div>
-<h4>Input Validation</h4>
- <p>Every user-provided value (device models, fingerprints) is validated
- through Pydantic schemas and sanitized before processing.</p>
+          <h4>Nonce-Based Content Security</h4>
+          <p>Our CSP strictly forbids inline scripts and styles. Every resource is verified via 
+            <strong>dynamically generated nonces</strong>, ensuring that only our authorized codebase can execute 
+            in your browser.</p>
         </div>
       </div>
       <div class="sl-item">
@@ -366,9 +363,9 @@
           <svg viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
         </div>
         <div>
-          <h4>Duplicate Detection</h4>
-          <p>SHA-256 hashes prevent the same fingerprint from being stored twice. If a duplicate
-            submission is detected, it is rejected with a clear error message.</p>
+          <h4>Pydantic Validation & Sanitization</h4>
+          <p>Data payloads are strictly validated against production schemas. We enforce type checking, 
+            max-length constraints, and NoSQL operator sanitization to prevent injection vulnerabilities.</p>
         </div>
       </div>
     </div>

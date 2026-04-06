@@ -8,13 +8,13 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 
 ## Features
 
+- **Layered Anti-Bot Protection:** Cloudflare Turnstile, browser honeypots, and behavioral interaction analysis for automated protection.
 - **Transparent Collection:** Visitors see every signal collected from their device in a categorized, expandable breakdown.
 - **Composite Hashing:** All signals are combined into a single SHA-256 fingerprint hash for identification and comparison.
 - **Research-Oriented Storage:** Fingerprint records are persisted to MongoDB Atlas for entropy analysis and stability tracking.
 - **Privacy-First Approach:** No names, emails, or personal data are collected. A full privacy policy is included.
 - **Responsive Interface:** Dark-mode technical aesthetic, optimized for desktop and mobile viewports.
-
-- **Rate Limiting:** API endpoints are rate-limited using SlowAPI to prevent abuse.
+- **Rate Limiting:** API endpoints and static assets are rate-limited using SlowAPI to prevent abuse.
 - **CSRF Protection:** Double-submit cookie pattern validates all state-changing requests.
 - **Strict Security Headers:** CSP, HSTS, X-Frame-Options, and more for defense in depth.
 
@@ -30,16 +30,16 @@ The collected fingerprints are stored for research into browser entropy, fingerp
 │   ├── database.py          # MongoDB Atlas connection lifecycle
 │   ├── limiter.py           # SlowAPI rate limiter instance
 │   ├── schemas.py           # Pydantic models for request/response validation
-│ ├── security.py # IP anonymization, origin validation, headers middleware
-│ └── routes/
+│   ├── security.py          # IP anonymization, origin validation, headers middleware
+│   └── routes/
 │       ├── fingerprint.py   # Page rendering endpoints
-│ └── api.py # API endpoints (fingerprint submission)
+│       └── api.py           # API endpoints (fingerprint submission)
 ├── static/
 │   ├── css/                 # Theming and layout
 │   └── js/                  # MixVisit integration and UI rendering
-├── templates/ # Jinja2 HTML templates
-├── main.py # Application entry point
-├── pyproject.toml # UV project configuration
+├── templates/               # Jinja2 HTML templates
+├── main.py                  # Application entry point
+├── pyproject.toml           # UV project configuration
 └── uv.lock                  # Dependency lockfile
 ```
 
@@ -62,9 +62,13 @@ Create a `.env` file in the project root:
 MONGODB_URI="your_mongodb_atlas_connection_string"
 DB_NAME="fingrasp"
 
+# Verification Service (required for anti-bot)
+TURNSTILE_SITE_KEY="your_site_key"
+TURNSTILE_SECRET_KEY="your_secret_key"
+
 # Optional
 BASE_URL="http://localhost:8000"
-
+ALLOW_ANONYMOUS="false"
 ALLOWED_ORIGINS="http://localhost:8000,http://127.0.0.1:8000"
 ```
 
