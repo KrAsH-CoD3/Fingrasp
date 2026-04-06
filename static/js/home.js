@@ -494,14 +494,14 @@ async function validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, int
       body: JSON.stringify(payload)
     });
     
+    const body = await res.json().catch(() => ({}));
     if (res.ok) {
-        const body = await res.json();
-        return body.session_token;
+        return { token: body.session_token, error: null };
     }
-    return null;
+    return { token: null, error: body.message || 'Security verification failed.' };
   } catch (err) {
     console.error('Validation fetch error:', err);
-    return null;
+    return { token: null, error: 'Could not connect to verification service.' };
   }
 }
 
@@ -514,14 +514,21 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, time
     if (codeEntry) codeEntry.classList.add('hidden');
 
     setLoaderMessage('Verifying security check<span class="dot-anim"></span>');
-    const sessionToken = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, INTERACTION_SCORE);
+    const { token, error } = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, INTERACTION_SCORE);
 
-    if (!sessionToken) {
-      showToast('Security verification failed. Please try again.', 'error');
+    if (error) {
+      showToast(error, 'error');
       if (loader) loader.classList.add('hidden');
       if (codeEntry) codeEntry.classList.remove('hidden');
+      
+      // If Turnstile failed specific check, reset it
+      if (window.turnstile) {
+         window.turnstile.reset('#turnstileWidget');
+      }
       return;
     }
+    
+    const sessionToken = token;
 
     setLoaderMessage('Obtaining fingerprint<span class="dot-anim"></span>');
     const mv = new MixVisit();
@@ -603,12 +610,24 @@ function showPlatformError() {
  * Handle Turnstile widget initialization errors (e.g. invalid site key).
  * Called via data-error-callback in index.html.
  */
-window.onTurnstileError = function() {
+window.onTurnstileSuccess = function(token) {
+  console.log('[Fingrasp] Turnstile token obtained');
+};
+
+window.onTurnstileExpired = function() {
+  console.warn('[Fingrasp] Turnstile token expired');
+  showToast('Challenge expired. Please solve it again.', 'error');
+  if (window.turnstile) window.turnstile.reset('#turnstileWidget');
+};
+
+window.onTurnstileError = function(code) {
+  console.error('[Fingrasp] Turnstile error:', code);
   const widget = document.getElementById('turnstileWidget');
   const errorEl = document.getElementById('turnstileError');
   if (widget) widget.classList.add('hidden');
   if (errorEl) errorEl.classList.remove('hidden');
-  showToast('Security verification could not be loaded. Please try refreshing the page.', 'error');
+  
+  showToast('Security verification failed (Check ad-blockers or site configuration).', 'error');
 };
 
 async function initFormLogic(detectedPlatform, screenKey = null) {

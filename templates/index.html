@@ -117,7 +117,8 @@
                     <div class="turnstile-wrapper">
                         {% if turnstile_site_key %}
                         <div class="cf-turnstile" id="turnstileWidget" data-sitekey="{{ turnstile_site_key }}"
-                            data-theme="auto" data-error-callback="onTurnstileError"></div>
+                            data-theme="auto" data-callback="onTurnstileSuccess"
+                            data-expired-callback="onTurnstileExpired" data-error-callback="onTurnstileError"></div>
                         <!-- Placeholder for dynamic errors (e.g. invalid site key detected by SDK) -->
                         <div id="turnstileError" class="code-error hidden">
                             <p>We're having trouble loading the security check. Please try refreshing the page or
@@ -190,16 +191,16 @@
             <h3>Manual Entry Required</h3>
             <p>For Android, Windows, and Linux devices, please manually enter your device model. There are too many
                 models from different manufacturers to list them all in a single menu.</p>
-            <div class="example-box">
+                <div class="example-box">
                 <div class="example-item">
                     <span class="example-label">Android:</span>
                     <span class="example-val">Google Pixel 8, Samsung Galaxy S24 Ultra, Xiaomi 14.</span>
                 </div>
-                <div class="example-item" style="margin-top: 8px;">
+                <div class="example-item">
                     <span class="example-label">Windows:</span>
                     <span class="example-val">Surface Pro 9, Dell XPS 15, HP Spectre x360.</span>
                 </div>
-                <div class="example-item" style="margin-top: 8px;">
+                <div class="example-item">
                     <span class="example-label">Linux:</span>
                     <span class="example-val">ThinkPad X1 Carbon, Framework Laptop 13.</span>
                 </div>
