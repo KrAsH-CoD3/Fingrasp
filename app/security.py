@@ -45,11 +45,54 @@ def anonymize_ip(ip: str) -> str:
         return "0.0.0.0"
 
 
+# Known Cloudflare IP ranges (IPv4 and IPv6)
+# These are used to validate whether a request is genuinely from Cloudflare
+_CLOUDFLARE_IP_RANGES = [
+    # IPv4 ranges
+    ipaddress.ip_network("173.245.48.0/20"),
+    ipaddress.ip_network("103.21.244.0/22"),
+    ipaddress.ip_network("103.22.200.0/22"),
+    ipaddress.ip_network("103.31.4.0/22"),
+    ipaddress.ip_network("141.101.64.0/18"),
+    ipaddress.ip_network("108.162.192.0/18"),
+    ipaddress.ip_network("190.93.240.0/20"),
+    ipaddress.ip_network("188.114.96.0/20"),
+    ipaddress.ip_network("197.234.240.0/22"),
+    ipaddress.ip_network("198.41.128.0/17"),
+    ipaddress.ip_network("162.158.0.0/15"),
+    ipaddress.ip_network("104.16.0.0/13"),
+    ipaddress.ip_network("104.24.0.0/14"),
+    ipaddress.ip_network("172.64.0.0/13"),
+    ipaddress.ip_network("131.0.72.0/22"),
+    # IPv6 ranges
+    ipaddress.ip_network("2400:cb00::/32"),
+    ipaddress.ip_network("2606:4700::/32"),
+    ipaddress.ip_network("2803:f800::/32"),
+    ipaddress.ip_network("2405:b500::/32"),
+    ipaddress.ip_network("2405:8100::/32"),
+    ipaddress.ip_network("2a06:98c0::/29"),
+    ipaddress.ip_network("2c0f:f248::/32"),
+]
+
+
+def _is_cloudflare_ip(ip_str: str) -> bool:
+    """Check if an IP address belongs to Cloudflare's known IP ranges."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return any(ip in network for network in _CLOUDFLARE_IP_RANGES)
+    except ValueError:
+        return False
+
+
 def get_real_ip(request: Request) -> str:
-    """Extract real user IP from Cloudflare or standard proxy headers."""
-    # Priority: CF-Connecting-IP > X-Forwarded-For > remote_addr
+    """Extract real user IP from Cloudflare or standard proxy headers.
+
+    Only trusts CF-Connecting-IP when the request genuinely comes from
+    a Cloudflare IP range, preventing IP spoofing when not behind Cloudflare.
+    """
+    # Only trust CF-Connecting-IP if request is actually from Cloudflare
     cf_ip = request.headers.get("CF-Connecting-IP")
-    if cf_ip:
+    if cf_ip and _is_cloudflare_ip(request.client.host if request.client else ""):
         return cf_ip
 
     forwarded = request.headers.get("X-Forwarded-For")

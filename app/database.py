@@ -116,7 +116,9 @@ class SanitizedCollection:
     def __init__(self, collection):
         self._collection = collection
 
-    def _validate_and_sanitize_query(self, query: dict, allowed: set[str] | None = None) -> dict:
+    def _validate_and_sanitize_query(
+        self, query: dict, allowed: set[str] | None = None
+    ) -> dict:
         _validate_query_structure(query, allowed=allowed)
         return self._sanitize_query(query, allowed=allowed)
 
@@ -166,17 +168,23 @@ class SanitizedCollection:
     async def find(self, filter: dict | None = None, *args, **kwargs) -> Any:
         if filter:
             filter = self._validate_and_sanitize_query(filter)
-        return self._collection.find(filter, *args, **kwargs)
+        cursor = self._collection.find(filter, *args, **kwargs)
+        results = await cursor.to_list(length=None)
+        return [self._sanitize_for_mongodb(doc) for doc in results]
 
     async def update_one(self, filter: dict, update: dict, *args, **kwargs) -> Any:
         filter = self._validate_and_sanitize_query(filter)
-        update = self._validate_and_sanitize_query(update, allowed=ALLOWED_UPDATE_OPERATORS)
+        update = self._validate_and_sanitize_query(
+            update, allowed=ALLOWED_UPDATE_OPERATORS
+        )
         logger.debug("update_one: filter and update validated and sanitized")
         return await self._collection.update_one(filter, update, *args, **kwargs)
 
     async def update_many(self, filter: dict, update: dict, *args, **kwargs) -> Any:
         filter = self._validate_and_sanitize_query(filter)
-        update = self._validate_and_sanitize_query(update, allowed=ALLOWED_UPDATE_OPERATORS)
+        update = self._validate_and_sanitize_query(
+            update, allowed=ALLOWED_UPDATE_OPERATORS
+        )
         logger.debug("update_many: filter and update validated and sanitized")
         return await self._collection.update_many(filter, update, *args, **kwargs)
 
@@ -197,8 +205,11 @@ class SanitizedCollection:
                 validated_stage = self._validate_and_sanitize_query(stage)
                 validated_pipeline.append(validated_stage)
             logger.debug(f"aggregate: {len(pipeline)} pipeline stages validated")
-            return self._collection.aggregate(validated_pipeline, *args, **kwargs)
-        return self._collection.aggregate(pipeline, *args, **kwargs)
+            cursor = self._collection.aggregate(validated_pipeline, *args, **kwargs)
+        else:
+            cursor = self._collection.aggregate(pipeline, *args, **kwargs)
+        results = await cursor.to_list(length=None)
+        return [self._sanitize_for_mongodb(doc) for doc in results]
 
     async def find_one_and_delete(self, filter: dict, *args, **kwargs) -> Any:
         filter = self._validate_and_sanitize_query(filter)
@@ -209,7 +220,9 @@ class SanitizedCollection:
         self, filter: dict, update: dict, *args, **kwargs
     ) -> Any:
         filter = self._validate_and_sanitize_query(filter)
-        update = self._validate_and_sanitize_query(update, allowed=ALLOWED_UPDATE_OPERATORS)
+        update = self._validate_and_sanitize_query(
+            update, allowed=ALLOWED_UPDATE_OPERATORS
+        )
         logger.debug("find_one_and_update: filter and update validated and sanitized")
         return await self._collection.find_one_and_update(
             filter, update, *args, **kwargs

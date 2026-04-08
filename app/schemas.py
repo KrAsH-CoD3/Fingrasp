@@ -58,14 +58,18 @@ def _check_depth(obj: Any, current: int = 0) -> int:
 
 
 def _check_strings(obj: Any) -> None:
-    """Reject any string value that exceeds MAX_STRING_LENGTH."""
+    """Reject any string value or key that exceeds MAX_STRING_LENGTH."""
     if isinstance(obj, str):
         if len(obj) > MAX_STRING_LENGTH:
             raise ValueError(
                 f"String value exceeds maximum length of {MAX_STRING_LENGTH}"
             )
     elif isinstance(obj, dict):
-        for v in obj.values():
+        for k, v in obj.items():
+            if isinstance(k, str) and len(k) > MAX_STRING_LENGTH:
+                raise ValueError(
+                    f"Dictionary key exceeds maximum length of {MAX_STRING_LENGTH}"
+                )
             _check_strings(v)
     elif isinstance(obj, list):
         for v in obj:
@@ -122,7 +126,21 @@ class FingerprintPayload(BaseModel):
     @model_validator(mode="after")
     def enforce_depth_and_size(self) -> FingerprintPayload:
         # Sanitize fingerprint data to prevent NoSQL injection
+        original_key_count = (
+            len(self.fingerprint) if isinstance(self.fingerprint, dict) else 0
+        )
         self.fingerprint = _sanitize_data(self.fingerprint)
+        sanitized_key_count = (
+            len(self.fingerprint) if isinstance(self.fingerprint, dict) else 0
+        )
+
+        if sanitized_key_count < original_key_count:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"NoSQL sanitization removed {original_key_count - sanitized_key_count} keys from fingerprint"
+            )
 
         # Check nesting depth
         _check_depth(self.fingerprint)

@@ -28,6 +28,7 @@ from app.security import validate_input
 
 logger = logging.getLogger(__name__)
 
+
 # ── Helper to unwrap MixVisit {value, duration} wrapper ──
 def _unwrap(module: Any) -> Any:
     """
@@ -621,9 +622,24 @@ def _get_platform_group(name: str | None) -> str:
     name_lower = name.lower()
     if any(k in name_lower for k in ("iphone", "ipad", "ios", "apple gpu")):
         return "ios"
-    if any(k in name_lower for k in ("android", "samsung", "galaxy", "pixel", "redmi", "pixel", "xiaomi", "oppo", "vivo")):
+    if any(
+        k in name_lower
+        for k in (
+            "android",
+            "samsung",
+            "galaxy",
+            "pixel",
+            "redmi",
+            "pixel",
+            "xiaomi",
+            "oppo",
+            "vivo",
+        )
+    ):
         return "android"
-    if "mac" in name_lower or any(k in name_lower for k in ("apple m1", "apple m2", "apple m3", "apple m4")):
+    if "mac" in name_lower or any(
+        k in name_lower for k in ("apple m1", "apple m2", "apple m3", "apple m4")
+    ):
         return "mac"
     if "windows" in name_lower:
         return "windows"
@@ -642,121 +658,168 @@ def validate_device_model(
 ) -> str:
     """
     Validate user-provided device model in accordance with what the device actually is.
-    
+
     Cross-references hardware/browser signals with user input to prevent platform
     mismatches (e.g. user selects 'iPhone' while on a Windows PC).
     """
     user_model = validate_input(device_model)
     user_model_lower = user_model.lower()
-    
+
     # Get ground truth from fingerprint detection
-    detected_name = extract_device_name(fingerprint) if fingerprint else "Unknown Device"
+    detected_name = (
+        extract_device_name(fingerprint) if fingerprint else "Unknown Device"
+    )
     detected_group = _get_platform_group(detected_name)
-    
+
     # If user is 'Not Sure' or hasn't provided a model, use the detected one
-    if not user_model or user_model_lower == "not_sure" or user_model_lower == "unknown device":
-        logger.info(f"User selected 'Not Sure' or provided no model. Detected: {detected_name}")
+    if (
+        not user_model
+        or user_model_lower == "not_sure"
+        or user_model_lower == "unknown device"
+    ):
+        logger.info(
+            f"User selected 'Not Sure' or provided no model. Detected: {detected_name}"
+        )
         return detected_name
 
     # Handle Platform Consistency
     user_group = _get_platform_group(user_model)
-    
+
     # If there is a fundamental platform mismatch (e.g. User says Android, Fingerprint says iOS)
     # trust the hard signals from the fingerprint.
-    if user_group != "unknown" and detected_group != "unknown" and user_group != detected_group:
-        logger.warning(f"Platform mismatch! User claimed '{user_model}' ({user_group}), "
+    if (
+        user_group != "unknown"
+        and detected_group != "unknown"
+        and user_group != detected_group
+    ):
+        logger.warning(
+            f"Platform mismatch! User claimed '{user_model}' ({user_group}), "
             f"but signals detected '{detected_name}' ({detected_group}). Overriding user input."
         )
         return detected_name
 
     # Handle Android devices
-    # We must properly identify Android if the user entered unknown device model AND 
-    # _get_platform_group failed to categorize `the device model` as Android 
+    # We must properly identify Android if the user entered unknown device model AND
+    # _get_platform_group failed to categorize `the device model` as Android
     # because it lacks any of the keyword in the tuple ("samsung", "pixel", "galaxy", "sm-", "android").
     exact_from_fingerprint = None
     if fingerprint:
         nav = _unwrap(fingerprint.get("navigator")) or {}
         user_agent = nav.get("userAgent") or ""
-        
-        user_agent_data = _unwrap(fingerprint.get("userAgentData")) or nav.get("userAgentData") or {}
-        high_entropy_values = _unwrap(fingerprint.get("highEntropyValues")) or nav.get("highEntropyValues") or {}
-        
+
+        user_agent_data = (
+            _unwrap(fingerprint.get("userAgentData")) or nav.get("userAgentData") or {}
+        )
+        high_entropy_values = (
+            _unwrap(fingerprint.get("highEntropyValues"))
+            or nav.get("highEntropyValues")
+            or {}
+        )
+
         def _ext_model(source):
             val = source.get("model") if isinstance(source, dict) else None
             return val.strip() if isinstance(val, str) else None
-            
+
         model_hint = _ext_model(high_entropy_values) or _ext_model(user_agent_data)
-        
+
         if model_hint:
             exact_from_fingerprint = _identify_model(model_hint, silent_log=True)
-        
+
         if not exact_from_fingerprint and user_agent:
             ua_model = _parse_android_model_from_ua(user_agent)
             if ua_model:
                 exact_from_fingerprint = _identify_model(ua_model, silent_log=True)
-                
-    # If we found it in the Android store, it's 100% Android. 
+
+    # If we found it in the Android store, it's 100% Android.
     # Otherwise, rely on the broader platform group heuristics.
     is_android = bool(
-        exact_from_fingerprint or 
-        user_group == "android" or 
-        detected_group == "android" or 
-        any(k in user_model_lower for k in ("samsung", "pixel", "galaxy", "sm-", "android"))
+        exact_from_fingerprint
+        or user_group == "android"
+        or detected_group == "android"
+        or any(
+            k in user_model_lower
+            for k in ("samsung", "pixel", "galaxy", "sm-", "android")
+        )
     )
-    
+
     if is_android:
         if exact_from_fingerprint:
-            logger.info(f"Android exact model found from fingerprint store lookup: '{exact_from_fingerprint}'. Overriding user input '{user_model}'.")
+            logger.info(
+                f"Android exact model found from fingerprint store lookup: '{exact_from_fingerprint}'. Overriding user input '{user_model}'."
+            )
             return exact_from_fingerprint
         else:
             # Try to validate the user's manual text input against the store
             identified = _identify_model(user_model, silent_log=True)
             if identified:
-                logger.info(f"Android user input '{user_model}' validated against store as '{identified}'.")
+                logger.info(
+                    f"Android user input '{user_model}' validated against store as '{identified}'."
+                )
                 return identified
-            
+
             # Still unrecognized? Tag it with the hardware reality from signals
-            logger.info(f"Unrecognized Android model '{user_model}'. Tagging with hardware profile.")
+            logger.info(
+                f"Unrecognized Android model '{user_model}'. Tagging with hardware profile."
+            )
             return f"{user_model} ({detected_name})"
 
     # Handle iOS and Mac screen/GPU consistency
     if detected_group in ("ios", "mac"):
         # We perform a strict validation for iOS using screen dimension keys
         if detected_group == "ios" and fingerprint:
-            nav = _unwrap(fingerprint.get("navigator")) or {}
-            screen = _unwrap(fingerprint.get("screen")) or {}
-            
-            # Use same logic as extract_device_name to get hardware signals
-            w = min(screen.get("width", 0), screen.get("height", 0))
-            h = max(screen.get("width", 0), screen.get("height", 0))
-            dpr = nav.get("devicePixelRatio") or 1
-            screen_key = f"{int(w)}x{int(h)}x{int(float(dpr))}"
-            
+            # Use _get_screen_dims for consistency with extract_device_name
+            screen_dims = _get_screen_dims(fingerprint)
+            if not screen_dims:
+                screen_dims = (0, 0)
+            w, h = screen_dims
+
+            dpr = _get_dpr(fingerprint)
+            if dpr is None:
+                nav = _unwrap(fingerprint.get("navigator")) or {}
+                dpr = nav.get("devicePixelRatio") or 1
+            screen_key = f"{w}x{h}x{dpr}"
+
             # Determine if it's iphone or ipad
             is_ipad = "ipad" in _get_platform_group(detected_name)
             lookup_db = IPAD_SCREEN_MODELS if is_ipad else IPHONE_SCREEN_MODELS
-            
+
             valid_models = lookup_db.get(screen_key, [])
-            
+
             # Strict check: user input must be in the list of models valid for this screen
             if valid_models and user_model not in valid_models:
-                logger.warning(f"Hardware mismatch! User claims {user_model}, but screen key {screen_key} only supports {valid_models}")
+                logger.warning(
+                    f"Hardware mismatch! User claims {user_model}, but screen key {screen_key} only supports {valid_models}"
+                )
                 return f"{user_model} ({detected_name})"
-        
+
         # Generic consistency check for Mac or cases without full fingerprint
-        ground_truth_variants = [v.strip().lower() for v in detected_name.replace('(', '').replace(')', '').split('/')]
-        is_consistent = any(variant in user_model_lower or user_model_lower in variant for variant in ground_truth_variants)
-        
-        if not is_consistent and detected_name not in ("iPhone", "iPad", "Mac", "Unknown Device"):
-            logger.warning(f"Consistency check failed on {detected_group}! User: '{user_model}', Hardware Profile: '{detected_name}'.")
+        ground_truth_variants = [
+            v.strip().lower()
+            for v in detected_name.replace("(", "").replace(")", "").split("/")
+        ]
+        is_consistent = any(
+            variant in user_model_lower or user_model_lower in variant
+            for variant in ground_truth_variants
+        )
+
+        if not is_consistent and detected_name not in (
+            "iPhone",
+            "iPad",
+            "Mac",
+            "Unknown Device",
+        ):
+            logger.warning(
+                f"Consistency check failed on {detected_group}! User: '{user_model}', Hardware Profile: '{detected_name}'."
+            )
             return f"{user_model} ({detected_name})"
-    
-    # For all other cases (Windows, Linux, etc.), if the user input doesn't match 
+
+    # For all other cases (Windows, Linux, etc.), if the user input doesn't match
     # the detected hardware profile, append the truth as a suffix.
     if user_model_lower != detected_name.lower() and detected_name != "Unknown Device":
         return f"{user_model} ({detected_name})"
 
     # For all other cases where platforms match or we trust the input
-    logger.info(f"User provided model '{user_model}' matching detected platform '{detected_group}'.")
+    logger.info(
+        f"User provided model '{user_model}' matching detected platform '{detected_group}'."
+    )
     return user_model
-

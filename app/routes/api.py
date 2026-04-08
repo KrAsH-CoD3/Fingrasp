@@ -21,6 +21,12 @@ from app.schemas import (
 
 logger = logging.getLogger(__name__)
 
+# Shared httpx client with connection pooling for Turnstile verification
+_turnstile_client = httpx.AsyncClient(
+    base_url="https://challenges.cloudflare.com",
+    timeout=10.0,
+)
+
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -87,30 +93,29 @@ async def validate_turnstile(
         )
     else:
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-                    data={
-                        "secret": settings.TURNSTILE_SECRET_KEY,
-                        "response": body.cf_turnstile_response,
-                        "remoteip": get_real_ip(request),
-                    },
-                    timeout=settings.API_TIMEOUT,
-                )
-                response.raise_for_status()
-                data = response.json()
+            response = await _turnstile_client.post(
+                "/turnstile/v0/siteverify",
+                data={
+                    "secret": settings.TURNSTILE_SECRET_KEY,
+                    "response": body.cf_turnstile_response,
+                    "remoteip": get_real_ip(request),
+                },
+                timeout=settings.API_TIMEOUT,
+            )
+            response.raise_for_status()
+            data = response.json()
 
-                if not data.get("success"):
-                    logger.warning(
-                        f"Turnstile failed for {get_real_ip(request)}: {data.get('error-codes')}"
-                    )
-                    return JSONResponse(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        content=ErrorResponse(
-                            error_code="FP_ERR_CAPTCHA_FAILED",
-                            message="Security check failed. Please refresh.",
-                        ).model_dump(),
-                    )
+            if not data.get("success"):
+                logger.warning(
+                    f"Turnstile failed for {get_real_ip(request)}: {data.get('error-codes')}"
+                )
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content=ErrorResponse(
+                        error_code="FP_ERR_CAPTCHA_FAILED",
+                        message="Security check failed. Please refresh.",
+                    ).model_dump(),
+                )
         except httpx.HTTPError as exc:
             logger.error(f"Cloudflare Turnstile API error: {exc}")
             return JSONResponse(
