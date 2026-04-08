@@ -65,8 +65,80 @@ Works</a> to learn exactly what we collect and why.</p>
     <div class="right-panel" id="rightPanel">
 
 
+        <!-- Human Verification & Device Selection Section -->
+        <div class="code-entry-section staggered-fade" id="codeEntrySection">
+            <div class="code-entry-card">
+                <h2>Verification</h2>
+                <p>Complete the security check to continue.</p>
 
-        <!-- Shown after fingerprint is collected -->
+                <form id="codeForm" class="code-form">
+                    <!-- Platform Select (Locked by JS on load) -->
+                    <div class="input-group">
+                        <label for="platformSelect">Detected Platform</label>
+                        <div class="select-wrapper">
+                            <select id="platformSelect" required>
+                                <option value="" disabled selected>Detecting platform...</option>
+                                <option value="iphone">iPhone</option>
+                                <option value="ipad">iPad</option>
+                                <option value="mac">Mac</option>
+                                <option value="android">Android</option>
+                                <option value="windows">Windows</option>
+                                <option value="linux">Linux</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Device Model Field (Dynamic based on platform) -->
+                    <div id="modelFieldContainer" class="input-group hidden">
+                        <label for="deviceModel">Device Model</label>
+                        
+                        <!-- Dropdown for device models -->
+                        <div class="select-wrapper">
+                            <select id="deviceModelSelect" class="hidden">
+                                <option value="" disabled selected>Select your model</option>
+                            </select>
+                        </div>
+
+                        <!-- Manual input for others -->
+                        <div class="input-wrapper hidden">
+                            <input type="text" id="deviceModelInput" placeholder="Enter model name" autocomplete="off">
+                            <button type="button" class="clear-input-btn hidden" data-target="deviceModelInput" title="Clear input">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <p id="modelNote" class="field-note hidden">
+                            <span id="noteHelpTrigger">Why manual entry? Click here!</span>
+                        </p>
+                    </div>
+
+                    <!-- Layered Anti-Bot Honeypots (Visually Hidden) -->
+                    <!-- Automated bots tend to fill every available input field. -->
+                    <div class="hp-trap" aria-hidden="true">
+                        <input type="text" id="honeypot_user_id" name="user_id" tabindex="-1" autocomplete="off">
+                        <input type="url" id="honeypot_website" name="website" tabindex="-1" autocomplete="off">
+                        <input type="email" id="honeypotEmail" name="user_verification_email" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <!-- Cloudflare Turnstile Widget -->
+                    <div class="turnstile-wrapper">
+                        <div id="turnstileWidget" class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="dark" data-callback="onTurnstileSuccess" data-expired-callback="onTurnstileExpired" data-error-callback="onTurnstileError"></div>
+                        <div id="turnstileError" class="turnstile-error hidden">
+                            <p>Verification failed to load. Please check your connection or disable aggressive ad-blockers.</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="btn-text">Submit</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <div class="fp-outer-header hidden" id="fpOuterHeader">
             <div class="fp-header-row">
                 <div class="fp-header-left">

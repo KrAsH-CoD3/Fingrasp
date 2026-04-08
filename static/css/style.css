@@ -156,7 +156,26 @@ body {
   transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 .doc-body section:hover .sec-num { transform: scale(1.15) rotate(-5deg); box-shadow: 0 0 12px var(--glow); }
-.doc-body p { font-size: 13px; color: var(--muted); line-height: 1.9; margin-bottom: 12px; }
+.doc-body p { font-size: 13px; color: var(--muted); line-height: 1.9; margin-bottom: 24px; }
+
+.field-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 10px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.field-note span {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.field-note span:hover {
+  color: var(--accent);
+}
 
 /* ── Info Cards (Reason/Benefit) ── */
 .reason-list { display: flex; flex-direction: column; gap: 16px; margin: 32px 0; }
@@ -216,6 +235,17 @@ flex: 1;
 
 .hidden {
   display: none !important;
+}
+
+/* Honeypot trap — hides bot-bait fields */
+.hp-trap {
+  position: absolute;
+  left: -9999px;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
 }
 
 /* ── Header ── */
@@ -486,7 +516,7 @@ margin-bottom: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 24px 0 16px;
+  margin: 12px 0 8px;
   min-height: 70px;
 }
 
@@ -827,8 +857,6 @@ height: 14px;
 }
 
 .code-entry-card button[type="submit"]:hover {
-  border-color: var(--accent);
-  color: var(--accent);
   box-shadow: 0 8px 32px -8px var(--glow);
   transform: translateY(-3px) scale(1.02);
 }
@@ -1403,22 +1431,45 @@ line-height: 1.6;
 }
 
 .code-entry-card form {
-display: flex;
-flex-direction: column;
-gap: 12px;
-margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.input-group label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .code-entry-card #modelFieldContainer {
   width: 100%;
 }
 
-.code-entry-card #modelFieldContainer select,
-.code-entry-card #modelFieldContainer input[type="text"] {
+.code-entry-card .select-wrapper,
+.code-entry-card .input-wrapper {
   width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+.select-wrapper,
 .input-wrapper {
+  width: 100%;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   background: var(--surface2);
@@ -1426,8 +1477,12 @@ margin-bottom: 16px;
   border-radius: 10px;
   overflow: hidden;
   transition: all 0.2s;
-  width: 100%;
-  margin-bottom: 12px;
+}
+
+.select-wrapper {
+  background: transparent;
+  border: none;
+  overflow: visible;
 }
 
 .input-wrapper:hover {
@@ -1457,31 +1512,33 @@ margin-bottom: 16px;
 
 .clear-input-btn {
   width: 44px;
-  height: 44px;
+  height: auto;
+  align-self: stretch;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-left: 1px solid rgba(255, 255, 255, 0.05); /* The visual divider */
-  background: none;
+  border-left: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
   border-top: none;
   border-bottom: none;
   border-right: none;
-  color: var(--muted);
+  color: var(--accent);
   cursor: pointer;
-  opacity: 0.6;
-  transition: all 0.2s;
+  opacity: 0.8;
+  transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .clear-input-btn svg {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
 }
 
 .clear-input-btn:hover {
   opacity: 1;
-  color: var(--accent);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(252, 129, 129, 0.1);
+  color: #fc8181;
+  transform: scale(1.1);
 }
 
 .clear-input-btn.hidden {
@@ -1512,7 +1569,7 @@ margin-bottom: 16px;
   padding-right: 40px;
   width: 100%;
   min-width: 100%;
-  margin-bottom: 12px;
+  margin: 0;
   box-sizing: border-box;
 }
 
@@ -1539,18 +1596,19 @@ margin-bottom: 16px;
 }
 
 .code-entry-card button[type="submit"] {
-font-family: 'JetBrains Mono', monospace;
-font-size: 13px;
-font-weight: 600;
-padding: 14px 24px;
-background: var(--accent);
-color: var(--bg);
-border: none;
-border-radius: 10px;
-cursor: pointer;
-transition: transform .2s, box-shadow .2s;
-text-transform: uppercase;
-letter-spacing: 1px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 14px 24px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
 }
 
 .code-entry-card button[type="submit"]:hover {

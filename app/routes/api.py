@@ -34,14 +34,15 @@ async def validate_turnstile(
     """
     Validate Turnstile challenge and behavioral metrics, then generate a session token.
     """
-    # Check Honeypot
-    if body.honeypot_email:
+    # Check Honeypots (Multi-layered bait)
+    if body.honeypot_email or body.honeypot_user_id or body.honeypot_website:
         # Silently fail for bots
+        logger.warning(f"Submission rejected: Layered honeypot triggered by {get_real_ip(request)}")
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=ErrorResponse(
                 error_code="FP_ERR_BOT_DETECTED",
-                message="Invalid submission.",
+                message="Security verification failed.",
             ).model_dump(),
         )
 

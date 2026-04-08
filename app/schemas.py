@@ -146,6 +146,16 @@ class TurnstileValidationRequest(BaseModel):
         max_length=100,
         description="Honeypot field that must be empty",
     )
+    honeypot_user_id: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Honeypot field that must be empty",
+    )
+    honeypot_website: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Honeypot field that must be empty",
+    )
     time_to_solve: int | None = Field(
         default=None,
         description="Time taken between page load and submission in milliseconds",

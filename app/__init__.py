@@ -180,7 +180,7 @@ async def lifespan(application: FastAPI):
         settings.TEMP_SESSION_COLLECTION_NAME,
     ]:
         try:
-            await db[collection].create_index(
+            await db._db[collection].create_index(
                 [("expires_at", ASCENDING)], expireAfterSeconds=0
             )
             logger.info(f"Verified TTL index on {collection}")
