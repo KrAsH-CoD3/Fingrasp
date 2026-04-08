@@ -46,11 +46,3 @@ async def privacy(request: Request):
     return templates.TemplateResponse(
         "privacy.html", {"request": request, "nonce": request.state.csp_nonce}
     )
-
-
-@router.get("/how-it-works", response_class=HTMLResponse, include_in_schema=False)
-@limiter.limit(settings.RATE_LIMIT_FRONTEND)
-async def how_it_works(request: Request):
-    return templates.TemplateResponse(
-        "how-it-works.html", {"request": request, "nonce": request.state.csp_nonce}
-    )

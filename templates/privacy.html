@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block title %}Privacy Policy — Fingrasp{% endblock %}
-{% block description %}Fingrasp Privacy Policy — how and why we collect device fingerprints.{% endblock %}
+{% block description %}Fingrasp Privacy Policy — how we collect device fingerprints, what data we gather, and how we
+protect your privacy.{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', path='css/privacy.css') }}">
@@ -11,15 +12,14 @@
 <div class="doc-hero staggered-fade">
   <div class="doc-tag">Transparency</div>
   <h1>Privacy <em>Policy</em></h1>
-  <p class="pp-meta">Last Updated: <strong>April 2026</strong> &nbsp;·&nbsp; Version: <strong>1.2.0</strong></p>
+  <p class="pp-meta">Last Updated: <strong>April 2026</strong> &nbsp;·&nbsp; Version: <strong>2.0.0</strong></p>
 </div>
 
 <div class="doc-toc staggered-fade">
   <p class="toc-title">Policy Sections</p>
   <ol>
-    <li><a href="#overview">Overview & Scope</a></li>
-    <li><a href="#what-we-collect">Data Points Collected</a></li>
     <li><a href="#overview">Overview & Governance</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
     <li><a href="#what-we-collect">Signal Taxonomy</a></li>
     <li><a href="#why-fingerprint">Research Mandate</a></li>
     <li><a href="#third-party">Third-Party Processing</a></li>
@@ -29,22 +29,100 @@
 </div>
 
 <div class="doc-body staggered-fade">
+  <!-- ─── Section 1: Overview ─── -->
   <section id="overview">
     <h2><span class="sec-num">01</span>Overview & Governance</h2>
     <p>
-      Fingrasp is a specialized research instrument engineered to study the landscape of browser fingerprinting. 
-      This policy delineates our data governance framework, ensuring that all technical signal collection adheres to 
+      Fingrasp is a specialized research instrument engineered to study the landscape of browser fingerprinting.
+      This policy outlines our data governance framework, ensuring that all technical signal collection adheres to
       principles of <strong>Data Minimization</strong> and <strong>Purpose Limitation</strong>.
     </p>
     <p>
-      By participating in this research, you are contributing to a dataset used to evaluate the entropy and stability 
-      of modern web APIs. We operate under a "Privacy by Design" mandate, where technical signal collection is 
+      By participating in this research, you are contributing to a dataset used to evaluate the entropy and stability
+      of modern web APIs. We operate under a "Privacy by Design" mandate, where technical signal collection is
       strictly decoupled from personal identity.
     </p>
   </section>
 
+  <!-- ─── Section 2: How It Works ─── -->
+  <section id="how-it-works">
+    <h2><span class="sec-num">02</span>How It Works</h2>
+    <p>
+      Fingrasp collects device fingerprints through a secure, automated process. Here is the full flow:
+    </p>
+
+    <div class="step-flow">
+      <div class="step">
+        <div class="step-marker">1</div>
+        <div class="step-content">
+          <h3>Land & Detect</h3>
+          <p>When you visit, the system identifies your device platform using standard browser APIs and hardware
+            signals.</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-marker">2</div>
+        <div class="step-content">
+          <h3>Verify & Select</h3>
+          <p>You confirm your device model and complete a human verification check to protect the research database from
+            automated abuse.</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-marker">3</div>
+        <div class="step-content">
+          <h3>Collect & Store</h3>
+          <p>Your browser signals are gathered, hashed into a unique fingerprint, and securely stored for research
+            analysis.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-map-container">
+      <div class="flow-title">Collection Pipeline</div>
+      <div class="flow-map">
+        <div class="flow-node">
+          <span class="node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+            </svg>
+          </span>
+          <span class="node-text">Detect Platform</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node highlight">
+          <span class="node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </span>
+          <span class="node-text">Human Verification</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+          </span>
+          <span class="node-text">Secure Archival</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Section 3: Signal Taxonomy ─── -->
   <section id="what-we-collect">
-    <h2><span class="sec-num">02</span>Signal Taxonomy</h2>
+    <h2><span class="sec-num">03</span>Signal Taxonomy</h2>
     <p>The following technical signals are processed during a collection event:</p>
     <div class="data-table">
       <div class="dt-row dt-head">
@@ -64,12 +142,12 @@
       </div>
       <div class="dt-row">
         <span>Environmental Analytics</span>
-        <span>Solve-time thresholds, behavioral interaction scores</span>
+        <span>Behavioral interaction scores</span>
         <span class="tag low">Technical</span>
       </div>
       <div class="dt-row">
         <span>Heuristic Indicators</span>
-        <span>Honeypot field status, screen-hardware consistency</span>
+        <span>Screen-hardware consistency</span>
         <span class="tag low">Technical</span>
       </div>
       <div class="dt-row">
@@ -88,68 +166,85 @@
         <span class="tag high">Primary Key</span>
       </div>
     </div>
-    <p>We explicitly <strong>strictly prohibit</strong> the collection of Protected Health Information (PHI), Financial Records, or PII such as names and addresses.</p>
+    <p>We explicitly <strong>strictly prohibit</strong> the collection of Protected Health Information (PHI), Financial
+      Records, or PII such as names and addresses.</p>
   </section>
 
+  <!-- ─── Section 4: Research Mandate ─── -->
   <section id="why-fingerprint">
-    <h2><span class="sec-num">03</span>Research Mandate</h2>
+    <h2><span class="sec-num">04</span>Research Mandate</h2>
     <div class="callout callout-blue">
       <div class="callout-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
       </div>
       <div>
-        <strong>Non-Identification Principle:</strong> Our processing logic is incapable of reversing a fingerprint hash into a person. 
+        <strong>Non-Identification Principle:</strong> Our processing logic is incapable of reversing a fingerprint hash
+        into a person.
         Records are stored as independent technical snapshots with no cross-site tracking capabilities.
       </div>
     </div>
     <div class="reason-list">
       <div class="reason">
-        <div class="reason-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="reason-icon"><svg viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg></div>
         <div>
           <h3>Bot Detection Benchmarking</h3>
-          <p>Analyzing legitimate device variability to improve the accuracy of bot-detection algorithms across different platforms.</p>
+          <p>Analyzing legitimate device variability to improve the accuracy of bot-detection algorithms across
+            different platforms.</p>
         </div>
       </div>
       <div class="reason">
-        <div class="reason-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <div class="reason-icon"><svg viewBox="0 0 24 24">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg></div>
         <div>
           <h3>Entropy & Privacy Analysis</h3>
-          <p>Identifying which browser features contribute most significantly to device uniqueness to inform future privacy standards.</p>
+          <p>Identifying which browser features contribute most significantly to device uniqueness to inform future
+            privacy standards.</p>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- ─── Section 5: Third-Party Processing ─── -->
   <section id="third-party">
-    <h2><span class="sec-num">04</span>Third-Party Processing</h2>
+    <h2><span class="sec-num">05</span>Third-Party Processing</h2>
     <p>
-      To maintain research integrity and prevent automated abuse, we utilize <strong>Cloudflare Turnstile</strong>. 
-      Turnstile captures specific interaction and network signals to verify human presence. This processing is 
-      subject to <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer" class="inline-link">Cloudflare's Privacy Policy</a>. 
+      To maintain research integrity and prevent automated abuse, we utilize <strong>Cloudflare Turnstile</strong>.
+      Turnstile captures specific interaction and network signals to verify human presence. This processing is
+      subject to <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer"
+        class="inline-link">Cloudflare's Privacy Policy</a>.
       Fingrasp does not share your generated fingerprint with Cloudflare.
     </p>
   </section>
 
+  <!-- ─── Section 6: Retention & Security ─── -->
   <section id="storage">
-    <h2><span class="sec-num">05</span>Retention & Security</h2>
+    <h2><span class="sec-num">06</span>Retention & Security</h2>
     <p>
-      Data is hosted within secure, encrypted environments with strict access controls. 
-      IP addresses are anonymized at the point of ingestion (masking the final octet/bits). 
-      Records are subject to a defined retention period, after which they are either purged or 
+      Data is hosted within secure, encrypted environments with strict access controls.
+      IP addresses are anonymized at the point of ingestion (masking the final octet/bits).
+      Records are subject to a defined retention period, after which they are either purged or
       transformed into high-level statistical aggregates that cannot be linked to the original device state.
     </p>
   </section>
 
+  <!-- ─── Section 7: Compliance & Rights ─── -->
   <section id="rights">
-    <h2><span class="sec-num">06</span>Compliance & Rights</h2>
+    <h2><span class="sec-num">07</span>Compliance & Rights</h2>
     <p>
-      While our data is pseudonymous, we honor the spirit of the <strong>GDPR</strong> and <strong>CCPA</strong>. 
-      Participants may request deletion of their specific fingerprint record by providing their 
+      While our data is pseudonymous, we honor the spirit of the <strong>GDPR</strong> and <strong>CCPA</strong>.
+      Participants may request deletion of their specific fingerprint record by providing their
       <strong>Fingerprint Hash</strong>, which is the only key capable of identifying a record in our system.
     </p>
     <div class="contact-block">
-      <div class="contact-row"><span class="ck">General Inquiries</span><span class="cv">privacy@fingrasp.dev</span></div>
-      <div class="contact-row"><span class="ck">Deletion Request</span><span class="cv">Must include Hash ID</span></div>
+      <div class="contact-row"><span class="ck">Data Requests</span><span class="cv">Contact us through our project
+          repository with your Fingerprint Hash ID</span></div>
     </div>
   </section>
 </div>

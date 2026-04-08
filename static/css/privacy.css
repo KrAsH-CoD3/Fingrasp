@@ -137,6 +137,17 @@
 .pp-list-no li::marker { color: #fc8181; }
 .pp-list li::marker { color: var(--accent); }
 
+/* Inline Links */
+.inline-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(99, 179, 237, 0.3);
+  transition: border-color 0.2s;
+}
+.inline-link:hover {
+  border-color: var(--accent);
+}
+
 /* Contact block */
 .contact-block {
   background: var(--surface);
@@ -167,5 +178,222 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+}
+
+/* ── Step Flow ── */
+.step-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 32px 0;
+}
+
+.step {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 16px 0;
+}
+
+.step-marker {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.step-content h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.step-content p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.step-connector {
+  width: 2px;
+  height: 24px;
+  background: var(--border);
+  margin-left: 17px;
+}
+
+/* ── Flow Map ── */
+.flow-map-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 32px 0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.flow-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.flow-map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.flow-node:hover {
+border-color: var(--accent);
+box-shadow: 0 4px 16px -4px var(--glow);
+transform: translateY(-2px);
+}
+
+.flow-node.highlight {
+background: linear-gradient(135deg, rgba(99, 179, 237, 0.1), rgba(79, 209, 197, 0.05));
+border-color: rgba(99, 179, 237, 0.3);
+}
+
+.flow-node.highlight:hover {
+border-color: var(--accent2);
+box-shadow: 0 4px 16px -4px var(--glow);
+}
+
+.node-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+
+.flow-node.highlight .node-icon svg {
+  color: var(--accent);
+}
+
+.node-text {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.flow-arrow {
+  font-size: 20px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Reason List ── */
+.reason-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.reason {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.reason:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px -4px var(--glow);
+}
+
+.reason-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(99, 179, 237, 0.1);
+  color: var(--accent);
+}
+
+.reason-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.reason h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.reason p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── Mobile Adjustments ── */
+@media (max-width: 600px) {
+  .flow-map {
+    flex-direction: column;
+  }
+  
+  .flow-arrow {
+    transform: rotate(90deg);
+  }
+  
+  .step {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .step-connector {
+    margin-left: 0;
+    width: 100%;
+    height: 2px;
+  }
+  
+  .reason {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 }
