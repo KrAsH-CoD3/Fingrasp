@@ -377,6 +377,9 @@ function renderUI(payload) {
   if (heroCollected) heroCollected.classList.remove('hidden');
   if (body) body.innerHTML = '';
 
+  // Show thank-you popup after 1 second
+  setTimeout(() => showThankYouPopup(hash, loadTime), 1000);
+
   const flat = { ...fingerprint };
   const usedKeys = new Set();
 
@@ -510,6 +513,9 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypots, timeToSo
   const codeEntry = document.getElementById('codeEntrySection');
 
   try {
+    // Disable all interactions during collection
+    document.body.classList.add('collecting-fp');
+
     if (loader) loader.classList.remove('hidden');
     if (codeEntry) codeEntry.classList.add('hidden');
 
@@ -520,6 +526,8 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypots, timeToSo
       showToast(error, 'error');
       if (loader) loader.classList.add('hidden');
       if (codeEntry) codeEntry.classList.remove('hidden');
+      // Re-enable interactions
+      document.body.classList.remove('collecting-fp');
       
       // If Turnstile failed specific check, reset it
       if (window.turnstile) {
@@ -552,17 +560,23 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypots, timeToSo
 
     if (res.ok) {
       renderUI({ hash: payload.hash, loadTime: payload.loadTime, fingerprint: payload.fingerprint });
+      // Re-enable interactions
+      document.body.classList.remove('collecting-fp');
     } else {
       const data = await res.json().catch(() => ({}));
       showToast(data.message || 'Submission failed.', 'error');
       if (loader) loader.classList.add('hidden');
       if (codeEntry) codeEntry.classList.remove('hidden');
+      // Re-enable interactions
+      document.body.classList.remove('collecting-fp');
     }
   } catch (err) {
     console.error('Collection error:', err);
     showToast('An error occurred during submission.', 'error');
     if (loader) loader.classList.add('hidden');
     if (codeEntry) codeEntry.classList.remove('hidden');
+    // Re-enable interactions
+    document.body.classList.remove('collecting-fp');
   }
 }
 
@@ -765,6 +779,49 @@ function _configureModelField(platform, els, screenKey = null) {
     }
     if (modelNote) modelNote.classList.remove('hidden');
   }
+}
+
+function showThankYouPopup(hash, loadTime) {
+  const popup = document.getElementById('thankYouPopup');
+  const popupHash = document.getElementById('popupHash');
+  const popupTime = document.getElementById('popupTime');
+  const closeBtn = document.getElementById('popupCloseBtn');
+
+  if (!popup) return;
+
+  // Set stats
+  if (popupHash) popupHash.textContent = hash || '—';
+  if (popupTime) popupTime.textContent = `${loadTime}ms` || '—';
+
+  // Show popup
+  popup.classList.remove('hidden');
+
+  // Close handler
+  const closePopup = () => {
+    popup.classList.add('hidden');
+    closeBtn?.removeEventListener('click', closePopup);
+    popup.removeEventListener('click', handleOverlayClick);
+  };
+
+  // Close on button click
+  closeBtn?.addEventListener('click', closePopup);
+
+  // Close on overlay click (outside card)
+  const handleOverlayClick = (e) => {
+    if (e.target === popup) {
+      closePopup();
+    }
+  };
+  popup.addEventListener('click', handleOverlayClick);
+
+  // Close on Escape key
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      closePopup();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
 }
 
 async function run() {

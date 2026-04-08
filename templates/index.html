@@ -210,6 +210,48 @@ Works</a> to learn exactly what we collect and why.</p>
     </div>
 </div>
 
+<!-- Thank You Popup -->
+<div id="thankYouPopup" class="popup-overlay hidden">
+    <div class="popup-card">
+        <div class="popup-confetti">
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+            <span class="confetti-piece"></span>
+        </div>
+        <div class="popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+        </div>
+        <h2>Thank You!</h2>
+        <p>Your device fingerprint has been successfully collected and contributed to our research.</p>
+        <div class="popup-stats">
+            <div class="stat-item">
+                <span class="stat-value" id="popupHash">—</span>
+                <span class="stat-label">Fingerprint Hash</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="popupTime">—</span>
+                <span class="stat-label">Collection Time</span>
+            </div>
+        </div>
+        <button type="button" class="popup-close-btn" id="popupCloseBtn">
+            <span>Got it</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
 <!-- Toast Container for error messages -->
 <div class="toast-container" id="toastContainer"></div>
 
