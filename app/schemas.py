@@ -15,7 +15,7 @@ MAX_STRING_LENGTH = 100_000  # max length of any single string value
 MAX_HASH_LENGTH = 128  # max length of the hash field
 
 # Regex for illegal MongoDB keys: starts with '$' or contains '.'
-_ILLEGAL_KEY_PATTERN = re.compile(r"^\$|\.")
+_ILLEGAL_KEY_PATTERN = re.compile(r"^[$.]")
 
 
 def _sanitize_data(obj: Any) -> Any:
