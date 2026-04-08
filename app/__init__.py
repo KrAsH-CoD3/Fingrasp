@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class BodySizeLimitMiddleware:
-    """Middleware to limit request body size before JSON parsing."""
+    """Middleware to limit request body size without pre-consuming the body."""
 
     def __init__(self, app: ASGIApp, max_size: int):
         self.app = app
@@ -37,53 +37,42 @@ class BodySizeLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
-        # Only limit body size for POST/PUT/PATCH requests
         method = scope.get("method", "GET")
         if method in ("GET", "HEAD", "OPTIONS", "DELETE"):
             await self.app(scope, receive, send)
             return
 
-        # Read the body first to check size
-        body_size = 0
-        body_parts = []
-
-        async def read_body() -> bytes:
-            nonlocal body_size
-            while True:
-                message = await receive()
-                if message.get("type") == "http.request":
-                    chunk = message.get("body", b"")
-                    body_size += len(chunk)
-                    if body_size > self.max_size:
-                        # Body too large, reject immediately
+        # Fast path: check Content-Length header
+        for name, value in scope.get("headers", []):
+            if name.lower() == b"content-length":
+                try:
+                    if int(value) > self.max_size:
                         response = Response(
                             content='{"detail": "Request body exceeds maximum size"}',
                             status_code=413,
                             headers={"Content-Type": "application/json"},
                         )
                         await response(scope, receive, send)
-                        return None  # Signal rejection
-                    body_parts.append(chunk)
-                    if not message.get("more_body", False):
-                        break
-                else:
-                    break
-            return b"".join(body_parts)
+                        return
+                except (ValueError, TypeError):
+                    pass
 
-        full_body = await read_body()
-        if full_body is None:
-            return  # Rejected due to size
+        # Wrap receive to enforce limit on chunked bodies
+        body_size = 0
+        exceeded = False
 
-        # Create new receive function that returns the cached body
-        async def cached_receive():
-            if cached_receive.called:
-                return {"type": "http.request", "body": b"", "more_body": False}
-            cached_receive.called = True
-            return {"type": "http.request", "body": full_body, "more_body": False}
+        async def wrapped_receive():
+            nonlocal body_size, exceeded
+            if exceeded:
+                return {"type": "http.disconnect"}
+            message = await receive()
+            if message.get("type") == "http.request":
+                body_size += len(message.get("body", b""))
+                if body_size > self.max_size:
+                    exceeded = True
+            return message
 
-        cached_receive.called = False
-
-        await self.app(scope, cached_receive, send)
+        await self.app(scope, wrapped_receive, send)
 
 
 class RateLimitedStaticFiles(StaticFiles):
