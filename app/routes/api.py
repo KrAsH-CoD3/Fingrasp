@@ -12,7 +12,6 @@ from app.security import anonymize_ip, get_real_ip
 from app.config import settings
 from app.limiter import limiter
 from app.schemas import (
-    CodeValidationRequest,
     TurnstileValidationRequest,
     ErrorResponse,
     MixVisitPayload,
@@ -27,60 +26,6 @@ router = APIRouter(prefix="/api", tags=["api"])
 
 
 @limiter.limit(settings.RATE_LIMIT_API)
-@router.post("/validate-code")
-async def validate_code(
-    request: Request,
-    body: CodeValidationRequest,
-) -> JSONResponse:
-    """
-    Validate code and generate a short-lived session token.
-    """
-    db = request.app.state.db
-
-    # Atomic consumption: burn the code instantly regardless of what happens next
-    code_doc = await db[settings.ACCESS_CODE_COLLECTION_NAME].find_one_and_delete(
-        {"code": body.code}
-    )
-    if not code_doc:
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content=ErrorResponse(
-                error_code="FP_ERR_INVALID",
-                message="Access code is not valid.",
-            ).model_dump(),
-        )
-
-    # Manual check in case the DB TTL cycle hasn't hit yet
-    expires_at = code_doc.get("expires_at")
-    if expires_at:
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        if expires_at < datetime.now(timezone.utc):
-            return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
-                content=ErrorResponse(
-                    error_code="FP_ERR_INVALID",
-                    message="Access code is expired.",
-                ).model_dump(),
-            )
-
-    # Generate a short-lived session token
-    session_token = str(uuid.uuid4())
-    await db[settings.TEMP_SESSION_COLLECTION_NAME].insert_one({
-        "session_token": session_token,
-        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=settings.TEMP_SESSION_EXPIRY_MINUTES)
-    })
-
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=SessionResponse(
-            session_token=session_token,
-            message="Code valid. Session initiated.",
-        ).model_dump(),
-    )
-
-
-@limiter.limit(settings.RATE_LIMIT_API)
 @router.post("/validate-turnstile")
 async def validate_turnstile(
     request: Request,
@@ -89,14 +34,15 @@ async def validate_turnstile(
     """
     Validate Turnstile challenge and behavioral metrics, then generate a session token.
     """
-    # Check Honeypot
-    if body.honeypot_email:
+    # Check Honeypots (Multi-layered bait)
+    if body.honeypot_email or body.honeypot_user_id or body.honeypot_website:
         # Silently fail for bots
+        logger.warning(f"Submission rejected: Layered honeypot triggered by {get_real_ip(request)}")
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=ErrorResponse(
                 error_code="FP_ERR_BOT_DETECTED",
-                message="Invalid submission.",
+                message="Security verification failed.",
             ).model_dump(),
         )
 
@@ -112,12 +58,14 @@ async def validate_turnstile(
                     message="Submission too fast.",
                 ).model_dump(),
             )
-        
+
         # Zero interaction after significant time is highly suspicious of headless automation
         # We check if score is < 5 (e.g. they solved turnstile but never moved mouse/typed)
         if body.interaction_score is not None and body.interaction_score < 5:
-             logger.warning(f"Bot suspected for {get_real_ip(request)}: Low interaction score ({body.interaction_score})")
-             return JSONResponse(
+            logger.warning(
+                f"Bot suspected for {get_real_ip(request)}: Low interaction score ({body.interaction_score})"
+            )
+            return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content=ErrorResponse(
                     error_code="FP_ERR_BOT_DETECTED",
@@ -143,9 +91,11 @@ async def validate_turnstile(
                 )
                 response.raise_for_status()
                 data = response.json()
-                
+
                 if not data.get("success"):
-                    logger.warning(f"Turnstile failed for {get_real_ip(request)}: {data.get('error-codes')}")
+                    logger.warning(
+                        f"Turnstile failed for {get_real_ip(request)}: {data.get('error-codes')}"
+                    )
                     return JSONResponse(
                         status_code=status.HTTP_403_FORBIDDEN,
                         content=ErrorResponse(
@@ -166,10 +116,13 @@ async def validate_turnstile(
     # Generate Session Token
     db = request.app.state.db
     session_token = str(uuid.uuid4())
-    await db[settings.TEMP_SESSION_COLLECTION_NAME].insert_one({
-        "session_token": session_token,
-        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=settings.TEMP_SESSION_EXPIRY_MINUTES)
-    })
+    await db[settings.TEMP_SESSION_COLLECTION_NAME].insert_one(
+        {
+            "session_token": session_token,
+            "expires_at": datetime.now(timezone.utc)
+            + timedelta(minutes=settings.TEMP_SESSION_EXPIRY_MINUTES),
+        }
+    )
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -255,13 +208,11 @@ async def save(
     # ── Persistent Atomic Counter Increment ──
     try:
         await db[settings.COUNTERS_COLLECTION_NAME].update_one(
-            {"_id": "total_fingerprints"},
-            {"$inc": {"count": 1}},
-            upsert=True
+            {"_id": "total_fingerprints"}, {"$inc": {"count": 1}}, upsert=True
         )
         # Immediate update for this worker's memory cache
         if hasattr(request.app.state, "total_collected"):
-             request.app.state.total_collected += 1
+            request.app.state.total_collected += 1
     except Exception as e:
         logger.error(f"Failed to increment persistent counter: {e}")
 

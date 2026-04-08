@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Request, Depends, HTTPException
-from telegram.ext import Application as TelegramApplication
+from fastapi import FastAPI, Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -7,10 +6,8 @@ from slowapi.errors import RateLimitExceeded
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from starlette.responses import Response
-from telegram import Update
 import logging
 
-from app.telegram_bot import get_telegram_app, setup_bot_database
 from app.routes.fingerprint import router as fingerprint_router
 from app.config import settings, MAX_REQUEST_BODY_SIZE
 from app.routes.api import router as api_router
@@ -20,10 +17,6 @@ from app.security import (
     SecurityValidationMiddleware,
     SecurityHeadersMiddleware,
 )
-
-TELEGRAM_BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
-TELEGRAM_WEBHOOK_URL = settings.TELEGRAM_WEBHOOK_URL
-TELEGRAM_WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
 
 logging.basicConfig(
     level=logging.INFO,
@@ -161,13 +154,19 @@ async def lifespan(application: FastAPI):
     # ── Persistent Global Counter Setup ──
     # Load once on startup for high-speed page loads
     try:
-        counter_doc = await db[settings.COUNTERS_COLLECTION_NAME].find_one({"_id": "total_fingerprints"})
+        counter_doc = await db[settings.COUNTERS_COLLECTION_NAME].find_one(
+            {"_id": "total_fingerprints"}
+        )
         if not counter_doc:
-            initial_count = await db[settings.FINGERPRINT_COLLECTION_NAME].count_documents({})
-            await db[settings.COUNTERS_COLLECTION_NAME].insert_one({"_id": "total_fingerprints", "count": initial_count})
+            initial_count = await db[
+                settings.FINGERPRINT_COLLECTION_NAME
+            ].count_documents({})
+            await db[settings.COUNTERS_COLLECTION_NAME].insert_one(
+                {"_id": "total_fingerprints", "count": initial_count}
+            )
         else:
             initial_count = counter_doc.get("count", 0)
-        
+
         application.state.total_collected = initial_count
         logger.info(f"Persistent counter initialized at {initial_count}")
     except Exception as e:
@@ -176,58 +175,24 @@ async def lifespan(application: FastAPI):
 
     # ── Database Index Verification (TTL) ──
     from pymongo import ASCENDING
-    
-    for collection in [settings.ACCESS_CODE_COLLECTION_NAME, settings.TEMP_SESSION_COLLECTION_NAME]:
+
+    for collection in [
+        settings.TEMP_SESSION_COLLECTION_NAME,
+    ]:
         try:
             await db._db[collection].create_index(
-                [("expires_at", ASCENDING)], 
-                expireAfterSeconds=0
+                [("expires_at", ASCENDING)], expireAfterSeconds=0
             )
             logger.info(f"Verified TTL index on {collection}")
         except Exception as e:
             logger.error(f"TTL index sync error: {e}")
 
-    # ── Telegram Bot Initialization ──
-    telegram_app: TelegramApplication | None = None
-
-    if TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_URL:
-        try:
-            telegram_app = get_telegram_app()
-            await telegram_app.bot.set_webhook(
-                url=TELEGRAM_WEBHOOK_URL,
-                secret_token=TELEGRAM_WEBHOOK_SECRET,
-                allowed_updates=Update.ALL_TYPES,
-            )
-
-            await setup_bot_database(telegram_app, client, db)
-            application.state.telegram_app = telegram_app
-            logger.info("Telegram bot initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize Telegram bot: {e}")
-
     yield
 
     # ── Shutdown ──
-    if telegram_app:
-        try:
-            await telegram_app.bot.delete_webhook()
-            await telegram_app.stop()
-            await telegram_app.shutdown()
-            logger.info("Telegram bot shutdown complete")
-        except Exception as e:
-            logger.error(f"Error during Telegram bot shutdown: {e}")
-        
     if client:
         client.close()
         logger.info("Database connection closed")
-
-
-def verify_telegram_webhook_secret(request: Request) -> None:
-    """Verify the webhook secret token from Telegram."""
-    secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
-    if not secret_token or secret_token != TELEGRAM_WEBHOOK_SECRET:
-        logger.warning("Invalid webhook secret token attempt")
-        raise HTTPException(status_code=403, detail="Invalid secret token")
 
 
 def create_app() -> FastAPI:
@@ -247,27 +212,14 @@ def create_app() -> FastAPI:
     application.include_router(fingerprint_router)
     application.include_router(api_router)
 
-    @application.post("/webhook", dependencies=[Depends(verify_telegram_webhook_secret)])
-    async def telegram_webhook(request: Request):
-        """Handle incoming Telegram webhook updates."""
-        from telegram import Update
-        
-        telegram_app = getattr(application.state, "telegram_app", None)
-        if telegram_app is None:
-            return {"status": "error", "message": "Bot not initialized"}
-
-        # Get the raw body and parse as JSON
-        body = await request.json()
-        update = Update.de_json(body, telegram_app.bot)
-        await telegram_app.process_update(update)
-        return {"status": "ok"}
-
     # ── Request Body Size Limit ──
     application.add_middleware(BodySizeLimitMiddleware, max_size=MAX_REQUEST_BODY_SIZE)
 
     # ── Secure HTTP Headers & Resource Protection ──
-    application.add_middleware(SecurityValidationMiddleware)    # Handles CSRF and Origin checks.
-    application.add_middleware(SecurityHeadersMiddleware)       # Injects CSP, HSTS, etc.
+    application.add_middleware(
+        SecurityValidationMiddleware
+    )  # Handles CSRF and Origin checks.
+    application.add_middleware(SecurityHeadersMiddleware)  # Injects CSP, HSTS, etc.
 
     # ── CORS ──
     application.add_middleware(

@@ -133,17 +133,6 @@ class FingerprintPayload(BaseModel):
         return self
 
 
-class CodeValidationRequest(BaseModel):
-    """Schema for code validation request in manual flow."""
-
-    code: str = Field(
-        ...,
-        min_length=6,
-        max_length=6,
-        description="Access code to validate",
-    )
-
-
 class TurnstileValidationRequest(BaseModel):
     """Schema for public self-service flow using Turnstile and honeypot."""
 
@@ -153,6 +142,16 @@ class TurnstileValidationRequest(BaseModel):
         description="Turnstile challenge token",
     )
     honeypot_email: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Honeypot field that must be empty",
+    )
+    honeypot_user_id: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Honeypot field that must be empty",
+    )
+    honeypot_website: str | None = Field(
         default=None,
         max_length=100,
         description="Honeypot field that must be empty",
@@ -174,7 +173,7 @@ class MixVisitPayload(FingerprintPayload):
         ...,
         min_length=36,
         max_length=36,
-        description="Session token from successful access code validation",
+        description="Session token from successful validation",
     )
     device_model: str | None = Field(
         default=None,
@@ -186,15 +185,18 @@ class MixVisitPayload(FingerprintPayload):
 
 # --- Response Schemas ---
 
+
 class SuccessResponse(BaseModel):
     """Standard success response."""
 
     message: str
 
+
 class ErrorResponse(SuccessResponse):
     """Standard error response."""
 
     error_code: str
+
 
 class SessionResponse(SuccessResponse):
     """Response containing the short-lived session token."""

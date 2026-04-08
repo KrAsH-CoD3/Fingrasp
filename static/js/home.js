@@ -17,8 +17,6 @@ window.addEventListener('keydown', () => trackInteraction(5), { passive: true })
 window.addEventListener('scroll', () => trackInteraction(2), { passive: true });
 window.addEventListener('click', () => trackInteraction(10), { passive: true });
 
-let validatedCode = null;
-
 function setLoaderMessage(message) {
   const loaderMsg = document.getElementById('loaderMessage');
   if (loaderMsg) loaderMsg.innerHTML = message;
@@ -478,13 +476,15 @@ function copySection(id) {
   });
 }
 
-async function validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, interactionScore) {
+async function validateTurnstile(turnstileToken, honeypots, timeToSolve, interactionScore) {
   try {
     const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
     const csrfToken = csrfMatch ? csrfMatch[1] : '';
     const payload = {
         cf_turnstile_response: turnstileToken,
-        honeypot_email: honeypotEmail,
+        user_verification_email: honeypots.email,
+        user_id: honeypots.user_id,
+        website: honeypots.website,
         time_to_solve: timeToSolve,
         interaction_score: interactionScore
     };
@@ -505,7 +505,7 @@ async function validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, int
   }
 }
 
-async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, timeToSolve) {
+async function collectAndSubmit(deviceModel, turnstileToken, honeypots, timeToSolve) {
   const loader = document.getElementById('loader');
   const codeEntry = document.getElementById('codeEntrySection');
 
@@ -514,7 +514,7 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, time
     if (codeEntry) codeEntry.classList.add('hidden');
 
     setLoaderMessage('Verifying security check<span class="dot-anim"></span>');
-    const { token, error } = await validateTurnstile(turnstileToken, honeypotEmail, timeToSolve, INTERACTION_SCORE);
+    const { token, error } = await validateTurnstile(turnstileToken, honeypots, timeToSolve, INTERACTION_SCORE);
 
     if (error) {
       showToast(error, 'error');
@@ -563,32 +563,6 @@ async function collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, time
     showToast('An error occurred during submission.', 'error');
     if (loader) loader.classList.add('hidden');
     if (codeEntry) codeEntry.classList.remove('hidden');
-  }
-}
-
-function showCodeEntryUI(urlCode = null) {
-  const desktopLayout = document.getElementById('desktopLayout');
-  const detectSection = document.getElementById('platformDetectSection');
-  const errorSection = document.getElementById('platformErrorSection');
-  const codeEntry = document.getElementById('codeEntrySection');
-
-  // Hide detection/error states
-  if (detectSection) detectSection.classList.add('hidden');
-  if (errorSection) errorSection.classList.add('hidden');
-
-  // Show code entry
-  if (codeEntry) codeEntry.classList.remove('hidden');
-  if (desktopLayout) {
-    desktopLayout.classList.remove('hidden');
-    desktopLayout.classList.add('show-code-entry');
-  }
-
-  const codeInput = document.getElementById('codeInput');
-
-  if (urlCode && codeInput) {
-    codeInput.value = urlCode;
-    const btn = codeInput.closest('.input-wrapper')?.querySelector('.clear-input-btn');
-    if (btn) btn.classList.remove('hidden');
   }
 }
 
@@ -708,13 +682,17 @@ async function initFormLogic(detectedPlatform, screenKey = null) {
       return;
     }
 
-    const honeypotEmail = honeypotEmailInput ? honeypotEmailInput.value : '';
+    const honeypots = {
+      email: document.getElementById('honeypotEmail')?.value || '',
+      user_id: document.getElementById('honeypot_user_id')?.value || '',
+      website: document.getElementById('honeypot_website')?.value || ''
+    };
     const timeToSolve = Date.now() - PAGE_LOAD_TIME;
 
     const loader = document.getElementById('loader');
     const codeEntry = document.getElementById('codeEntrySection');
     try {
-      await collectAndSubmit(deviceModel, turnstileToken, honeypotEmail, timeToSolve);
+      await collectAndSubmit(deviceModel, turnstileToken, honeypots, timeToSolve);
     } catch (err) {
       console.error('Submit error:', err);
       loader?.classList.add('hidden');
@@ -805,8 +783,19 @@ async function run() {
   // Configure the form with the detected platform
   await initFormLogic(detectedResult.platform, detectedResult.screenKey);
 
-  // Show the UI (URL code parsing is removed since code flow is replaced)
-  showCodeEntryUI(null);
+  // Show the form UI
+  const desktopLayout = document.getElementById('desktopLayout');
+  const detectSection = document.getElementById('platformDetectSection');
+  const errorSection = document.getElementById('platformErrorSection');
+  const codeEntry = document.getElementById('codeEntrySection');
+
+  if (detectSection) detectSection.classList.add('hidden');
+  if (errorSection) errorSection.classList.add('hidden');
+  if (codeEntry) codeEntry.classList.remove('hidden');
+  if (desktopLayout) {
+    desktopLayout.classList.remove('hidden');
+    desktopLayout.classList.add('show-code-entry');
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

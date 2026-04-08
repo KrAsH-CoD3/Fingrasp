@@ -18,6 +18,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 def anonymize_ip(ip: str) -> str:
     """
     Mask the last octet of an IPv4 address or the last 80 bits of IPv6.
@@ -43,18 +44,19 @@ def anonymize_ip(ip: str) -> str:
         logger.warning(f"Could not parse IP for anonymization: {ip!r}")
         return "0.0.0.0"
 
+
 def get_real_ip(request: Request) -> str:
     """Extract real user IP from Cloudflare or standard proxy headers."""
     # Priority: CF-Connecting-IP > X-Forwarded-For > remote_addr
     cf_ip = request.headers.get("CF-Connecting-IP")
     if cf_ip:
         return cf_ip
-    
+
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
         # Get the first IP in the list
         return forwarded.split(",")[0].strip()
-    
+
     return request.client.host if request.client else "0.0.0.0"
 
 
@@ -63,12 +65,12 @@ def is_trusted_origin(request: Request) -> bool:
     Validates request source (Origin/Referer) against ALLOWED_ORIGINS.
     Strict for state-changing methods; lenient for safe methods (GET/HEAD).
     """
-    if "*" in settings.ALLOWED_ORIGINS: # ── Dev Support ─
+    if "*" in settings.ALLOWED_ORIGINS:  # ── Dev Support ─
         return True
 
     origin = request.headers.get("origin")
     referer = request.headers.get("referer")
-    
+
     allowed = {o.rstrip("/") for o in settings.ALLOWED_ORIGINS}
 
     def _match(val: str | None, is_ref: bool = False) -> bool:
@@ -82,23 +84,27 @@ def is_trusted_origin(request: Request) -> bool:
     # State-changing MUST have a verified source
     if request.method in ("POST", "PUT", "DELETE", "PATCH"):
         return _match(origin) or _match(referer, is_ref=True)
-    
+
     # Safe methods: GET, HEAD, OPTIONS
     if not origin and not referer:
         return True
-    
+
     # Most likely from malicious site/source
     return _match(origin) or _match(referer, is_ref=True)
 
 
 # ── Pre-compiled sanitization patterns (compiled once at import time) ──
-_RE_ALLOWED = re.compile(r"[^\w\s\-./()'+,]")  # Allowlist: word chars, spaces, - . / ( ) ' + ,
+_RE_ALLOWED = re.compile(
+    r"[^\w\s\-./()'+,]"
+)  # Allowlist: word chars, spaces, - . / ( ) ' + ,
 _RE_WHITESPACE = re.compile(r"\s+")
 
 _DEFAULT_MAX_LENGTH = 120
 
 
-def validate_input(user_input: str | None, *, max_length: int = _DEFAULT_MAX_LENGTH) -> str:
+def validate_input(
+    user_input: str | None, *, max_length: int = _DEFAULT_MAX_LENGTH
+) -> str:
     """
     Sanitize untrusted string input for safe storage and display.
 
@@ -244,10 +250,6 @@ class SecurityValidationMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         # Only validate state-changing methods
         if request.method in ("POST", "PUT", "DELETE", "PATCH"):
-            # Skip validation for the Telegram Webhook (handled by its own secret check)
-            if request.url.path == "/webhook":
-                return await call_next(request)
-
             # Origin/Referer Validation
             if not is_trusted_origin(request):
                 return JSONResponse(
@@ -262,7 +264,11 @@ class SecurityValidationMiddleware(BaseHTTPMiddleware):
             csrf_cookie = request.cookies.get("csrf_token")
             csrf_header = request.headers.get("X-CSRF-Token")
 
-            if not csrf_cookie or not csrf_header or not hmac.compare_digest(csrf_cookie, csrf_header):
+            if (
+                not csrf_cookie
+                or not csrf_header
+                or not hmac.compare_digest(csrf_cookie, csrf_header)
+            ):
                 logger.warning(f"CSRF validation failed for {request.url.path}")
                 return JSONResponse(
                     status_code=status.HTTP_403_FORBIDDEN,

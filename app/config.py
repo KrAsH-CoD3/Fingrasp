@@ -65,20 +65,22 @@ class Settings:
     TURNSTILE_SITE_KEY: str = os.getenv("TURNSTILE_SITE_KEY", "").strip()
     TURNSTILE_SECRET_KEY: str = os.getenv("TURNSTILE_SECRET_KEY", "").strip()
 
-    # ── Telegram Bot ──
+    # ── App Configuration ──
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
-    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
-    TELEGRAM_ALLOWED_USER_ID: int = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
-    TELEGRAM_WEBHOOK_URL: str = BASE_URL + "/webhook"
-    TELEGRAM_WEBHOOK_SECRET: str = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
-    CODE_EXPIRY_HOURS: int = int(os.getenv("CODE_EXPIRY_HOURS", "48"))
 
     # ── MongoDB Collections ──
-    ACCESS_CODE_COLLECTION_NAME: str = os.getenv("ACCESS_CODE_COLLECTION_NAME", "access_codes")
-    FINGERPRINT_COLLECTION_NAME: str = os.getenv("FINGERPRINT_COLLECTION_NAME", "fingerprints")
-    TEMP_SESSION_COLLECTION_NAME: str = os.getenv("TEMP_SESSION_COLLECTION_NAME", "temp_sessions")
-    COUNTERS_COLLECTION_NAME: str = os.getenv("COUNTERS_COLLECTION_NAME", "stats_counters")
-    TEMP_SESSION_EXPIRY_MINUTES: int = int(os.getenv("TEMP_SESSION_EXPIRY_MINUTES", "5"))
+    FINGERPRINT_COLLECTION_NAME: str = os.getenv(
+        "FINGERPRINT_COLLECTION_NAME", "fingerprints"
+    )
+    TEMP_SESSION_COLLECTION_NAME: str = os.getenv(
+        "TEMP_SESSION_COLLECTION_NAME", "temp_sessions"
+    )
+    COUNTERS_COLLECTION_NAME: str = os.getenv(
+        "COUNTERS_COLLECTION_NAME", "stats_counters"
+    )
+    TEMP_SESSION_EXPIRY_MINUTES: int = int(
+        os.getenv("TEMP_SESSION_EXPIRY_MINUTES", "5")
+    )
 
     # ── External APIs ──
     # Timeout for external requests like Turnstile siteverify
