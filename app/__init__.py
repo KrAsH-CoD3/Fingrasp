@@ -81,26 +81,26 @@ class RateLimitedStaticFiles(StaticFiles):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._rate_limits = {}
-        self._rate_limit_lock = False
+        self._cleanup_counter = 0
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
             request = Request(scope)
-            # Apply rate limit: 20 requests per minute for static files
-            from slowapi.util import get_remote_address
+            from app.security import get_real_ip
             import time
 
-            key = f"static:{get_remote_address(request)}"
+            key = f"static:{get_real_ip(request)}"
 
             now = time.time()
             window_start = now - 60  # 60 second window
 
-            # Cleanup old entries periodically to prevent memory growth
-            # Every 100 requests, remove entries for IPs with no recent activity
-            if len(self._rate_limits) % 100 == 0:
+            # Cleanup old entries every 10 requests to prevent memory growth
+            self._cleanup_counter += 1
+            if self._cleanup_counter >= 10:
+                self._cleanup_counter = 0
                 self._cleanup_old_entries(now, window_start)
 
-            # Get or create rate limit entry
+            # Get or create rate limit entry atomically
             if key not in self._rate_limits:
                 self._rate_limits[key] = []
 
@@ -112,9 +112,12 @@ class RateLimitedStaticFiles(StaticFiles):
             # Check if over limit (20 requests per minute)
             if len(self._rate_limits[key]) >= 20:
                 response = Response(
-                    content="Rate limit exceeded",
+                    content='{"error_code": "FP_ERR_RATE_LIMITED", "message": "Rate limit exceeded"}',
                     status_code=429,
-                    headers={"Retry-After": "60"},
+                    headers={
+                        "Retry-After": "60",
+                        "Content-Type": "application/json",
+                    },
                 )
                 await response(scope, receive, send)
                 return
