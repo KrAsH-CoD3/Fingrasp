@@ -272,17 +272,35 @@
 }
 
 .flow-node:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
+border-color: var(--accent);
+box-shadow: 0 4px 16px -4px var(--glow);
+transform: translateY(-2px);
 }
 
 .flow-node.highlight {
-  background: linear-gradient(135deg, rgba(99, 179, 237, 0.1), rgba(79, 209, 197, 0.05));
-  border-color: rgba(99, 179, 237, 0.3);
+background: linear-gradient(135deg, rgba(99, 179, 237, 0.1), rgba(79, 209, 197, 0.05));
+border-color: rgba(99, 179, 237, 0.3);
+}
+
+.flow-node.highlight:hover {
+border-color: var(--accent2);
+box-shadow: 0 4px 16px -4px var(--glow);
 }
 
 .node-icon {
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+
+.flow-node.highlight .node-icon svg {
+  color: var(--accent);
 }
 
 .node-text {
