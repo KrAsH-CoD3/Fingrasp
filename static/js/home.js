@@ -796,32 +796,14 @@ function showThankYouPopup(hash, loadTime) {
   // Show popup
   popup.classList.remove('hidden');
 
-  // Close handler
+  // Close handler — only via Got It button
   const closePopup = () => {
     popup.classList.add('hidden');
     closeBtn?.removeEventListener('click', closePopup);
-    popup.removeEventListener('click', handleOverlayClick);
   };
 
-  // Close on button click
+  // Close on button click only
   closeBtn?.addEventListener('click', closePopup);
-
-  // Close on overlay click (outside card)
-  const handleOverlayClick = (e) => {
-    if (e.target === popup) {
-      closePopup();
-    }
-  };
-  popup.addEventListener('click', handleOverlayClick);
-
-  // Close on Escape key
-  const handleEscape = (e) => {
-    if (e.key === 'Escape') {
-      closePopup();
-      document.removeEventListener('keydown', handleEscape);
-    }
-  };
-  document.addEventListener('keydown', handleEscape);
 }
 
 async function run() {
