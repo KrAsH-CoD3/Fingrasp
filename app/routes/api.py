@@ -37,7 +37,9 @@ async def validate_turnstile(
     # Check Honeypots (Multi-layered bait)
     if body.honeypot_email or body.honeypot_user_id or body.honeypot_website:
         # Silently fail for bots
-        logger.warning(f"Submission rejected: Layered honeypot triggered by {get_real_ip(request)}")
+        logger.warning(
+            f"Submission rejected: Layered honeypot triggered by {get_real_ip(request)}"
+        )
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=ErrorResponse(
@@ -75,8 +77,14 @@ async def validate_turnstile(
 
     # Verify Turnstile token with Cloudflare
     if not settings.TURNSTILE_SECRET_KEY:
-        # If no key is set, we bypass validation for local dev (warning: only for dev)
-        pass
+        logger.error("Turnstile secret key not configured - rejecting request")
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=ErrorResponse(
+                error_code="FP_ERR_CONFIG_ERROR",
+                message="Security verification service not configured.",
+            ).model_dump(),
+        )
     else:
         try:
             async with httpx.AsyncClient() as client:
