@@ -53,7 +53,8 @@ class Settings:
 
     # ── Rate Limiting ──
     RATE_LIMIT_SAVE: str = os.getenv("RATE_LIMIT_SAVE", "1/minute")
-    RATE_LIMIT_API: str = os.getenv("RATE_LIMIT_API", "10/minute")
+    RATE_LIMIT_API: str = os.getenv("RATE_LIMIT_API", "5/minute")
+    RATE_LIMIT_STATIC: str = os.getenv("RATE_LIMIT_STATIC", "30/minute")
     RATE_LIMIT_FRONTEND: str = os.getenv("RATE_LIMIT_FRONTEND", "30/minute")
 
     # ── IP Anonymization ──
