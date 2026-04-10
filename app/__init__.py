@@ -83,6 +83,9 @@ class RateLimitedStaticFiles(StaticFiles):
         super().__init__(*args, **kwargs)
         self._rate_limits = {}
         self._cleanup_counter = 0
+        # Parse rate limit from settings (e.g., "30/minute" -> 30)
+        rate_limit_str = settings.RATE_LIMIT_STATIC
+        self._rate_limit_count = int(rate_limit_str.split("/")[0])
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
@@ -110,8 +113,8 @@ class RateLimitedStaticFiles(StaticFiles):
                 ts for ts in self._rate_limits[key] if ts > window_start
             ]
 
-            # Check if over limit (20 requests per minute)
-            if len(self._rate_limits[key]) >= 20:
+            # Check if over limit (configurable via settings.RATE_LIMIT_STATIC)
+            if len(self._rate_limits[key]) >= self._rate_limit_count:
                 response = Response(
                     content='{"error_code": "FP_ERR_RATE_LIMITED", "message": "Rate limit exceeded"}',
                     status_code=429,
@@ -182,7 +185,7 @@ def create_app() -> FastAPI:
     application = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 
     # ── Static Files ──
-    # Rate-limited static files: 20 requests/minute per IP
+    # Rate-limited static files: configurable via settings.RATE_LIMIT_STATIC
     application.mount(
         "/static", RateLimitedStaticFiles(directory="static", html=True), name="static"
     )
