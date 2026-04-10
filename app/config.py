@@ -69,6 +69,9 @@ class Settings:
     # ── App Configuration ──
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
 
+    # ── Redis Configuration ──
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
     # ── MongoDB Collections ──
     FINGERPRINT_COLLECTION_NAME: str = os.getenv(
         "FINGERPRINT_COLLECTION_NAME", "fingerprints"

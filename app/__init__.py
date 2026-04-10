@@ -17,6 +17,7 @@ from app.security import (
     SecurityValidationMiddleware,
     SecurityHeadersMiddleware,
 )
+from app.redis_client import init_redis, close_redis
 
 logging.basicConfig(
     level=logging.INFO,
@@ -142,6 +143,9 @@ class RateLimitedStaticFiles(StaticFiles):
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    # ── Redis Setup ──
+    await init_redis()
+
     # ── Database Setup ──
     client, db = setup_db()
     application.state.db = db
@@ -168,23 +172,10 @@ async def lifespan(application: FastAPI):
         logger.error(f"Failed to initialize persistent counter: {e}")
         application.state.total_collected = 0
 
-    # ── Database Index Verification (TTL) ──
-    from pymongo import ASCENDING
-
-    for collection in [
-        settings.TEMP_SESSION_COLLECTION_NAME,
-    ]:
-        try:
-            await db._db[collection].create_index(
-                [("expires_at", ASCENDING)], expireAfterSeconds=0
-            )
-            logger.info(f"Verified TTL index on {collection}")
-        except Exception as e:
-            logger.error(f"TTL index sync error: {e}")
-
     yield
 
     # ── Shutdown ──
+    await close_redis()
     if client:
         client.close()
         logger.info("Database connection closed")
