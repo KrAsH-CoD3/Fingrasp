@@ -1,6 +1,6 @@
 """FastAPI API endpoints for fingerprint collection."""
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 import uuid
@@ -11,6 +11,7 @@ from app.device_detection import validate_device_model
 from app.security import anonymize_ip, get_real_ip
 from app.config import settings
 from app.limiter import limiter
+from app.redis_client import set_session_token, consume_session_token
 from app.schemas import (
     TurnstileValidationRequest,
     ErrorResponse,
@@ -126,16 +127,19 @@ async def validate_turnstile(
                 ).model_dump(),
             )
 
-    # Generate Session Token
-    db = request.app.state.db
+    # Generate Session Token (stored in Redis with TTL)
     session_token = str(uuid.uuid4())
-    await db[settings.TEMP_SESSION_COLLECTION_NAME].insert_one(
-        {
-            "session_token": session_token,
-            "expires_at": datetime.now(timezone.utc)
-            + timedelta(minutes=settings.TEMP_SESSION_EXPIRY_MINUTES),
-        }
-    )
+    ttl_seconds = settings.TEMP_SESSION_EXPIRY_MINUTES * 60
+
+    if not await set_session_token(session_token, ttl_seconds):
+        logger.error("Failed to store session token in Redis")
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=ErrorResponse(
+                error_code="FP_ERR_STORAGE_FAILED",
+                message="Session storage temporarily unavailable.",
+            ).model_dump(),
+        )
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -156,18 +160,15 @@ async def save(
     Save fingerprint payload.
 
     Validation order:
-    a. Validate session token exists and is valid
+    a. Validate session token exists (Redis)
     b. Delete session token immediately (prevent race conditions)
-    c. Validate payload fields
-    d. Check for duplicates using SHA-256 hash
-    e. Save fingerprint
+    c. Check for duplicates using SHA-256 hash
+    d. Save fingerprint
     """
     db = request.app.state.db
-    # Atomically verify and consume the session token
-    session_doc = await db[settings.TEMP_SESSION_COLLECTION_NAME].find_one_and_delete(
-        {"session_token": payload.session_token}
-    )
-    if not session_doc:
+
+    # Atomically verify and consume the session token from Redis
+    if not await consume_session_token(payload.session_token):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=ErrorResponse(
@@ -176,20 +177,7 @@ async def save(
             ).model_dump(),
         )
 
-    # Manual check in case the DB TTL cycle hasn't hit yet
-    expires_at = session_doc.get("expires_at")
-    if expires_at:
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        if expires_at < datetime.now(timezone.utc):
-            return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
-                content=ErrorResponse(
-                    error_code="FP_ERR_SESSION_INVALID",
-                    message="Session has expired.",
-                ).model_dump(),
-            )
-
+    # Check for duplicate fingerprint
     existing = await db[settings.FINGERPRINT_COLLECTION_NAME].find_one(
         {"hash": payload.hash}
     )
