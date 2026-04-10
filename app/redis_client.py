@@ -139,3 +139,60 @@ async def check_session_token(token: str) -> bool:
     except RedisError as e:
         logger.error(f"Failed to check session token: {e}")
         return False
+
+
+# ── Fingerprint Duplicate Cache Operations ──
+
+FINGERPRINT_KEY_PREFIX = "fp:"
+
+# Default TTL for fingerprint cache (7 days)
+FINGERPRINT_CACHE_TTL = 7 * 24 * 60 * 60  # 7 days in seconds
+
+
+def _fingerprint_key(fingerprint_hash: str) -> str:
+    """Generate Redis key for fingerprint hash."""
+    return f"{FINGERPRINT_KEY_PREFIX}{fingerprint_hash}"
+
+
+async def check_fingerprint_cached(fingerprint_hash: str) -> bool:
+    """
+    Check if fingerprint hash exists in cache.
+
+    Args:
+        fingerprint_hash: The SHA-256 hash of the fingerprint
+
+    Returns:
+        True if fingerprint exists in cache, False otherwise
+    """
+    try:
+        redis = get_redis()
+        key = _fingerprint_key(fingerprint_hash)
+        result = await redis.exists(key)
+        return result > 0
+    except RedisError as e:
+        logger.error(f"Failed to check fingerprint cache: {e}")
+        return False
+
+
+async def cache_fingerprint(
+    fingerprint_hash: str, ttl: int = FINGERPRINT_CACHE_TTL
+) -> bool:
+    """
+    Cache a fingerprint hash with TTL.
+
+    Args:
+        fingerprint_hash: The SHA-256 hash of the fingerprint
+        ttl: Time-to-live in seconds (default: 7 days)
+
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        redis = get_redis()
+        key = _fingerprint_key(fingerprint_hash)
+        await redis.setex(key, ttl, "1")
+        logger.debug(f"Fingerprint cached: {fingerprint_hash[:16]}... (TTL: {ttl}s)")
+        return True
+    except RedisError as e:
+        logger.error(f"Failed to cache fingerprint: {e}")
+        return False

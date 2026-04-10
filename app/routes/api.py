@@ -11,7 +11,12 @@ from app.device_detection import validate_device_model
 from app.security import anonymize_ip, get_real_ip
 from app.config import settings
 from app.limiter import limiter
-from app.redis_client import set_session_token, consume_session_token
+from app.redis_client import (
+    set_session_token,
+    consume_session_token,
+    check_fingerprint_cached,
+    cache_fingerprint,
+)
 from app.schemas import (
     TurnstileValidationRequest,
     ErrorResponse,
@@ -162,8 +167,9 @@ async def save(
     Validation order:
     a. Validate session token exists (Redis)
     b. Delete session token immediately (prevent race conditions)
-    c. Check for duplicates using SHA-256 hash
-    d. Save fingerprint
+    c. Check fingerprint cache (Redis) for duplicates
+    d. Check MongoDB for duplicates (fallback)
+    e. Save fingerprint and cache hash
     """
     db = request.app.state.db
 
@@ -177,11 +183,24 @@ async def save(
             ).model_dump(),
         )
 
-    # Check for duplicate fingerprint
+    # Check fingerprint cache first (Redis)
+    if await check_fingerprint_cached(payload.hash):
+        logger.info(f"Duplicate fingerprint found in cache: {payload.hash[:16]}...")
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=ErrorResponse(
+                error_code="FP_ERR_DUPLICATE",
+                message="Duplicate submission.",
+            ).model_dump(),
+        )
+
+    # Check MongoDB for duplicate (fallback if cache miss)
     existing = await db[settings.FINGERPRINT_COLLECTION_NAME].find_one(
         {"hash": payload.hash}
     )
     if existing:
+        # Cache the duplicate for future lookups
+        await cache_fingerprint(payload.hash)
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=ErrorResponse(
@@ -205,6 +224,9 @@ async def save(
     }
 
     await db[settings.FINGERPRINT_COLLECTION_NAME].insert_one(fingerprint_doc)
+
+    # Cache the new fingerprint hash
+    await cache_fingerprint(payload.hash)
 
     # ── Persistent Atomic Counter Increment ──
     try:
