@@ -199,9 +199,9 @@ async def save(
         "hash": payload.hash,
         "loadTime": payload.loadTime,
         "fingerprint": payload.fingerprint,
-        "device_name": device_name,
         "ip_address": anonymized_ip,
         "created_at": datetime.now(timezone.utc),
+        "device_name": device_name,
     }
 
     await db[settings.FINGERPRINT_COLLECTION_NAME].insert_one(fingerprint_doc)
