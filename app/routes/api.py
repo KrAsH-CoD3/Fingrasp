@@ -201,6 +201,7 @@ async def save(
     if existing:
         # Cache the duplicate for future lookups
         await cache_fingerprint(payload.hash)
+        logger.info(f"Duplicate fingerprint found in DB: {payload.hash[:16]}...")
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=ErrorResponse(
