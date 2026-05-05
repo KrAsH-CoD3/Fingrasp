@@ -228,7 +228,7 @@ def _identify_model(model: str, silent_log: bool = False) -> str | None:
     return _lookup_device_store(normalized, silent_log=silent_log)
 
 
-def _detect_from_gpu(gpu_renderer: str) -> str | None:
+def _detect_from_gpu(gpu_renderer: str, os_type: str | None = None) -> str | None:
     """Detect device or platform type from GPU renderer string."""
     if not gpu_renderer:
         return None
@@ -248,6 +248,13 @@ def _detect_from_gpu(gpu_renderer: str) -> str | None:
     # Desktop & mobile GPU pattern matching
     for pattern, device_name in DESKTOP_GPU_PATTERNS:
         if re.search(pattern, gpu_renderer, re.IGNORECASE):
+            if os_type == "mac":
+                device_name = device_name.replace("Windows PC", "Mac").replace("PC", "Mac")
+            elif os_type == "linux":
+                if "Windows PC" in device_name:
+                    device_name = device_name.replace("Windows PC", "Linux PC")
+                elif "PC" in device_name and "Linux" not in device_name:
+                    device_name = device_name.replace("PC", "Linux PC")
             logger.info(f"Device identified via GPU pattern '{pattern}': {device_name}")
             return device_name
 
@@ -569,21 +576,21 @@ def extract_device_name(fingerprint: dict[str, Any]) -> str:
 
     elif os_type == "mac":
         if gpu_renderer:
-            mac_name = _detect_from_gpu(gpu_renderer)
+            mac_name = _detect_from_gpu(gpu_renderer, os_type="mac")
             if mac_name:
                 return mac_name
         return "Mac"
 
     elif os_type == "windows":
         if gpu_renderer:
-            gpu_device = _detect_from_gpu(gpu_renderer)
+            gpu_device = _detect_from_gpu(gpu_renderer, os_type="windows")
             if gpu_device:
                 return gpu_device
         return "Windows PC"
 
     elif os_type == "linux":
         if gpu_renderer:
-            gpu_device = _detect_from_gpu(gpu_renderer)
+            gpu_device = _detect_from_gpu(gpu_renderer, os_type="linux")
             if gpu_device:
                 return gpu_device
         return "Linux PC"
@@ -792,7 +799,13 @@ def validate_device_model(
                 )
                 return f"{user_model} ({detected_name})"
 
-        # Generic consistency check for Mac or cases without full fingerprint
+        if detected_group == "mac":
+            # Trust the user's specific Mac model selection if we know they're on a Mac.
+            # WebGL renderer strings are unreliable for Macs (e.g. Mac (Intel Iris), M-Chip, etc).
+            logger.info(f"Trusting user Mac model '{user_model}' since OS matches Mac.")
+            return user_model
+
+        # Generic consistency check for iOS cases without full fingerprint
         ground_truth_variants = [
             v.strip().lower()
             for v in detected_name.replace("(", "").replace(")", "").split("/")
@@ -805,7 +818,6 @@ def validate_device_model(
         if not is_consistent and detected_name not in (
             "iPhone",
             "iPad",
-            "Mac",
             "Unknown Device",
         ):
             logger.warning(
