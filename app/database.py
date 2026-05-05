@@ -2,6 +2,13 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Any
 import logging
 import sys
+import os
+
+try:
+    import certifi
+    ca = certifi.where()
+except ImportError:
+    ca = None
 
 from app.config import settings
 from app.schemas import MAX_PAYLOAD_BYTES, MAX_NESTING_DEPTH
@@ -269,13 +276,27 @@ class SanitizedDatabase:
 
 
 def setup_db() -> tuple[AsyncIOMotorClient, SanitizedDatabase]:
+    client_kwargs = {
+        "serverSelectionTimeoutMS": 5_000,
+        "connectTimeoutMS": 10_000,
+        "socketTimeoutMS": 30_000,
+        "maxPoolSize": 10,
+        "minPoolSize": 1,
+    }
+
+    # On macOS, certificate verification often fails for MongoDB Atlas.
+    # Using certifi provides a reliable bundle of root certificates.
+    if ca:
+        client_kwargs["tlsCAFile"] = ca
+    elif sys.platform == "darwin":
+        # Fallback for macOS if certifi is not installed: 
+        # Attempt to use the system certificates if they exist, 
+        # but certifi is highly recommended.
+        logger.warning("certifi not found. MongoDB connection may fail on macOS.")
+
     client = AsyncIOMotorClient(
         settings.MONGODB_URI,
-        serverSelectionTimeoutMS=5_000,
-        connectTimeoutMS=10_000,
-        socketTimeoutMS=30_000,
-        maxPoolSize=10,
-        minPoolSize=1,
+        **client_kwargs
     )
 
     # Wrap the database for sanitization
