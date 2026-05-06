@@ -2,7 +2,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Any
 import logging
 import sys
-import os
 
 try:
     import certifi
