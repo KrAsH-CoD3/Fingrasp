@@ -758,6 +758,55 @@ function _configureModelField(platform, els, screenKey = null) {
       }
     }
 
+    // For Mac: use WebGL renderer to filter Apple Silicon vs Intel
+    if (platform === 'mac') {
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (gl) {
+          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          const gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
+          if (gpu) {
+            console.log(`[Fingrasp] Mac GPU detected: ${gpu}`);
+            const lowerGpu = gpu.toLowerCase();
+            let arch = null;
+
+            if (lowerGpu.includes('intel') || lowerGpu.includes('amd') || lowerGpu.includes('radeon')) {
+              arch = 'Intel';
+            } else {
+              const mMatch = lowerGpu.match(/(m[1-4])\s*(pro|max|ultra)?/);
+              if (mMatch) {
+                  arch = mMatch[1].toUpperCase() + (mMatch[2] ? ' ' + mMatch[2].charAt(0).toUpperCase() + mMatch[2].slice(1) : '');
+              }
+            }
+
+            if (arch) {
+              let filtered = [];
+              if (arch === 'Intel') {
+                  filtered = devices.filter(d => d.includes('Intel') || d.includes('Late 2013') || d.includes('Retina'));
+              } else {
+                  filtered = devices.filter(d => {
+                      if (!d.includes(arch)) return false;
+                      // Prevent base "M3" from matching "M3 Pro"
+                      if (!arch.includes('Pro') && !arch.includes('Max') && !arch.includes('Ultra')) {
+                          if (d.includes(arch + ' Pro') || d.includes(arch + ' Max') || d.includes(arch + ' Ultra')) return false;
+                      }
+                      return true;
+                  });
+              }
+              
+              if (filtered.length > 0) {
+                  devices = filtered;
+                  console.log(`[Fingrasp] GPU lookup matched ${devices.length} models for ${arch}`);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Mac GPU lookup error:', err);
+      }
+    }
+
     if (deviceModelSelect) populateModelDropdown(devices, deviceModelSelect, displayName);
   } else {
     // Show text input (Android, Windows, Linux have too many models to list)
