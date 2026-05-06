@@ -170,23 +170,23 @@ def _normalize_model(raw_model: str) -> str:
 
 def _detect_iphone_by_screen(screen_dims: tuple[int, int], dpr: int) -> str | None:
     """Match an iPhone model by screen resolution and pixel ratio."""
-    for (iphone_width, iphone_height), ratio, name in IPHONE_SCREEN_DB:
-        if screen_dims == (iphone_width, iphone_height) and dpr == ratio:
+    for screen in IPHONE_SCREEN_DB:
+        if screen_dims == (screen.width, screen.height) and dpr == screen.dpr:
             logger.info(
-                f"iPhone detected by screen resolution {screen_dims} and DPR {dpr}: {name}"
+                f"iPhone detected by screen resolution {screen_dims} and DPR {dpr}: {screen.label}"
             )
-            return name
+            return screen.label
     return None
 
 
 def _detect_ipad_by_screen(screen_dims: tuple[int, int], dpr: int) -> str | None:
     """Match an iPad model by screen resolution and pixel ratio."""
-    for (ipad_width, ipad_height), ratio, name in IPAD_SCREEN_DB:
-        if screen_dims == (ipad_width, ipad_height) and dpr == ratio:
+    for screen in IPAD_SCREEN_DB:
+        if screen_dims == (screen.width, screen.height) and dpr == screen.dpr:
             logger.info(
-                f"iPad detected by screen resolution {screen_dims} and DPR {dpr}: {name}"
+                f"iPad detected by screen resolution {screen_dims} and DPR {dpr}: {screen.label}"
             )
-            return name
+            return screen.label
     return None
 
 
@@ -234,20 +234,21 @@ def _detect_from_gpu(gpu_renderer: str, os_type: str | None = None) -> str | Non
         return None
 
     # Apple Silicon Mac detection
-    for pattern, device_name in APPLE_SILICON_PATTERNS:
-        if gpu_renderer.startswith(pattern):
+    for gpu_profile in APPLE_SILICON_PATTERNS:
+        if gpu_renderer.startswith(gpu_profile.pattern):
             logger.info(
-                f"Mac identified via Apple Silicon GPU pattern '{pattern}': {device_name}"
+                f"Mac identified via Apple Silicon GPU pattern '{gpu_profile.pattern}': {gpu_profile.label}"
             )
-            return device_name
+            return gpu_profile.label
 
     # Generic Apple GPU = Apple mobile device (not a Mac)
     if gpu_renderer == "Apple GPU":
         return None
 
     # Desktop & mobile GPU pattern matching
-    for pattern, device_name in DESKTOP_GPU_PATTERNS:
-        if re.search(pattern, gpu_renderer, re.IGNORECASE):
+    for gpu_profile in DESKTOP_GPU_PATTERNS:
+        if re.search(gpu_profile.pattern, gpu_renderer, re.IGNORECASE):
+            device_name = gpu_profile.label
             if os_type == "mac":
                 device_name = device_name.replace("Windows PC", "Mac").replace("PC", "Mac")
             elif os_type == "linux":
@@ -255,7 +256,7 @@ def _detect_from_gpu(gpu_renderer: str, os_type: str | None = None) -> str | Non
                     device_name = device_name.replace("Windows PC", "Linux PC")
                 elif "PC" in device_name and "Linux" not in device_name:
                     device_name = device_name.replace("PC", "Linux PC")
-            logger.info(f"Device identified via GPU pattern '{pattern}': {device_name}")
+            logger.info(f"Device identified via GPU pattern '{gpu_profile.pattern}': {device_name}")
             return device_name
 
     return None

@@ -5,9 +5,26 @@ so data stays separate from logic.
 """
 
 from __future__ import annotations
+from dataclasses import dataclass
 
-SCREEN_DB = list[tuple[tuple[int, int], int, str]]
+@dataclass(frozen=True)
+class HardwareProfile:
+    """Represents a unique hardware profile based on screen metrics."""
+    width: int
+    height: int
+    dpr: int
+    label: str
+
+@dataclass(frozen=True)
+class GPUPattern:
+    """Represents a GPU identification pattern."""
+    pattern: str
+    label: str
+
+SCREEN_DB = list[HardwareProfile]
+GPU_DB = list[GPUPattern]
 IOS_MODELS = list[str]
+MAC_MODELS = list[str]
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # --- iPhone Device Detection Mapping ---
@@ -23,23 +40,23 @@ IOS_MODELS = list[str]
 
 IPHONE_SCREEN_DB: SCREEN_DB = [
     # ── 2026 / 2025 iPhones ──
-    ((440, 956), 3, "iPhone 16 Pro Max / 17 Pro Max"),
-    ((420, 912), 3, "iPhone Air"),
-    ((402, 874), 3, "iPhone 16 Pro / 17 / 17 Pro"),
-    ((430, 932), 3, "iPhone 14 Pro Max / 15 Plus / 15 Pro Max / 16 Plus"),
-    ((393, 852), 3, "iPhone 14 Pro / 15 / 15 Pro / 16"),
+    HardwareProfile(440, 956, 3, "iPhone 16 Pro Max / 17 Pro Max"),
+    HardwareProfile(420, 912, 3, "iPhone Air"),
+    HardwareProfile(402, 874, 3, "iPhone 16 Pro / 17 / 17 Pro"),
+    HardwareProfile(430, 932, 3, "iPhone 14 Pro Max / 15 Plus / 15 Pro Max / 16 Plus"),
+    HardwareProfile(393, 852, 3, "iPhone 14 Pro / 15 / 15 Pro / 16"),
     # ── 2022 / 2021 / 2020 iPhones ──
-    ((428, 926), 3, "iPhone 12 Pro Max / 13 Pro Max / 14 Plus"),
-    ((390, 844), 3, "iPhone 12 / 12 Pro / 13 / 13 Pro / 14 / 16e / 17e"),
-    ((375, 812), 3, "iPhone X / XS / 11 Pro / 12 mini / 13 mini"),
-    ((414, 896), 3, "iPhone XS Max / 11 Pro Max"),
-    ((414, 896), 2, "iPhone XR / 11"),
+    HardwareProfile(428, 926, 3, "iPhone 12 Pro Max / 13 Pro Max / 14 Plus"),
+    HardwareProfile(390, 844, 3, "iPhone 12 / 12 Pro / 13 / 13 Pro / 14 / 16e / 17e"),
+    HardwareProfile(375, 812, 3, "iPhone X / XS / 11 Pro / 12 mini / 13 mini"),
+    HardwareProfile(414, 896, 3, "iPhone XS Max / 11 Pro Max"),
+    HardwareProfile(414, 896, 2, "iPhone XR / 11"),
     # ── Older iPhones ──
-    ((414, 736), 3, "iPhone 6 Plus / 6S Plus / 7 Plus / 8 Plus"),
-    ((375, 667), 2, "iPhone 6 / 6S / 7 / 8 / SE 2nd / SE 3rd"),
-    ((320, 568), 2, "iPhone 5 / 5C / 5S / SE 1st"),
-    ((320, 480), 2, "iPhone 4 / 4S"),
-    ((320, 480), 1, "iPhone 3G / 3GS / 1st gen"),
+    HardwareProfile(414, 736, 3, "iPhone 6 Plus / 6S Plus / 7 Plus / 8 Plus"),
+    HardwareProfile(375, 667, 2, "iPhone 6 / 6S / 7 / 8 / SE 2nd / SE 3rd"),
+    HardwareProfile(320, 568, 2, "iPhone 5 / 5C / 5S / SE 1st"),
+    HardwareProfile(320, 480, 2, "iPhone 4 / 4S"),
+    HardwareProfile(320, 480, 1, "iPhone 3G / 3GS / 1st gen"),
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -49,26 +66,26 @@ IPHONE_SCREEN_DB: SCREEN_DB = [
 
 IPAD_SCREEN_DB: SCREEN_DB = [
     # ── Pro 13" / 12.9" ──
-    ((1032, 1376), 2, 'iPad Pro 13" (M4 / 8th gen)'),
-    (
-        (1024, 1366),
+    HardwareProfile(1032, 1376, 2, 'iPad Pro 13" (M4 / 8th gen)'),
+    HardwareProfile(
+        1024, 1366,
         2,
         'iPad Pro 12.9" (1st–6th gen) / iPad Air 13" (M2 / 7th / 8th gen)',
     ),
     # ── Pro 11" ──
-    ((834, 1210), 2, 'iPad Pro 11" (M4 / 8th gen)'),
-    ((834, 1194), 2, 'iPad Pro 11" (1st–4th gen) / iPad Air 4th / 5th'),
+    HardwareProfile(834, 1210, 2, 'iPad Pro 11" (M4 / 8th gen)'),
+    HardwareProfile(834, 1194, 2, 'iPad Pro 11" (1st–4th gen) / iPad Air 4th / 5th'),
     # ── Air 11" / 10th gen iPad ──
-    ((820, 1180), 2, 'iPad 10th / 11th gen / iPad Air 11" (M2 / 7th / 8th gen)'),
+    HardwareProfile(820, 1180, 2, 'iPad 10th / 11th gen / iPad Air 11" (M2 / 7th / 8th gen)'),
     # ── Pro 10.5" / Air 3rd ──
-    ((834, 1112), 2, 'iPad Air 3rd / iPad Pro 10.5"'),
+    HardwareProfile(834, 1112, 2, 'iPad Air 3rd / iPad Pro 10.5"'),
     # ── 9.7" iPads / iPad 7th–9th / minis ──
-    ((810, 1080), 2, "iPad 7th / 8th / 9th gen"),
-    ((768, 1024), 2, "iPad 5th / 6th / Air 2 / Mini 2 / 3 / 4 / 5"),
+    HardwareProfile(810, 1080, 2, "iPad 7th / 8th / 9th gen"),
+    HardwareProfile(768, 1024, 2, "iPad 5th / 6th / Air 2 / Mini 2 / 3 / 4 / 5"),
     # ── Mini 6+ ──
-    ((744, 1133), 2, "iPad Mini 6th / 7th gen"),
+    HardwareProfile(744, 1133, 2, "iPad Mini 6th / 7th gen"),
     # ── Legacy non-retina ──
-    ((768, 1024), 1, "iPad 1st / 2nd gen / Mini 1st"),
+    HardwareProfile(768, 1024, 1, "iPad 1st / 2nd gen / Mini 1st"),
 ]
 
 
@@ -199,7 +216,7 @@ INDIVIDUAL_IPAD_MODELS: IOS_MODELS = [
     "iPad Mini 1st generation",
 ]
 
-INDIVIDUAL_MAC_MODELS: IOS_MODELS = [
+INDIVIDUAL_MAC_MODELS: MAC_MODELS = [
     # MacBook Pro
     'MacBook Pro 16" (M4 Max)',
     'MacBook Pro 16" (M4 Pro)',
@@ -354,73 +371,73 @@ IPAD_SCREEN_MODELS: dict[str, list[str]] = {
 # --- Mac & Apple Silicon WebGL Identification Patterns ---
 # ═══════════════════════════════════════════════════════════════════════════════
 
-APPLE_SILICON_PATTERNS: list[tuple[str, str]] = [
+APPLE_SILICON_PATTERNS: list[GPUPattern] = [
     # Order: most specific first (Ultra > Max > Pro > base)
-    ("Apple M4 Ultra", "Mac (Apple M4 Ultra)"),
-    ("Apple M4 Max", "Mac (Apple M4 Max)"),
-    ("Apple M4 Pro", "MacBook Pro (Apple M4 Pro)"),
-    ("Apple M4", "Mac (Apple M4)"),
-    ("Apple M3 Ultra", "Mac (Apple M3 Ultra)"),
-    ("Apple M3 Max", "Mac (Apple M3 Max)"),
-    ("Apple M3 Pro", "MacBook Pro (Apple M3 Pro)"),
-    ("Apple M3", "Mac (Apple M3)"),
-    ("Apple M2 Ultra", "Mac Studio / Mac Pro (Apple M2 Ultra)"),
-    ("Apple M2 Max", "Mac (Apple M2 Max)"),
-    ("Apple M2 Pro", "MacBook Pro (Apple M2 Pro)"),
-    ("Apple M2", "Mac (Apple M2)"),
-    ("Apple M1 Ultra", "Mac Studio (Apple M1 Ultra)"),
-    ("Apple M1 Max", "Mac (Apple M1 Max)"),
-    ("Apple M1 Pro", "MacBook Pro (Apple M1 Pro)"),
-    ("Apple M1", "Mac (Apple M1)"),
+    GPUPattern("Apple M4 Ultra", "Mac (Apple M4 Ultra)"),
+    GPUPattern("Apple M4 Max", "Mac (Apple M4 Max)"),
+    GPUPattern("Apple M4 Pro", "MacBook Pro (Apple M4 Pro)"),
+    GPUPattern("Apple M4", "Mac (Apple M4)"),
+    GPUPattern("Apple M3 Ultra", "Mac (Apple M3 Ultra)"),
+    GPUPattern("Apple M3 Max", "Mac (Apple M3 Max)"),
+    GPUPattern("Apple M3 Pro", "MacBook Pro (Apple M3 Pro)"),
+    GPUPattern("Apple M3", "Mac (Apple M3)"),
+    GPUPattern("Apple M2 Ultra", "Mac Studio / Mac Pro (Apple M2 Ultra)"),
+    GPUPattern("Apple M2 Max", "Mac (Apple M2 Max)"),
+    GPUPattern("Apple M2 Pro", "MacBook Pro (Apple M2 Pro)"),
+    GPUPattern("Apple M2", "Mac (Apple M2)"),
+    GPUPattern("Apple M1 Ultra", "Mac Studio (Apple M1 Ultra)"),
+    GPUPattern("Apple M1 Max", "Mac (Apple M1 Max)"),
+    GPUPattern("Apple M1 Pro", "MacBook Pro (Apple M1 Pro)"),
+    GPUPattern("Apple M1", "Mac (Apple M1)"),
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # --- Desktop & Mobile GPU Vendor Pattern Matching ---
 # ═══════════════════════════════════════════════════════════════════════════════
 
-DESKTOP_GPU_PATTERNS: list[tuple[str, str]] = [
+DESKTOP_GPU_PATTERNS: list[GPUPattern] = [
     # ── NVIDIA ──
-    (r"NVIDIA GeForce RTX 50\d{2}", "Windows PC (NVIDIA RTX 50-series)"),
-    (r"NVIDIA GeForce RTX 40\d{2}", "Windows PC (NVIDIA RTX 40-series)"),
-    (r"NVIDIA GeForce RTX 30\d{2}", "Windows PC (NVIDIA RTX 30-series)"),
-    (r"NVIDIA GeForce RTX 20\d{2}", "Windows PC (NVIDIA RTX 20-series)"),
-    (r"NVIDIA GeForce GTX 16\d{2}", "Windows PC (NVIDIA GTX 16-series)"),
-    (r"NVIDIA GeForce GTX 10\d{2}", "Windows PC (NVIDIA GTX 10-series)"),
-    (r"NVIDIA GeForce GTX 9\d{2}", "Windows PC (NVIDIA GTX 900-series)"),
-    (r"NVIDIA GeForce MX\d+", "Windows PC (NVIDIA MX)"),
-    (r"NVIDIA", "PC (NVIDIA GPU)"),
+    GPUPattern(r"NVIDIA GeForce RTX 50\d{2}", "Windows PC (NVIDIA RTX 50-series)"),
+    GPUPattern(r"NVIDIA GeForce RTX 40\d{2}", "Windows PC (NVIDIA RTX 40-series)"),
+    GPUPattern(r"NVIDIA GeForce RTX 30\d{2}", "Windows PC (NVIDIA RTX 30-series)"),
+    GPUPattern(r"NVIDIA GeForce RTX 20\d{2}", "Windows PC (NVIDIA RTX 20-series)"),
+    GPUPattern(r"NVIDIA GeForce GTX 16\d{2}", "Windows PC (NVIDIA GTX 16-series)"),
+    GPUPattern(r"NVIDIA GeForce GTX 10\d{2}", "Windows PC (NVIDIA GTX 10-series)"),
+    GPUPattern(r"NVIDIA GeForce GTX 9\d{2}", "Windows PC (NVIDIA GTX 900-series)"),
+    GPUPattern(r"NVIDIA GeForce MX\d+", "Windows PC (NVIDIA MX)"),
+    GPUPattern(r"NVIDIA", "PC (NVIDIA GPU)"),
     # ── AMD ──
-    (r"AMD Radeon RX 9\d{3}", "Windows PC (AMD RX 9000)"),
-    (r"AMD Radeon RX 7\d{3}", "Windows PC (AMD RX 7000)"),
-    (r"AMD Radeon RX 6\d{3}", "Windows PC (AMD RX 6000)"),
-    (r"AMD Radeon RX 5\d{3}", "Windows PC (AMD RX 5000)"),
-    (r"AMD Radeon RX Vega", "Windows PC (AMD Vega)"),
-    (r"AMD Radeon", "PC (AMD Radeon)"),
-    (r"Radeon", "PC (AMD Radeon)"),
+    GPUPattern(r"AMD Radeon RX 9\d{3}", "Windows PC (AMD RX 9000)"),
+    GPUPattern(r"AMD Radeon RX 7\d{3}", "Windows PC (AMD RX 7000)"),
+    GPUPattern(r"AMD Radeon RX 6\d{3}", "Windows PC (AMD RX 6000)"),
+    GPUPattern(r"AMD Radeon RX 5\d{3}", "Windows PC (AMD RX 5000)"),
+    GPUPattern(r"AMD Radeon RX Vega", "Windows PC (AMD Vega)"),
+    GPUPattern(r"AMD Radeon", "PC (AMD Radeon)"),
+    GPUPattern(r"Radeon", "PC (AMD Radeon)"),
     # ── Intel ──
-    (r"Intel.*Arc", "Windows PC (Intel Arc)"),
-    (r"Intel.*Iris.*Xe", "Windows PC (Intel Iris Xe)"),
-    (r"Intel.*UHD", "Windows PC (Intel UHD)"),
-    (r"Intel.*Iris", "Windows PC (Intel Iris)"),
-    (r"Intel.*HD Graphics", "Windows PC (Intel HD Graphics)"),
+    GPUPattern(r"Intel.*Arc", "Windows PC (Intel Arc)"),
+    GPUPattern(r"Intel.*Iris.*Xe", "Windows PC (Intel Iris Xe)"),
+    GPUPattern(r"Intel.*UHD", "Windows PC (Intel UHD)"),
+    GPUPattern(r"Intel.*Iris", "Windows PC (Intel Iris)"),
+    GPUPattern(r"Intel.*HD Graphics", "Windows PC (Intel HD Graphics)"),
     # ── Qualcomm Adreno (Android) ──
-    (r"Adreno.*8\d{2}", "Android (Qualcomm Adreno 8xx)"),
-    (r"Adreno.*7\d{2}", "Android (Qualcomm Adreno 7xx)"),
-    (r"Adreno.*6\d{2}", "Android (Qualcomm Adreno 6xx)"),
-    (r"Adreno.*5\d{2}", "Android (Qualcomm Adreno 5xx)"),
-    (r"Adreno.*4\d{2}", "Android (Qualcomm Adreno 4xx)"),
-    (r"Adreno", "Android (Qualcomm Adreno)"),
+    GPUPattern(r"Adreno.*8\d{2}", "Android (Qualcomm Adreno 8xx)"),
+    GPUPattern(r"Adreno.*7\d{2}", "Android (Qualcomm Adreno 7xx)"),
+    GPUPattern(r"Adreno.*6\d{2}", "Android (Qualcomm Adreno 6xx)"),
+    GPUPattern(r"Adreno.*5\d{2}", "Android (Qualcomm Adreno 5xx)"),
+    GPUPattern(r"Adreno.*4\d{2}", "Android (Qualcomm Adreno 4xx)"),
+    GPUPattern(r"Adreno", "Android (Qualcomm Adreno)"),
     # ── ARM Mali (Android — Samsung Exynos, MediaTek Dimensity) ──
-    (r"Mali-G7\d{2}", "Android (ARM Mali G7xx)"),
-    (r"Mali-G6\d{2}", "Android (ARM Mali G6xx)"),
-    (r"Mali-G5\d{2}", "Android (ARM Mali G5xx)"),
-    (r"Mali-G\d+", "Android (ARM Mali)"),
-    (r"Mali-T\d+", "Android (ARM Mali)"),
-    (r"Mali", "Android (ARM Mali)"),
+    GPUPattern(r"Mali-G7\d{2}", "Android (ARM Mali G7xx)"),
+    GPUPattern(r"Mali-G6\d{2}", "Android (ARM Mali G6xx)"),
+    GPUPattern(r"Mali-G5\d{2}", "Android (ARM Mali G5xx)"),
+    GPUPattern(r"Mali-G\d+", "Android (ARM Mali)"),
+    GPUPattern(r"Mali-T\d+", "Android (ARM Mali)"),
+    GPUPattern(r"Mali", "Android (ARM Mali)"),
     # ── ARM Immortalis (high-end MediaTek Dimensity 9000+) ──
-    (r"Immortalis", "Android (ARM Immortalis)"),
+    GPUPattern(r"Immortalis", "Android (ARM Immortalis)"),
     # ── Samsung Xclipse (Exynos 2200+) ──
-    (r"Xclipse", "Android (Samsung Xclipse)"),
+    GPUPattern(r"Xclipse", "Android (Samsung Xclipse)"),
     # ── IMG PowerVR ──
-    (r"PowerVR", "Android (PowerVR)"),
+    GPUPattern(r"PowerVR", "Android (PowerVR)"),
 ]
